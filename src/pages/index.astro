@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/Blog/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+  .filter((post) => !post.id.startsWith('en/'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const siteTitle = '林健的技术博客';
+const siteDescription = '11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化';
+---
+
+<BaseLayout title={siteTitle} description={siteDescription} lang="zh">
+  <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
+    <div class="flex flex-col" style="gap: var(--section-gap);">
+      <!-- Hero section -->
+      <section class="text-center relative">
+        <!-- Decorative line -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+          <div class="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-[var(--color-accent)]/10 to-transparent"></div>
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center" style="gap: var(--space-6);">
+          <p class="font-mono text-xs text-[var(--color-accent)] tracking-widest opacity-60">{'// WELCOME TO MY BLOG'}</p>
+          <div class="flex flex-col items-center" style="gap: var(--space-4);">
+            <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-text)] tracking-tight">
+              你好，我是<span class="text-[var(--color-accent)]">林健</span>
+            </h1>
+            <p class="text-base md:text-lg text-[var(--color-text-secondary)] max-w-2xl leading-relaxed font-mono">
+              {siteDescription}
+            </p>
+          </div>
+          <div class="flex flex-wrap justify-center" style="gap: var(--space-3);">
+            <a href="/about" class="btn"><span>了解更多</span></a>
+            <a href="/blog" class="btn btn-outline"><span>阅读博客</span></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent posts -->
+      <section class="flex flex-col items-center w-full">
+        <h2 class="section-title">最新文章</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full" style="gap: var(--space-6);">
+          {posts.slice(0, 6).map((post) => (
+            <PostCard
+              title={post.data.title}
+              description={post.data.description}
+              pubDate={post.data.pubDate}
+              updatedDate={post.data.updatedDate}
+              heroImage={post.data.heroImage}
+              slug={post.id}
+              lang="zh"
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  </div>
+</BaseLayout>

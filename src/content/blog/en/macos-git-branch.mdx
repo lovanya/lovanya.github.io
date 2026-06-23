@@ -1,0 +1,93 @@
+---
+title: Git Branch Management on macOS
+description: An introduction to Git branch management concepts and common commands, including creating, switching, and merging branches.
+pubDate: 2018-11-12
+tags: ['git', 'macos', 'terminal']
+---
+
+## Introduction
+
+Git branches are one of Git's most powerful features. This post introduces the basic concepts and common commands for Git branch management.
+
+## Viewing Branches
+
+```bash
+# View local branches
+git branch
+
+# View all branches (including remote)
+git branch -a
+
+# View branches with last commit info
+git branch -v
+```
+
+## Creating Branches
+
+```bash
+# Create a new branch
+git branch feature-login
+
+# Create and switch to a new branch
+git checkout -b feature-login
+
+# Create a new branch (recommended)
+git switch -c feature-login
+```
+
+## Switching Branches
+
+```bash
+# Switch to a specific branch
+git checkout main
+
+# Switch branch (recommended)
+git switch main
+```
+
+## Merging Branches
+
+```bash
+# Switch to the target branch
+git checkout main
+
+# Merge the feature branch
+git merge feature-login
+```
+
+## Deleting Branches
+
+```bash
+# Delete merged branch
+git branch -d feature-login
+
+# Force delete unmerged branch
+git branch -D feature-login
+```
+
+## Resolving Conflicts
+
+When merge conflicts occur, Git marks the conflicting files. You need to resolve them manually:
+
+1. Open the conflicting file
+2. Find conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+3. Manually edit to keep the correct content
+4. Add to staging and commit
+
+```bash
+git add .
+git commit -m "feat: resolve merge conflict"
+```
+
+## Branch Management Strategy
+
+Recommended to use Git Flow or GitHub Flow workflow:
+
+- `main` - Production branch
+- `develop` - Development branch
+- `feature/*` - Feature branches
+- `hotfix/*` - Hotfix branches
+
+## Summary
+
+Mastering Git branch management is fundamental for team collaboration. Practice creating, switching, and merging branches regularly.

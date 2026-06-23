@@ -1,0 +1,382 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "林健" [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - list [ref=e6]:
+          - listitem [ref=e7]:
+            - link "首页" [ref=e8] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e9]:
+            - link "博客" [ref=e10] [cursor=pointer]:
+              - /url: /blog
+          - listitem [ref=e11]:
+            - link "关于我" [ref=e12] [cursor=pointer]:
+              - /url: /about
+        - generic [ref=e13]:
+          - link "EN" [ref=e14] [cursor=pointer]:
+            - /url: /en/about
+          - button "Toggle theme" [ref=e15]:
+            - img [ref=e16]
+  - main [ref=e18]:
+    - generic [ref=e20]:
+      - img "林健" [ref=e23]
+      - heading "林健" [level=1] [ref=e25]
+      - paragraph [ref=e26]: 前端架构师
+      - paragraph [ref=e27]: 11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化
+      - generic [ref=e28]:
+        - link "job.ziya@outlook.com" [ref=e29] [cursor=pointer]:
+          - /url: mailto:job.ziya@outlook.com
+          - img [ref=e30]
+          - text: job.ziya@outlook.com
+        - generic [ref=e32]:
+          - img [ref=e33]
+          - text: 中南大学 · 计算机科学与技术 (2015)
+        - generic [ref=e37]:
+          - img [ref=e38]
+          - text: 中文（母语）/ English（工作沟通）
+      - img [ref=e41]
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - heading "核心能力" [level=2] [ref=e45]
+        - img [ref=e49]:
+          - generic [ref=e66]: 架构设计
+          - generic [ref=e67]: 性能优化
+          - generic [ref=e68]: 跨端开发
+          - generic [ref=e69]: 团队管理
+          - generic [ref=e70]: 前端工程化
+          - generic [ref=e71]: 大型中后台
+      - generic [ref=e72]:
+        - heading "工作经历" [level=2] [ref=e73]
+        - generic [ref=e75]:
+          - generic [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]: 2022.01 – 2026.04
+            - heading "顺丰科技有限公司" [level=3] [ref=e83]
+            - paragraph [ref=e84]: 高级前端开发工程师
+            - list [ref=e85]:
+              - listitem [ref=e86]:
+                - img [ref=e87]
+                - generic [ref=e89]: 主导 ERP 财务系统全栈重构项目前端架构，系统承载 800+ 页面，覆盖应收/应付/总账/报表/合并全财务链路
+              - listitem [ref=e90]:
+                - img [ref=e91]
+                - generic [ref=e93]: 主导微前端架构（模块联邦）设计与落地，支持多团队独立开发、独立部署，构建耗时从 12min 降至 3min
+              - listitem [ref=e94]:
+                - img [ref=e95]
+                - generic [ref=e97]: 主导 FinSpread 自研工具研发，通过 iframe 隔离 SpreadJS 能力，降低授权成本约 30%
+              - listitem [ref=e98]:
+                - img [ref=e99]
+                - generic [ref=e101]: 搭建半低码方案：抽象 20+ 高频模式化页面模板，需求交付周期缩短 60%
+              - listitem [ref=e102]:
+                - img [ref=e103]
+                - generic [ref=e105]: 设计统一的错误监控与性能埋点体系（Sentry + 自研 SDK），线上问题发现率提升 80%
+              - listitem [ref=e106]:
+                - img [ref=e107]
+                - generic [ref=e109]: 管理 3-5 人外包团队，负责需求拆分、Code Review、技术方案评审
+              - listitem [ref=e110]:
+                - img [ref=e111]
+                - generic [ref=e113]: 主导性能优化专项：首屏加载时间从 4.2s 降至 1.8s（路由懒加载 + 资源预加载 + CDN）
+            - generic [ref=e114]:
+              - img [ref=e115]
+              - generic [ref=e117]: 展开详情
+          - generic [ref=e122] [cursor=pointer]:
+            - generic [ref=e123]: 2018.09 – 2021.12
+            - heading "深圳柔宇电子技术有限公司" [level=3] [ref=e124]
+            - paragraph [ref=e125]: 高级前端开发工程师
+            - list [ref=e126]:
+              - listitem [ref=e127]:
+                - img [ref=e128]
+                - generic [ref=e130]: 主导 SSO 统一权限管理系统架构设计，打通 5+ 业务线后台的统一登录、统一授权、统一审计
+              - listitem [ref=e131]:
+                - img [ref=e132]
+                - generic [ref=e134]: 实现基于 RBAC 的动态路由系统，支持按钮级权限控制，覆盖 500+ 内部用户
+              - listitem [ref=e135]:
+                - img [ref=e136]
+                - generic [ref=e138]: 自研基于 iView 的企业级 UI 组件库（20+ 组件），被部门所有管理系统复用，开发效率提升约 40%
+              - listitem [ref=e139]:
+                - img [ref=e140]
+                - generic [ref=e142]: 主导制定 RESTful API 规范与前端开发规范，推动前后端协作效率提升
+              - listitem [ref=e143]:
+                - img [ref=e144]
+                - generic [ref=e146]: 搭建前端监控体系（埋点 + 性能采集 + 异常上报），输出月度前端质量报告
+            - generic [ref=e147]:
+              - img [ref=e148]
+              - generic [ref=e150]: 展开详情
+          - generic [ref=e155] [cursor=pointer]:
+            - generic [ref=e156]: 2017.06 – 2018.07
+            - heading "深圳信锐网科技术有限公司" [level=3] [ref=e157]
+            - paragraph [ref=e158]: 前端开发工程师
+            - list [ref=e159]:
+              - listitem [ref=e160]:
+                - img [ref=e161]
+                - generic [ref=e163]: 负责信锐云管理平台前端架构，使用 Vue.js + Webpack 构建企业级网络设备管理系统
+              - listitem [ref=e164]:
+                - img [ref=e165]
+                - generic [ref=e167]: 使用 Ionic + Angular + TypeScript 开发移动端 App，实现网络设备远程管控
+              - listitem [ref=e168]:
+                - img [ref=e169]
+                - generic [ref=e171]: 搭建 Node.js Mock Server，支持团队离线开发与接口联调
+              - listitem [ref=e172]:
+                - img [ref=e173]
+                - generic [ref=e175]: 参与前端工程化建设：Webpack 配置优化、HMR 热更新、代码分割
+            - generic [ref=e176]:
+              - img [ref=e177]
+              - generic [ref=e179]: 展开详情
+          - generic [ref=e184] [cursor=pointer]:
+            - generic [ref=e185]: 2015.07 – 2017.03
+            - heading "深圳联友科技有限公司" [level=3] [ref=e186]
+            - paragraph [ref=e187]: 前端开发工程师
+            - list [ref=e188]:
+              - listitem [ref=e189]:
+                - img [ref=e190]
+                - generic [ref=e192]: 使用 Framework7 + Cordova 开发多款企业移动端 App（OA 审批、考勤、巡检）
+              - listitem [ref=e193]:
+                - img [ref=e194]
+                - generic [ref=e196]: 使用 EasyUI + jQuery 开发 PC 端 OA 系统，实现流程审批、报表展示等核心功能
+              - listitem [ref=e197]:
+                - img [ref=e198]
+                - generic [ref=e200]: 获得早期混合跨端开发经验：Cordova 插件开发、原生桥接、离线缓存
+              - listitem [ref=e201]:
+                - img [ref=e202]
+                - generic [ref=e204]: 参与需求分析与技术方案设计，与产品经理、后端工程师紧密协作
+            - generic [ref=e205]:
+              - img [ref=e206]
+              - generic [ref=e208]: 展开详情
+      - generic [ref=e209]:
+        - heading "项目经历" [level=2] [ref=e210]
+        - generic [ref=e212]:
+          - generic [ref=e214] [cursor=pointer]:
+            - generic [ref=e215]:
+              - generic [ref=e216]:
+                - generic [ref=e217]: 2024.06 – 2026.04
+                - generic [ref=e218]: 点击翻转 →
+              - heading "ERP 财务系统全栈重构" [level=3] [ref=e219]
+              - paragraph [ref=e220]: 前端架构师
+              - paragraph [ref=e221]: 主导公司核心 ERP 财务系统前后端同步重构，系统承载 800+ 页面，覆盖应收、应付、总账、报表、合并等全财务链路，服务集团 2000+ 用户日常财务核算与审计工作
+              - generic [ref=e222]:
+                - generic [ref=e223]: Vue 3
+                - generic [ref=e224]: Vite 4
+                - generic [ref=e225]: FinUI
+                - generic [ref=e226]: SpreadJS
+                - generic [ref=e227]: "+3"
+            - generic [ref=e228]:
+              - generic [ref=e229]:
+                - heading "项目亮点" [level=4] [ref=e230]
+                - generic [ref=e231]: ← 返回
+              - list [ref=e232]:
+                - listitem [ref=e233]:
+                  - img [ref=e234]
+                  - generic [ref=e236]: 主导微前端架构（Module Federation）设计与落地，实现多团队独立开发、独立部署，构建耗时从 12min 降至 3min
+                - listitem [ref=e237]:
+                  - img [ref=e238]
+                  - generic [ref=e240]: 搭建半低码方案：抽象 20+ 高频模式化页面模板，支持配置化生成，需求交付周期缩短 60%
+                - listitem [ref=e241]:
+                  - img [ref=e242]
+                  - generic [ref=e244]: 主导引入 Web Component 方案（Lit），实现跨 Vue/React 技术栈的组件复用，累计沉淀 8 个通用业务组件
+                - listitem [ref=e245]:
+                  - img [ref=e246]
+                  - generic [ref=e248]: 设计统一的错误监控与性能埋点体系（Sentry + 自研 SDK），线上问题发现率提升 80%
+                - listitem [ref=e249]:
+                  - img [ref=e250]
+                  - generic [ref=e252]: 制定前端工程化规范（Monorepo + ESlint + Husky + Changesets），团队代码质量显著提升
+                - listitem [ref=e253]:
+                  - img [ref=e254]
+                  - generic [ref=e256]: 主导首屏性能优化专项：路由懒加载 + 资源预加载 + 图片压缩 + CDN 配置，首屏加载时间从 4.2s 降至 1.8s
+              - generic [ref=e257]:
+                - generic [ref=e258]: Vue 3
+                - generic [ref=e259]: Vite 4
+                - generic [ref=e260]: FinUI
+                - generic [ref=e261]: SpreadJS
+                - generic [ref=e262]: Module Federation
+                - generic [ref=e263]: Pinia
+                - generic [ref=e264]: TypeScript
+          - generic [ref=e266] [cursor=pointer]:
+            - generic [ref=e267]:
+              - generic [ref=e268]:
+                - generic [ref=e269]: 2024.06 – 2024.11
+                - generic [ref=e270]: 点击翻转 →
+              - heading "FinSpread 自研工具" [level=3] [ref=e271]
+              - paragraph [ref=e272]: 主程
+              - paragraph [ref=e273]: 自研电子表格能力平台，通过 iframe 架构隔离 SpreadJS 核心能力，以微服务形式向财务系统、预算系统、报表系统等多个业务线提供在线表格编辑与计算服务，降低 SpreadJS 授权成本约 30%
+              - generic [ref=e274]:
+                - generic [ref=e275]: SpreadJS
+                - generic [ref=e276]: iframe
+                - generic [ref=e277]: postMessage
+                - generic [ref=e278]: Vue 3
+                - generic [ref=e279]: "+1"
+            - generic [ref=e280]:
+              - generic [ref=e281]:
+                - heading "项目亮点" [level=4] [ref=e282]
+                - generic [ref=e283]: ← 返回
+              - list [ref=e284]:
+                - listitem [ref=e285]:
+                  - img [ref=e286]
+                  - generic [ref=e288]: 设计统一的 postMessage 通信协议（请求-响应模式 + 事件订阅模式），支持跨域双向通信
+                - listitem [ref=e289]:
+                  - img [ref=e290]
+                  - generic [ref=e292]: 封装 SpreadJS 核心 API 为独立服务，暴露统一的 CRUD + 公式计算 + 格式化接口
+                - listitem [ref=e293]:
+                  - img [ref=e294]
+                  - generic [ref=e296]: 输出完整的接入文档与 SDK，3 个业务系统在 2 周内完成接入
+                - listitem [ref=e297]:
+                  - img [ref=e298]
+                  - generic [ref=e300]: 实现操作录制与回放能力，支持用户操作审计与问题追溯
+                - listitem [ref=e301]:
+                  - img [ref=e302]
+                  - generic [ref=e304]: 设计插件化架构，支持按需加载行列操作、数据透视、图表等能力模块
+              - generic [ref=e305]:
+                - generic [ref=e306]: SpreadJS
+                - generic [ref=e307]: iframe
+                - generic [ref=e308]: postMessage
+                - generic [ref=e309]: Vue 3
+                - generic [ref=e310]: TypeScript
+          - generic [ref=e312] [cursor=pointer]:
+            - generic [ref=e313]:
+              - generic [ref=e314]:
+                - generic [ref=e315]: 2018.09 – 2021.12
+                - generic [ref=e316]: 点击翻转 →
+              - heading "SSO 统一权限管理系统" [level=3] [ref=e317]
+              - paragraph [ref=e318]: 前端负责人
+              - paragraph [ref=e319]: 主导柔宇科技统一认证与权限管理系统架构设计与开发，打通 5+ 业务线后台系统的统一登录、统一授权、统一审计，覆盖 500+ 内部用户的日常权限管理需求
+              - generic [ref=e320]:
+                - generic [ref=e321]: Vue 2.6
+                - generic [ref=e322]: iView
+                - generic [ref=e323]: Nuxt.js
+                - generic [ref=e324]: Less
+                - generic [ref=e325]: "+2"
+            - generic [ref=e326]:
+              - generic [ref=e327]:
+                - heading "项目亮点" [level=4] [ref=e328]
+                - generic [ref=e329]: ← 返回
+              - list [ref=e330]:
+                - listitem [ref=e331]:
+                  - img [ref=e332]
+                  - generic [ref=e334]: 实现基于 RBAC 的动态路由系统：后端下发权限树，前端动态生成路由与菜单，支持按钮级权限控制
+                - listitem [ref=e335]:
+                  - img [ref=e336]
+                  - generic [ref=e338]: 设计统一登录方案：OAuth 2.0 + JWT，支持 SSO 单点登录、Token 无感刷新、多端互踢
+                - listitem [ref=e339]:
+                  - img [ref=e340]
+                  - generic [ref=e342]: 自研基于 iView 的企业级组件库（20+ 组件），包含高级表格、表单引擎、权限指令等，被部门所有管理系统复用
+                - listitem [ref=e343]:
+                  - img [ref=e344]
+                  - generic [ref=e346]: 搭建前端监控体系（埋点 + 性能采集 + 异常上报），输出月度前端质量报告
+                - listitem [ref=e347]:
+                  - img [ref=e348]
+                  - generic [ref=e350]: 主导制定 RESTful API 规范与前端开发规范，推动前后端协作效率提升 40%
+              - generic [ref=e351]:
+                - generic [ref=e352]: Vue 2.6
+                - generic [ref=e353]: iView
+                - generic [ref=e354]: Nuxt.js
+                - generic [ref=e355]: Less
+                - generic [ref=e356]: Vuex
+                - generic [ref=e357]: Node.js
+          - generic [ref=e359] [cursor=pointer]:
+            - generic [ref=e360]:
+              - generic [ref=e361]:
+                - generic [ref=e362]: 2019.10 – 2020.04
+                - generic [ref=e363]: 点击翻转 →
+              - heading "柔记 PC 端（Electron）" [level=3] [ref=e364]
+              - paragraph [ref=e365]: 核心开发
+              - paragraph [ref=e366]: 跨平台桌面应用（Windows / macOS），连接柔记智能手写板硬件，实现手写输入、绘画创作、笔记管理等功能，支持手写板与屏幕双画布实时同步渲染
+              - generic [ref=e367]:
+                - generic [ref=e368]: Electron
+                - generic [ref=e369]: Vue 2.6
+                - generic [ref=e370]: Node.js
+                - generic [ref=e371]: Less
+                - generic [ref=e372]: "+1"
+            - generic [ref=e373]:
+              - generic [ref=e374]:
+                - heading "项目亮点" [level=4] [ref=e375]
+                - generic [ref=e376]: ← 返回
+              - list [ref=e377]:
+                - listitem [ref=e378]:
+                  - img [ref=e379]
+                  - generic [ref=e381]: 实现手写板 USB 驱动通信与数据解析，基于 Node.js native addon 封装硬件 SDK
+                - listitem [ref=e382]:
+                  - img [ref=e383]
+                  - generic [ref=e385]: 设计双画布实时同步渲染架构：手写板画布 → 数据压缩 → 屏幕画布，延迟控制在 16ms 以内
+                - listitem [ref=e386]:
+                  - img [ref=e387]
+                  - generic [ref=e389]: 实现笔迹压感模拟与平滑曲线算法（贝塞尔曲线插值），还原真实书写体验
+                - listitem [ref=e390]:
+                  - img [ref=e391]
+                  - generic [ref=e393]: 处理 macOS / Windows 双平台兼容问题：文件路径、系统托盘、快捷键、窗口管理
+                - listitem [ref=e394]:
+                  - img [ref=e395]
+                  - generic [ref=e397]: 实现笔记导入导出功能：支持 PDF、PNG、JPG 格式，批量导出性能优化（100 页 < 3s）
+              - generic [ref=e398]:
+                - generic [ref=e399]: Electron
+                - generic [ref=e400]: Vue 2.6
+                - generic [ref=e401]: Node.js
+                - generic [ref=e402]: Less
+                - generic [ref=e403]: Canvas
+      - generic [ref=e404]:
+        - heading "技术栈" [level=2] [ref=e405]
+        - img [ref=e409]:
+          - generic [ref=e418]:
+            - generic [ref=e422]: 框架
+            - generic [ref=e427]: Vue 3
+            - generic [ref=e432]: Vue 2
+            - generic [ref=e437]: React 18
+            - generic [ref=e442]: Angular
+            - generic [ref=e447]: Nuxt.js
+          - generic [ref=e448]:
+            - generic [ref=e452]: 架构
+            - generic [ref=e457]: Module Federation
+            - generic [ref=e462]: Web Components
+            - generic [ref=e467]: SSR
+            - generic [ref=e472]: SPA
+          - generic [ref=e473]:
+            - generic [ref=e477]: 语言
+            - generic [ref=e482]: TypeScript
+            - generic [ref=e487]: JavaScript
+            - generic [ref=e492]: HTML5
+            - generic [ref=e497]: CSS3
+          - generic [ref=e498]:
+            - generic [ref=e502]: 后端协作
+            - generic [ref=e507]: Node.js
+            - generic [ref=e512]: Express
+            - generic [ref=e517]: Koa
+            - generic [ref=e522]: RESTful API
+          - generic [ref=e523]:
+            - generic [ref=e527]: 构建
+            - generic [ref=e532]: Vite 4
+            - generic [ref=e537]: Webpack
+            - generic [ref=e542]: Rspack
+            - generic [ref=e547]: Monorepo
+          - generic [ref=e548]:
+            - generic [ref=e552]: 跨端
+            - generic [ref=e557]: Electron
+            - generic [ref=e562]: Taro
+            - generic [ref=e567]: Cordova
+            - generic [ref=e572]: Ionic
+          - generic [ref=e573]:
+            - generic [ref=e577]: UI 库
+            - generic [ref=e582]: Element Plus
+            - generic [ref=e587]: iView
+            - generic [ref=e592]: Ant Design
+            - generic [ref=e597]: FinUI
+          - generic [ref=e598]:
+            - generic [ref=e602]: 业务库
+            - generic [ref=e607]: SpreadJS
+            - generic [ref=e612]: ECharts
+            - generic [ref=e617]: Rich Text Editor
+      - heading "评论" [level=3] [ref=e619]
+  - contentinfo [ref=e621]:
+    - generic [ref=e622]:
+      - paragraph [ref=e623]: © 2026 林健. 版权所有
+      - paragraph [ref=e624]: 由 Astro 驱动
+  - generic [ref=e627]:
+    - button "Menu" [ref=e628]:
+      - img [ref=e630]
+      - generic: Menu
+    - button "Inspect" [ref=e634]:
+      - img [ref=e636]
+      - generic: Inspect
+    - button "Audit" [ref=e638]:
+      - img [ref=e640]
+      - generic: Audit
+    - button "Settings" [ref=e643]:
+      - img [ref=e645]
+      - generic: Settings

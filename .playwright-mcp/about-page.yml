@@ -1,0 +1,334 @@
+- generic [active] [ref=e1] [box=0,0,981,4370]:
+  - banner [ref=e2] [box=0,0,981,65]:
+    - navigation [ref=e3] [box=0,0,981,64]:
+      - link "林健" [ref=e4] [cursor=pointer] [box=0,18,40,28]:
+        - /url: /
+      - generic [ref=e5] [box=823,19,157,26]:
+        - list [ref=e6] [box=823,19,106,26]:
+          - listitem [ref=e7] [box=823,19,28,26]:
+            - link "首页" [ref=e8] [cursor=pointer] [box=823,23,28,18]:
+              - /url: /
+          - listitem [ref=e9] [box=855,19,28,26]:
+            - link "博客" [ref=e10] [cursor=pointer] [box=855,23,28,18]:
+              - /url: /blog
+          - listitem [ref=e11] [box=887,19,42,26]:
+            - link "关于我" [ref=e12] [cursor=pointer] [box=887,23,42,18]:
+              - /url: /about
+        - generic [ref=e13] [box=937,23,43,18]:
+          - link "EN" [ref=e14] [cursor=pointer] [box=938,23,17,18]:
+            - /url: /en/about
+          - button "Toggle theme" [ref=e15] [box=963,23,18,18]:
+            - img [ref=e16] [box=964,24,16,16]
+  - main [ref=e18] [box=0,65,981,4258]:
+    - generic [ref=e20] [box=141,249,700,292]:
+      - img "林健" [ref=e23] [box=422,251,136,136]
+      - heading "林健" [level=1] [ref=e25] [box=141,399,700,60]
+      - paragraph [ref=e26] [box=141,459,700,32]: 前端架构师
+      - paragraph [ref=e27] [box=141,491,672,29]: 11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化
+      - generic [ref=e28] [box=141,520,700,20]:
+        - link "job.ziya@outlook.com" [ref=e29] [cursor=pointer] [box=141,520,161,20]:
+          - /url: mailto:job.ziya@outlook.com
+          - img [ref=e30] [box=141,522,16,16]
+          - text: job.ziya@outlook.com
+        - generic [ref=e32] [box=326,520,245,20]:
+          - img [ref=e33] [box=326,522,16,16]
+          - text: 中南大学 · 计算机科学与技术 (2015)
+        - generic [ref=e37] [box=595,520,245,20]:
+          - img [ref=e38] [box=595,522,16,16]
+          - text: 中文（母语）/ English（工作沟通）
+      - img [ref=e41] [box=478,481,24,24]
+    - generic [ref=e43] [box=0,724,981,3599]:
+      - generic [ref=e44] [box=40,724,901,645]:
+        - heading "核心能力" [level=2] [ref=e45] [box=40,804,901,45]
+        - img [ref=e49] [box=176,889,400,400]:
+          - generic [ref=e66] [box=352,893,48,16]: 架构设计
+          - generic [ref=e67] [box=513,986,48,16]: 性能优化
+          - generic [ref=e68] [box=513,1172,48,16]: 跨端开发
+          - generic [ref=e69] [box=352,1265,48,16]: 团队管理
+          - generic [ref=e70] [box=185,1172,60,16]: 前端工程化
+          - generic [ref=e71] [box=185,986,60,16]: 大型中后台
+      - generic [ref=e72] [box=40,1465,901,610]:
+        - heading "工作经历" [level=2] [ref=e73] [box=40,1545,901,45]
+        - generic [ref=e75] [box=40,1630,896,365]:
+          - generic [ref=e81] [cursor=pointer] [box=40,1630,416,91]:
+            - generic [ref=e82] [box=41,1637,97,16]: 2022.01 – 2026.04
+            - heading "顺丰科技有限公司" [level=3] [ref=e83] [box=41,1656,414,28]
+            - paragraph [ref=e84] [box=41,1684,414,20]: 高级前端开发工程师
+            - list [ref=e85] [box=41,1704,414,281]:
+              - listitem [ref=e86] [box=41,1705,414,40]:
+                - img [ref=e87] [box=41,1705,16,16]
+                - generic [ref=e89] [box=65,1705,390,40]: 主导 ERP 财务系统全栈重构项目前端架构，系统承载 800+ 页面，覆盖应收/应付/总账/报表/合并全财务链路
+              - listitem [ref=e90] [box=41,1745,414,40]:
+                - img [ref=e91] [box=41,1745,16,16]
+                - generic [ref=e93] [box=65,1745,390,40]: 主导微前端架构（模块联邦）设计与落地，支持多团队独立开发、独立部署，构建耗时从 12min 降至 3min
+              - listitem [ref=e94] [box=41,1785,414,40]:
+                - img [ref=e95] [box=41,1785,16,16]
+                - generic [ref=e97] [box=65,1785,390,40]: 主导 FinSpread 自研工具研发，通过 iframe 隔离 SpreadJS 能力，降低授权成本约 30%
+              - listitem [ref=e98] [box=41,1825,414,40]:
+                - img [ref=e99] [box=41,1825,16,16]
+                - generic [ref=e101] [box=65,1825,390,40]: 搭建半低码方案：抽象 20+ 高频模式化页面模板，需求交付周期缩短 60%
+              - listitem [ref=e102] [box=41,1865,414,40]:
+                - img [ref=e103] [box=41,1865,16,16]
+                - generic [ref=e105] [box=65,1865,390,40]: 设计统一的错误监控与性能埋点体系（Sentry + 自研 SDK），线上问题发现率提升 80%
+              - listitem [ref=e106] [box=41,1905,414,40]:
+                - img [ref=e107] [box=41,1905,16,16]
+                - generic [ref=e109] [box=65,1905,390,40]: 管理 3-5 人外包团队，负责需求拆分、Code Review、技术方案评审
+              - listitem [ref=e110] [box=41,1945,414,40]:
+                - img [ref=e111] [box=41,1945,16,16]
+                - generic [ref=e113] [box=65,1945,390,40]: 主导性能优化专项：首屏加载时间从 4.2s 降至 1.8s（路由懒加载 + 资源预加载 + CDN）
+            - generic [ref=e114] [box=41,1704,414,16]:
+              - img [ref=e115] [box=41,1704,16,16]
+              - generic [ref=e117] [box=61,1704,48,16]: 展开详情
+          - generic [ref=e122] [cursor=pointer] [box=520,1721,416,91]:
+            - generic [ref=e123] [box=521,1728,93,16]: 2018.09 – 2021.12
+            - heading "深圳柔宇电子技术有限公司" [level=3] [ref=e124] [box=521,1747,414,28]
+            - paragraph [ref=e125] [box=521,1775,414,20]: 高级前端开发工程师
+            - list [ref=e126] [box=521,1795,414,201]:
+              - listitem [ref=e127] [box=521,1796,414,40]:
+                - img [ref=e128] [box=521,1796,16,16]
+                - generic [ref=e130] [box=545,1796,390,40]: 主导 SSO 统一权限管理系统架构设计，打通 5+ 业务线后台的统一登录、统一授权、统一审计
+              - listitem [ref=e131] [box=521,1836,414,40]:
+                - img [ref=e132] [box=521,1836,16,16]
+                - generic [ref=e134] [box=545,1836,390,40]: 实现基于 RBAC 的动态路由系统，支持按钮级权限控制，覆盖 500+ 内部用户
+              - listitem [ref=e135] [box=521,1876,414,40]:
+                - img [ref=e136] [box=521,1876,16,16]
+                - generic [ref=e138] [box=545,1876,390,40]: 自研基于 iView 的企业级 UI 组件库（20+ 组件），被部门所有管理系统复用，开发效率提升约 40%
+              - listitem [ref=e139] [box=521,1916,414,40]:
+                - img [ref=e140] [box=521,1916,16,16]
+                - generic [ref=e142] [box=545,1916,390,40]: 主导制定 RESTful API 规范与前端开发规范，推动前后端协作效率提升
+              - listitem [ref=e143] [box=521,1956,414,40]:
+                - img [ref=e144] [box=521,1956,16,16]
+                - generic [ref=e146] [box=545,1956,390,40]: 搭建前端监控体系（埋点 + 性能采集 + 异常上报），输出月度前端质量报告
+            - generic [ref=e147] [box=521,1795,414,16]:
+              - img [ref=e148] [box=521,1795,16,16]
+              - generic [ref=e150] [box=541,1795,48,16]: 展开详情
+          - generic [ref=e155] [cursor=pointer] [box=40,1812,416,91]:
+            - generic [ref=e156] [box=41,1819,94,16]: 2017.06 – 2018.07
+            - heading "深圳信锐网科技术有限公司" [level=3] [ref=e157] [box=41,1838,414,28]
+            - paragraph [ref=e158] [box=41,1866,414,20]: 前端开发工程师
+            - list [ref=e159] [box=41,1886,414,141]:
+              - listitem [ref=e160] [box=41,1887,414,40]:
+                - img [ref=e161] [box=41,1887,16,16]
+                - generic [ref=e163] [box=65,1887,390,40]: 负责信锐云管理平台前端架构，使用 Vue.js + Webpack 构建企业级网络设备管理系统
+              - listitem [ref=e164] [box=41,1927,414,40]:
+                - img [ref=e165] [box=41,1927,16,16]
+                - generic [ref=e167] [box=65,1927,390,40]: 使用 Ionic + Angular + TypeScript 开发移动端 App，实现网络设备远程管控
+              - listitem [ref=e168] [box=41,1967,414,20]:
+                - img [ref=e169] [box=41,1967,16,16]
+                - generic [ref=e171] [box=65,1967,355,20]: 搭建 Node.js Mock Server，支持团队离线开发与接口联调
+              - listitem [ref=e172] [box=41,1987,414,40]:
+                - img [ref=e173] [box=41,1987,16,16]
+                - generic [ref=e175] [box=65,1987,390,40]: 参与前端工程化建设：Webpack 配置优化、HMR 热更新、代码分割
+            - generic [ref=e176] [box=41,1886,414,16]:
+              - img [ref=e177] [box=41,1886,16,16]
+              - generic [ref=e179] [box=61,1886,48,16]: 展开详情
+          - generic [ref=e184] [cursor=pointer] [box=520,1903,416,91]:
+            - generic [ref=e185] [box=521,1910,94,16]: 2015.07 – 2017.03
+            - heading "深圳联友科技有限公司" [level=3] [ref=e186] [box=521,1930,414,28]
+            - paragraph [ref=e187] [box=521,1958,414,20]: 前端开发工程师
+            - list [ref=e188] [box=521,1978,414,161]:
+              - listitem [ref=e189] [box=521,1978,414,40]:
+                - img [ref=e190] [box=521,1978,16,16]
+                - generic [ref=e192] [box=545,1978,390,40]: 使用 Framework7 + Cordova 开发多款企业移动端 App（OA 审批、考勤、巡检）
+              - listitem [ref=e193] [box=521,2018,414,40]:
+                - img [ref=e194] [box=521,2018,16,16]
+                - generic [ref=e196] [box=545,2018,390,40]: 使用 EasyUI + jQuery 开发 PC 端 OA 系统，实现流程审批、报表展示等核心功能
+              - listitem [ref=e197] [box=521,2058,414,40]:
+                - img [ref=e198] [box=521,2058,16,16]
+                - generic [ref=e200] [box=545,2058,390,40]: 获得早期混合跨端开发经验：Cordova 插件开发、原生桥接、离线缓存
+              - listitem [ref=e201] [box=521,2098,414,40]:
+                - img [ref=e202] [box=521,2098,16,16]
+                - generic [ref=e204] [box=545,2098,390,40]: 参与需求分析与技术方案设计，与产品经理、后端工程师紧密协作
+            - generic [ref=e205] [box=521,1978,414,16]:
+              - img [ref=e206] [box=521,1978,16,16]
+              - generic [ref=e208] [box=541,1978,48,16]: 展开详情
+      - generic [ref=e209] [box=40,2170,901,1029]:
+        - heading "项目经历" [level=2] [ref=e210] [box=40,2250,901,45]
+        - generic [ref=e212] [box=40,2335,901,784]:
+          - generic [ref=e214] [cursor=pointer] [box=40,2335,438,380]:
+            - generic [ref=e215] [box=40,2335,438,380]:
+              - generic [ref=e216] [box=61,2356,397,16]: 2024.06 – 2026.04
+              - heading "ERP 财务系统全栈重构" [level=3] [ref=e217] [box=61,2372,397,28]
+              - paragraph [ref=e218] [box=61,2400,397,20]: 前端架构师
+              - paragraph [ref=e219] [box=61,2420,397,232]: 主导公司核心 ERP 财务系统前后端同步重构，系统承载 800+ 页面，覆盖应收、应付、总账、报表、合并等全财务链路，服务集团 2000+ 用户日常财务核算与审计工作
+              - generic [ref=e220] [box=61,2651,397,27]:
+                - generic [ref=e221] [box=61,2651,59,27]: Vue 3
+                - generic [ref=e222] [box=126,2651,60,27]: Vite 4
+                - generic [ref=e223] [box=192,2651,56,27]: FinUI
+                - generic [ref=e224] [box=254,2651,79,27]: SpreadJS
+                - generic [ref=e225] [box=339,2651,42,27]: "+3"
+              - generic [ref=e226] [box=61,2678,397,16]: 点击查看详情 →
+            - generic [ref=e227] [box=40,2335,438,380]:
+              - heading "项目亮点" [level=4] [ref=e228] [box=61,2356,397,24]
+              - list [ref=e229] [box=61,2380,397,238]:
+                - listitem [ref=e230] [box=61,2380,397,39]
+                - listitem [ref=e234] [box=61,2419,397,39]
+                - listitem [ref=e238] [box=61,2458,397,39]
+                - listitem [ref=e242] [box=61,2497,397,39]
+                - listitem [ref=e246] [box=61,2536,397,39]
+                - listitem [ref=e250] [box=61,2575,397,39]
+              - generic [ref=e254] [box=61,2618,397,61]:
+                - generic [ref=e255] [box=399,2618,59,27]: Vue 3
+                - generic [ref=e256] [box=333,2618,60,27]: Vite 4
+                - generic [ref=e257] [box=271,2618,56,27]: FinUI
+                - generic [ref=e258] [box=186,2618,79,27]: SpreadJS
+                - generic [ref=e259] [box=320,2651,138,27]: Module Federation
+                - generic [ref=e260] [box=259,2651,54,27]: Pinia
+                - generic [ref=e261] [box=166,2651,87,27]: TypeScript
+              - generic [ref=e262] [box=61,2678,397,16]: ← 返回
+          - generic [ref=e264] [cursor=pointer] [box=502,2335,438,380]:
+            - generic [ref=e265] [box=502,2335,438,380]:
+              - generic [ref=e266] [box=523,2356,397,16]: 2024.06 – 2024.11
+              - heading "FinSpread 自研工具" [level=3] [ref=e267] [box=523,2372,397,28]
+              - paragraph [ref=e268] [box=523,2400,397,20]: 主程
+              - paragraph [ref=e269] [box=523,2420,397,232]: 自研电子表格能力平台，通过 iframe 架构隔离 SpreadJS 核心能力，以微服务形式向财务系统、预算系统、报表系统等多个业务线提供在线表格编辑与计算服务，降低 SpreadJS 授权成本约 30%
+              - generic [ref=e270] [box=523,2651,397,27]:
+                - generic [ref=e271] [box=523,2651,79,27]: SpreadJS
+                - generic [ref=e272] [box=608,2651,64,27]: iframe
+                - generic [ref=e273] [box=678,2651,103,27]: postMessage
+                - generic [ref=e274] [box=787,2651,59,27]: Vue 3
+                - generic [ref=e275] [box=852,2651,40,27]: "+1"
+              - generic [ref=e276] [box=523,2678,397,16]: 点击查看详情 →
+            - generic [ref=e277] [box=502,2335,438,380]:
+              - heading "项目亮点" [level=4] [ref=e278] [box=523,2356,397,24]
+              - list [ref=e279] [box=523,2380,397,238]:
+                - listitem [ref=e280] [box=523,2380,397,39]
+                - listitem [ref=e284] [box=523,2419,397,39]
+                - listitem [ref=e288] [box=523,2458,397,20]
+                - listitem [ref=e292] [box=523,2477,397,20]
+                - listitem [ref=e296] [box=523,2497,397,20]
+              - generic [ref=e300] [box=523,2618,397,61]:
+                - generic [ref=e301] [box=841,2618,79,27]: SpreadJS
+                - generic [ref=e302] [box=772,2618,64,27]: iframe
+                - generic [ref=e303] [box=662,2618,103,27]: postMessage
+                - generic [ref=e304] [box=598,2618,59,27]: Vue 3
+                - generic [ref=e305] [box=833,2651,87,27]: TypeScript
+              - generic [ref=e306] [box=523,2678,397,16]: ← 返回
+          - generic [ref=e308] [cursor=pointer] [box=40,2739,438,380]:
+            - generic [ref=e309] [box=40,2739,438,380]:
+              - generic [ref=e310] [box=61,2760,397,16]: 2018.09 – 2021.12
+              - heading "SSO 统一权限管理系统" [level=3] [ref=e311] [box=61,2776,397,28]
+              - paragraph [ref=e312] [box=61,2804,397,20]: 前端负责人
+              - paragraph [ref=e313] [box=61,2824,397,232]: 主导柔宇科技统一认证与权限管理系统架构设计与开发，打通 5+ 业务线后台系统的统一登录、统一授权、统一审计，覆盖 500+ 内部用户的日常权限管理需求
+              - generic [ref=e314] [box=61,3055,397,27]:
+                - generic [ref=e315] [box=61,3055,69,27]: Vue 2.6
+                - generic [ref=e316] [box=136,3055,57,27]: iView
+                - generic [ref=e317] [box=199,3055,67,27]: Nuxt.js
+                - generic [ref=e318] [box=272,3055,50,27]: Less
+                - generic [ref=e319] [box=328,3055,42,27]: "+2"
+              - generic [ref=e320] [box=61,3082,397,16]: 点击查看详情 →
+            - generic [ref=e321] [box=40,2739,438,380]:
+              - heading "项目亮点" [level=4] [ref=e322] [box=61,2760,397,24]
+              - list [ref=e323] [box=61,2784,397,238]:
+                - listitem [ref=e324] [box=61,2784,397,39]
+                - listitem [ref=e328] [box=61,2823,397,39]
+                - listitem [ref=e332] [box=61,2862,397,39]
+                - listitem [ref=e336] [box=61,2901,397,39]
+                - listitem [ref=e340] [box=61,2940,397,39]
+              - generic [ref=e344] [box=61,3022,397,61]:
+                - generic [ref=e345] [box=388,3022,69,27]: Vue 2.6
+                - generic [ref=e346] [box=325,3022,57,27]: iView
+                - generic [ref=e347] [box=252,3022,67,27]: Nuxt.js
+                - generic [ref=e348] [box=196,3022,50,27]: Less
+                - generic [ref=e349] [box=136,3022,55,27]: Vuex
+                - generic [ref=e350] [box=387,3055,70,27]: Node.js
+              - generic [ref=e351] [box=61,3082,397,16]: ← 返回
+          - generic [ref=e353] [cursor=pointer] [box=502,2739,438,380]:
+            - generic [ref=e354] [box=502,2739,438,380]:
+              - generic [ref=e355] [box=523,2760,397,16]: 2019.10 – 2020.04
+              - heading "柔记 PC 端（Electron）" [level=3] [ref=e356] [box=523,2776,397,28]
+              - paragraph [ref=e357] [box=523,2804,397,20]: 核心开发
+              - paragraph [ref=e358] [box=523,2824,397,232]: 跨平台桌面应用（Windows / macOS），连接柔记智能手写板硬件，实现手写输入、绘画创作、笔记管理等功能，支持手写板与屏幕双画布实时同步渲染
+              - generic [ref=e359] [box=523,3055,397,27]:
+                - generic [ref=e360] [box=523,3055,73,27]: Electron
+                - generic [ref=e361] [box=603,3055,69,27]: Vue 2.6
+                - generic [ref=e362] [box=678,3055,70,27]: Node.js
+                - generic [ref=e363] [box=754,3055,50,27]: Less
+                - generic [ref=e364] [box=810,3055,40,27]: "+1"
+              - generic [ref=e365] [box=523,3082,397,16]: 点击查看详情 →
+            - generic [ref=e366] [box=502,2739,438,380]:
+              - heading "项目亮点" [level=4] [ref=e367] [box=523,2760,397,24]
+              - list [ref=e368] [box=523,2784,397,271]:
+                - listitem [ref=e369] [box=523,2784,397,39]
+                - listitem [ref=e373] [box=523,2823,397,39]
+                - listitem [ref=e377] [box=523,2862,397,39]
+                - listitem [ref=e381] [box=523,2901,397,39]
+                - listitem [ref=e385] [box=523,2940,397,39]
+              - generic [ref=e389] [box=523,3055,397,28]:
+                - generic [ref=e390] [box=847,3055,73,27]: Electron
+                - generic [ref=e391] [box=771,3055,69,27]: Vue 2.6
+                - generic [ref=e392] [box=695,3055,70,27]: Node.js
+                - generic [ref=e393] [box=639,3055,50,27]: Less
+                - generic [ref=e394] [box=566,3055,67,27]: Canvas
+              - generic [ref=e395] [box=523,3082,397,16]: ← 返回
+      - generic [ref=e396] [box=40,3295,901,803]:
+        - heading "技术栈" [level=2] [ref=e397] [box=40,3375,901,45]
+        - img [ref=e401] [box=40,3460,901,558]:
+          - generic [ref=e410] [box=313,3525,170,120]:
+            - generic [ref=e414] [box=313,3525,23,14]: 框架
+            - generic [ref=e418] [box=358,3545,21,11]: Vue 3
+            - generic [ref=e422] [box=355,3566,21,11]: Vue 2
+            - generic [ref=e426] [box=348,3588,31,11]: React 18
+            - generic [ref=e430] [box=346,3610,29,11]: Angular
+            - generic [ref=e434] [box=346,3631,25,11]: Nuxt.js
+          - generic [ref=e435] [box=278,3615,205,98]:
+            - generic [ref=e439] [box=278,3615,22,14]: 架构
+            - generic [ref=e443] [box=299,3635,68,11]: Module Federation
+            - generic [ref=e447] [box=297,3656,66,11]: Web Components
+            - generic [ref=e451] [box=321,3678,14,11]: SSR
+            - generic [ref=e455] [box=318,3700,14,11]: SPA
+          - generic [ref=e456] [box=296,3715,187,98]:
+            - generic [ref=e460] [box=296,3715,22,14]: 语言
+            - generic [ref=e464] [box=331,3734,38,11]: TypeScript
+            - generic [ref=e468] [box=330,3756,37,11]: JavaScript
+            - generic [ref=e472] [box=333,3777,26,11]: HTML5
+            - generic [ref=e476] [box=334,3799,18,11]: CSS3
+          - generic [ref=e477] [box=301,3814,182,98]:
+            - generic [ref=e481] [box=301,3814,44,14]: 后端协作
+            - generic [ref=e485] [box=364,3833,28,11]: Node.js
+            - generic [ref=e489] [box=362,3855,27,11]: Express
+            - generic [ref=e493] [box=366,3876,13,11]: Koa
+            - generic [ref=e497] [box=350,3898,40,11]: RESTful API
+          - generic [ref=e498] [box=499,3561,215,98]:
+            - generic [ref=e502] [box=645,3561,22,14]: 构建
+            - generic [ref=e506] [box=664,3581,22,11]: Vite 4
+            - generic [ref=e510] [box=661,3602,34,11]: Webpack
+            - generic [ref=e514] [box=668,3624,26,11]: Rspack
+            - generic [ref=e518] [box=664,3646,38,11]: Monorepo
+          - generic [ref=e519] [box=499,3660,233,98]:
+            - generic [ref=e523] [box=663,3660,22,14]: 跨端
+            - generic [ref=e527] [box=679,3680,29,11]: Electron
+            - generic [ref=e531] [box=687,3702,16,11]: Taro
+            - generic [ref=e535] [box=683,3723,30,11]: Cordova
+            - generic [ref=e539] [box=693,3745,17,11]: Ionic
+          - generic [ref=e540] [box=499,3760,206,98]:
+            - generic [ref=e544] [box=636,3760,25,14]: UI 库
+            - generic [ref=e548] [box=643,3779,46,11]: Element Plus
+            - generic [ref=e552] [box=659,3801,20,11]: iView
+            - generic [ref=e556] [box=651,3822,40,11]: Ant Design
+            - generic [ref=e560] [box=665,3844,18,11]: FinUI
+          - generic [ref=e561] [box=499,3859,222,77]:
+            - generic [ref=e565] [box=654,3859,33,14]: 业务库
+            - generic [ref=e569] [box=668,3878,33,11]: SpreadJS
+            - generic [ref=e573] [box=673,3900,27,11]: ECharts
+            - generic [ref=e577] [box=662,3921,55,11]: Rich Text Editor
+      - heading "评论" [level=3] [ref=e581] [box=40,4195,901,28]
+  - contentinfo [ref=e583] [box=0,4323,981,46]:
+    - generic [ref=e584] [box=0,4324,981,46]:
+      - paragraph [ref=e585] [box=40,4324,901,26]: © 2026 林健. 版权所有
+      - paragraph [ref=e586] [box=40,4350,901,20]: 由 Astro 驱动
+  - generic [ref=e589] [box=404,925,173,40]:
+    - button "Menu" [ref=e590] [box=404,925,42,40]:
+      - img [ref=e592] [box=417,935,20,20]
+      - generic [box=399,844,56,26]: Menu
+    - button "Inspect" [ref=e596] [box=446,925,44,40]:
+      - img [ref=e598] [box=458,935,20,20]
+      - generic [box=435,844,66,26]: Inspect
+    - button "Audit" [ref=e600] [box=490,925,44,40]:
+      - generic [ref=e601] [box=502,935,20,20]:
+        - img [ref=e602] [box=502,935,20,20]
+        - img [ref=e605] [box=518,931,10,10]
+      - generic [box=485,844,54,26]: Audit
+    - button "Settings" [ref=e608] [box=535,925,42,40]:
+      - img [ref=e610] [box=544,935,20,20]
+      - generic [box=518,844,72,26]: Settings

@@ -1,0 +1,176 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Resume/Hero.astro';
+import RadarChart from '../components/Resume/RadarChart';
+import Timeline from '../components/Resume/Timeline';
+import ProjectCard from '../components/Resume/ProjectCard';
+import SkillTree from '../components/Resume/SkillTree';
+import Comments from '../components/Comments.astro';
+import { skills, experience, projects, techStack } from '../data/resume';
+
+const title = '关于我 | 林健';
+const description = '11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化';
+
+const sections = [
+  { id: 'competencies', title: '核心能力' },
+  { id: 'experience', title: '工作经历' },
+  { id: 'projects', title: '项目经历' },
+  { id: 'techstack', title: '技术栈' },
+];
+---
+
+<BaseLayout title={title} description={description} lang="zh">
+  <Hero lang="zh" />
+
+  <!-- Scroll-to-next arrow (fixed at bottom of viewport) -->
+  <div id="scroll-arrow" class="scroll-arrow-container">
+    <button id="scroll-next-btn" class="next-section-btn" data-sections={JSON.stringify(sections)} aria-label="下一项">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <polyline points="19 12 12 19 5 12"></polyline>
+      </svg>
+    </button>
+    <span id="scroll-arrow-label" class="scroll-arrow-label">核心能力</span>
+  </div>
+
+  <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
+    <div class="flex flex-col" style="gap: var(--section-gap);">
+      <section id="sec-competencies" class="reveal flex flex-col items-center w-full">
+        <h2 class="section-title">核心能力</h2>
+        <RadarChart client:load skills={skills} lang="zh" />
+      </section>
+
+      <section id="sec-experience" class="reveal flex flex-col items-center w-full">
+        <h2 class="section-title">工作经历</h2>
+        <Timeline client:load experience={experience} lang="zh" />
+      </section>
+
+      <section id="sec-projects" class="reveal flex flex-col items-center w-full">
+        <h2 class="section-title">项目经历</h2>
+        <ProjectCard client:load projects={projects} lang="zh" />
+      </section>
+
+      <section id="sec-techstack" class="reveal flex flex-col items-center w-full">
+        <h2 class="section-title">技术栈</h2>
+        <SkillTree client:load techStack={techStack} lang="zh" />
+      </section>
+
+      <div class="w-full" style="padding-top: var(--space-12); border-top: 1px solid var(--color-border);">
+        <Comments lang="zh" />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  (function() {
+    const sections = ['sec-competencies', 'sec-experience', 'sec-projects', 'sec-techstack'];
+    const labels = ['核心能力', '工作经历', '项目经历', '技术栈'];
+    const btn = document.getElementById('scroll-next-btn');
+    const label = document.getElementById('scroll-arrow-label');
+    const arrowContainer = document.getElementById('scroll-arrow');
+    if (!btn || !label || !arrowContainer) return;
+
+    let currentIdx = -1; // -1 = at Hero, 0 = competencies, etc.
+
+    // Find which section is closest below Hero
+    function getClosestSectionIdx() {
+      const scrollY = window.scrollY + window.innerHeight * 0.5;
+      for (let i = 0; i < sections.length; i++) {
+        const el = document.getElementById(sections[i]);
+        if (el && el.offsetTop > scrollY) return i;
+      }
+      return sections.length - 1; // last section
+    }
+
+    function updateArrow() {
+      const heroH = document.querySelector('main')?.querySelector('.min-h-screen, [class*="min-h"]')?.getBoundingClientRect().height || window.innerHeight;
+      const isBelowHero = window.scrollY + window.innerHeight > heroH * 0.8;
+
+      if (!isBelowHero) {
+        // Still in Hero area — show arrow pointing to first section
+        arrowContainer.classList.add('visible');
+        label.textContent = labels[0];
+        currentIdx = -1;
+        return;
+      }
+
+      const nextIdx = getClosestSectionIdx();
+      if (nextIdx < sections.length) {
+        arrowContainer.classList.add('visible');
+        label.textContent = labels[nextIdx] || '';
+        currentIdx = nextIdx;
+      } else {
+        // At the end — hide arrow
+        arrowContainer.classList.remove('visible');
+      }
+    }
+
+    btn.addEventListener('click', () => {
+      const targetIdx = currentIdx < 0 ? 0 : currentIdx;
+      if (targetIdx < sections.length) {
+        const el = document.getElementById(sections[targetIdx]);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+
+    window.addEventListener('scroll', updateArrow, { passive: true });
+    updateArrow();
+  })();
+</script>
+
+<style>
+  .scroll-arrow-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .scroll-arrow-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .scroll-arrow-label {
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--color-accent);
+    opacity: 0.7;
+    letter-spacing: 0.05em;
+  }
+  .next-section-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--color-accent);
+    border-radius: 50%;
+    background: rgba(var(--color-accent-rgb, 0, 229, 255), 0.08);
+    color: var(--color-accent);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: arrow-bounce 2s ease-in-out infinite;
+    backdrop-filter: blur(8px);
+  }
+  .next-section-btn:hover {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    box-shadow: 0 0 20px rgba(var(--color-accent-rgb, 0, 229, 255), 0.3);
+    transform: scale(1.1);
+  }
+  @keyframes arrow-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+  section {
+    scroll-margin-top: 5rem;
+  }
+</style>

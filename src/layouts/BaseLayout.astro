@@ -1,0 +1,90 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  lang?: 'zh' | 'en';
+}
+
+const { title, description, lang = 'zh' } = Astro.props;
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang={lang} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+    <!-- JetBrains Mono for cold tech aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script is:inline>
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col bg-[var(--color-bg)] text-[var(--color-text)] transition-colors duration-300">
+    <!-- Scan line overlay -->
+    <div class="scan-line"></div>
+
+    <Header lang={lang} currentPath={currentPath} />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <footer
+      class="text-center text-[var(--color-text-secondary)] border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] relative overflow-hidden"
+      style="padding-top: var(--space-12); padding-bottom: var(--space-12);"
+    >
+      <!-- Footer circuit decoration -->
+      <div
+        class="absolute inset-0 opacity-5"
+        style="background-image: linear-gradient(rgba(0,229,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.3) 1px, transparent 1px); background-size: 30px 30px;"
+      ></div>
+      <div class="container relative z-10 flex flex-col items-center" style="gap: var(--space-2);">
+        <p class="font-mono text-sm">&copy; {new Date().getFullYear()} <span class="text-[var(--color-accent)]">{lang === 'zh' ? '林健' : 'Jian Lin'}</span>. {lang === 'zh' ? '版权所有' : 'All Rights Reserved'}</p>
+        <p class="text-xs opacity-50 font-mono">
+          {'// '}{lang === 'zh' ? '由 Astro 驱动' : 'Powered by Astro'}
+        </p>
+      </div>
+    </footer>
+
+    <!-- Cold tech cursor (vanilla JS, no React) -->
+    <script>
+      import '../scripts/cursor';
+    </script>
+
+    <!-- Scroll reveal -->
+    <script>
+      (function() {
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+      })();
+    </script>
+  </body>
+</html>
+
+<style>
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+</style>

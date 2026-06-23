@@ -1,0 +1,113 @@
+---
+title: MongoDB 安装教程
+description: 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。
+pubDate: 2018-11-12
+tags: ['mongodb', 'database', 'macos']
+---
+
+## 前言
+
+MongoDB 是一个流行的 NoSQL 数据库，以其灵活的文档模型和高性能著称。本文介绍如何在 macOS 上安装 MongoDB。
+
+## 使用 Homebrew 安装
+
+```bash
+# 添加 MongoDB tap
+brew tap mongodb/brew
+
+# 安装 MongoDB Community Edition
+brew install mongodb-community
+
+# 启动 MongoDB 服务
+brew services start mongodb-community
+```
+
+## 手动安装
+
+### 下载安装包
+
+访问 MongoDB 官网下载对应版本的安装包。
+
+### 配置数据目录
+
+```bash
+# 创建数据目录
+sudo mkdir -p /data/db
+
+# 设置权限
+sudo chown -R $USER /data/db
+```
+
+### 启动 MongoDB
+
+```bash
+# 启动 MongoDB 服务
+mongod
+```
+
+## 基本使用
+
+### 连接数据库
+
+```bash
+# 连接本地 MongoDB
+mongo
+
+# 连接指定数据库
+mongo mydatabase
+```
+
+### 常用命令
+
+```javascript
+// 查看所有数据库
+show dbs
+
+// 切换数据库
+use mydatabase
+
+// 查看当前数据库中的集合
+show collections
+
+// 插入文档
+db.users.insertOne({ name: 'John', age: 25 })
+
+// 查询文档
+db.users.find({ age: { $gte: 18 } })
+
+// 更新文档
+db.users.updateOne({ name: 'John' }, { $set: { age: 26 } })
+
+// 删除文档
+db.users.deleteOne({ name: 'John' })
+```
+
+## 配置 MongoDB
+
+### 创建配置文件
+
+```bash
+# 创建配置文件
+mkdir -p ~/.mongodb
+touch ~/.mongodb/mongod.conf
+```
+
+### 配置文件内容
+
+```yaml
+systemLog:
+  destination: file
+  path: ~/.mongodb/mongod.log
+  logAppend: true
+
+storage:
+  dbPath: ~/.mongodb/data
+
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+```
+
+## 总结
+
+MongoDB 是一个功能强大的 NoSQL 数据库，适合存储灵活的文档数据。通过本文的步骤，你应该能够在 macOS 上成功安装和配置 MongoDB。

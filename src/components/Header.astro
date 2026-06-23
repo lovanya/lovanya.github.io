@@ -1,0 +1,106 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+
+interface Props {
+  lang: 'zh' | 'en';
+  currentPath: string;
+}
+
+const { lang, currentPath } = Astro.props;
+
+const navItems = [
+  { label: lang === 'zh' ? '首页' : 'Home', href: lang === 'zh' ? '/' : '/en/' },
+  { label: lang === 'zh' ? '博客' : 'Blog', href: lang === 'zh' ? '/blog' : '/en/blog' },
+  { label: lang === 'zh' ? '关于我' : 'About', href: lang === 'zh' ? '/about' : '/en/about' },
+];
+
+function isActive(href: string): boolean {
+  if (href === '/') return currentPath === '/';
+  if (href === '/en/') return currentPath === '/en/' || currentPath === '/en';
+  return currentPath.startsWith(href);
+}
+---
+
+<header class="sticky top-0 z-50 backdrop-blur-md bg-[var(--color-bg)]/85 border-b border-[var(--color-border)]">
+  <!-- Top accent line -->
+  <div class="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-accent)]/40 to-transparent"></div>
+
+  <nav class="max-w-6xl mx-auto flex items-center justify-between" style="padding: 0 var(--space-8); height: 3.5rem;">
+    <a href={lang === 'zh' ? '/' : '/en/'} class="text-lg font-bold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors font-mono tracking-tight">
+      <span class="text-[var(--color-accent)]">&lt;</span>{lang === 'zh' ? '林健' : 'Jian Lin'}<span class="text-[var(--color-accent)]"> /&gt;</span>
+    </a>
+
+    <div class="flex items-center" style="gap: var(--space-2);">
+      <ul class="hidden md:flex items-center" style="gap: var(--space-1);">
+        {navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              class:list={[
+                'rounded text-xs font-mono transition-all',
+                isActive(item.href)
+                  ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-secondary)]',
+              ]}
+              style="padding: var(--space-2) var(--space-4);"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div
+        class="flex items-center border-l border-[var(--color-border)]"
+        style="gap: var(--space-2); margin-left: var(--space-2); padding-left: var(--space-2);"
+      >
+        <LanguageSwitcher lang={lang} currentPath={currentPath} />
+        <ThemeToggle />
+      </div>
+
+      <!-- Mobile menu button -->
+      <button
+        id="mobile-menu-btn"
+        class="md:hidden rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+        style="padding: var(--space-2);"
+        aria-label="Toggle menu"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-[var(--color-border)] bg-[var(--color-bg)]">
+    <ul class="max-w-6xl mx-auto" style="padding: var(--space-4) var(--space-8);" >
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class:list={[
+              'block rounded text-xs font-mono transition-all',
+              isActive(item.href)
+                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-secondary)]',
+            ]}
+            style="padding: var(--space-3) var(--space-4);"
+          >
+            {item.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</header>
+
+<script>
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  menuBtn?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+</script>

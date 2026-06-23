@@ -1,0 +1,93 @@
+---
+title: macOS Git 分支管理
+description: 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。
+pubDate: 2018-11-12
+tags: ['git', 'macos', 'terminal']
+---
+
+## 前言
+
+Git 分支是 Git 最强大的功能之一。本文介绍 Git 分支管理的基本概念和常用命令。
+
+## 查看分支
+
+```bash
+# 查看本地分支
+git branch
+
+# 查看所有分支（包括远程分支）
+git branch -a
+
+# 查看分支及最后提交信息
+git branch -v
+```
+
+## 创建分支
+
+```bash
+# 创建新分支
+git branch feature-login
+
+# 创建并切换到新分支
+git checkout -b feature-login
+
+# 创建新分支（推荐写法）
+git switch -c feature-login
+```
+
+## 切换分支
+
+```bash
+# 切换到指定分支
+git checkout main
+
+# 切换分支（推荐写法）
+git switch main
+```
+
+## 合并分支
+
+```bash
+# 切换到目标分支
+git checkout main
+
+# 合并 feature 分支
+git merge feature-login
+```
+
+## 删除分支
+
+```bash
+# 删除已合并的分支
+git branch -d feature-login
+
+# 强制删除未合并的分支
+git branch -D feature-login
+```
+
+## 解决冲突
+
+当合并出现冲突时，Git 会标记冲突文件，你需要手动解决：
+
+1. 打开冲突文件
+2. 找到冲突标记（`<<<<<<<`, `=======`, `>>>>>>>`）
+3. 手动编辑保留正确内容
+4. 添加到暂存区并提交
+
+```bash
+git add .
+git commit -m "feat: resolve merge conflict"
+```
+
+## 分支管理策略
+
+推荐使用 Git Flow 或 GitHub Flow 工作流：
+
+- `main` - 生产分支
+- `develop` - 开发分支
+- `feature/*` - 功能分支
+- `hotfix/*` - 紧急修复分支
+
+## 总结
+
+熟练掌握 Git 分支管理是团队协作开发的基础。建议多练习分支的创建、切换、合并等操作。

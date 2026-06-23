@@ -1,0 +1,749 @@
+[2m01:20:12[22m [34m[types][39m Generated [2m1ms[22m
+[2m01:20:13[22m [34m[content][39m Syncing content
+[2m01:20:13[22m [34m[content][39m Synced content
+
+[42m[1m astro [22m[49m [32mv5.18.2[39m [2mready in[22m 775 [2mms[22m
+
+[2m┃[22m Local    [36mhttp://localhost:4321/[39m
+[2m┃[22m Network  [36mhttp://198.18.0.1:4321/[39m
+           [36mhttp://192.168.0.106:4321/[39m
+           [36mhttp://192.168.72.1:4321/[39m
+           [36mhttp://192.168.71.1:4321/[39m
+           [36mhttp://172.25.144.1:4321/[39m
+           [36mhttp://192.168.48.1:4321/[39m
+
+[2m01:20:13[22m [32mwatching for file changes...[39m
+[2m01:20:27[22m [34m[200][39m / [2m81ms[22m
+[2m01:20:29[22m [34m[200][39m /about [2m46ms[22m
+[2m01:20:56[22m [34m[200][39m /about [2m28ms[22m
+[2m01:21:06[22m [34m[200][39m /blog [2m5ms[22m
+[2m01:21:07[22m [34m[200][39m /blog/local-storage [2m285ms[22m
+[2m01:22:08[22m [34m[200][39m /about [2m25ms[22m
+[2m01:22:24[22m [34m[200][39m /blog/local-storage [2m6ms[22m
+[2m01:22:31[22m [34m[200][39m /blog/local-storage [2m6ms[22m
+[2m01:22:45[22m [34m[watch][39m /src/styles/global.css
+[2m01:22:45[22m [34m[200][39m /about [2m67ms[22m
+[2m01:23:03[22m [34m[200][39m /about [2m26ms[22m
+[2m01:23:10[22m [34m[200][39m / [2m4ms[22m
+[2m01:23:53[22m [34m[200][39m /blog [2m4ms[22m
+[2m01:23:54[22m [34m[200][39m /blog/local-storage [2m14ms[22m
+[2m01:24:15[22m [34m[watch][39m src/components/Resume/Hero.astro
+[2m01:24:16[22m [34m[200][39m /blog/local-storage [2m42ms[22m
+[2m01:24:23[22m [34m[watch][39m src/pages/about.astro
+[2m01:24:23[22m [34m[200][39m /blog/local-storage [2m38ms[22m
+[2m01:24:28[22m [34m[watch][39m /src/styles/global.css
+[2m01:24:28[22m [34m[200][39m /blog/local-storage [2m63ms[22m
+[2m01:25:10[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\SkillTree.tsx, /src/styles/global.css
+[2m01:25:10[22m [34m[watch][39m src/components/Resume/SkillTree.tsx
+[2m01:25:18[22m [34m[200][39m /blog/local-storage [2m47ms[22m
+[2m01:25:20[22m [34m[200][39m /about [2m39ms[22m
+[2m01:25:26[22m [34m[200][39m /about [2m23ms[22m
+[2m01:26:25[22m [34m[watch][39m /src/styles/global.css
+[2m01:26:25[22m [34m[200][39m /about [2m108ms[22m
+[2m01:26:32[22m [34m[200][39m /blog [2m4ms[22m
+[2m01:26:34[22m [34m[200][39m /blog/local-storage [2m11ms[22m
+[2m01:26:38[22m [34m[200][39m /blog/local-storage [2m13ms[22m
+[2m01:26:52[22m [34m[200][39m /en/blog/local-storage [2m121ms[22m
+[2m01:26:57[22m [34m[200][39m /en/about [2m23ms[22m
+[2m01:27:08[22m [34m[200][39m /about [2m29ms[22m
+[2m01:27:51[22m [34m[200][39m /en/about [2m29ms[22m
+[2m01:28:09[22m [34m[200][39m /about [2m28ms[22m
+[2m01:28:23[22m [34m[200][39m /about [2m25ms[22m
+[2m01:28:28[22m [34m[200][39m /about [2m23ms[22m
+[2m01:28:31[22m [34m[200][39m /en/about [2m25ms[22m
+[2m01:28:56[22m [34m[200][39m /blog [2m5ms[22m
+[2m01:28:59[22m [34m[200][39m /en/blog [2m4ms[22m
+[2m01:29:02[22m [34m[200][39m /en/blog [2m4ms[22m
+[2m01:29:05[22m [34m[200][39m /en/blog/mongodb-install [2m57ms[22m
+[2m01:29:07[22m [34m[200][39m /en/blog [2m4ms[22m
+[2m01:29:08[22m [34m[200][39m /en/blog/macos-git-branch [2m34ms[22m
+[2m01:29:15[22m [34m[200][39m /en/blog [2m4ms[22m
+[2m01:29:16[22m [34m[200][39m /en/blog/mongodb-install [2m4ms[22m
+[2m01:29:20[22m [34m[200][39m /en/about [2m24ms[22m
+[2m01:29:43[22m [34m[watch][39m src/pages/about.astro
+[2m01:29:44[22m [34m[200][39m /en/about [2m53ms[22m
+[2m01:29:51[22m [34m[watch][39m src/pages/en/about.astro
+[2m01:29:51[22m [34m[200][39m /en/about [2m69ms[22m
+[2m01:30:00[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\RadarChart.tsx, /src/styles/global.css
+[2m01:30:00[22m [34m[watch][39m src/components/Resume/RadarChart.tsx
+[2m01:30:20[22m [34m[200][39m /en/about [2m65ms[22m
+[2m01:30:28[22m [34m[200][39m /about [2m30ms[22m
+[2m01:30:29[22m [34m[200][39m /en/about [2m31ms[22m
+[2m01:30:40[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\Timeline.tsx, /src/styles/global.css
+[2m01:30:40[22m [34m[watch][39m src/components/Resume/Timeline.tsx
+[2m01:30:47[22m [34m[200][39m /en/about [2m49ms[22m
+[2m01:33:16[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:16[22m [34m[200][39m /en/about [2m95ms[22m
+[2m01:33:22[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:22[22m [34m[200][39m /en/about [2m97ms[22m
+[2m01:33:28[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:28[22m [34m[200][39m /en/about [2m87ms[22m
+[2m01:33:34[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:34[22m [34m[200][39m /en/about [2m78ms[22m
+[2m01:33:44[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:45[22m [34m[200][39m /en/about [2m99ms[22m
+[2m01:33:53[22m [34m[watch][39m /src/styles/global.css
+[2m01:33:53[22m [34m[200][39m /en/about [2m86ms[22m
+[2m01:34:01[22m [34m[watch][39m src/pages/about.astro
+[2m01:34:01[22m [34m[200][39m /en/about [2m60ms[22m
+[2m01:34:09[22m [34m[watch][39m src/pages/en/about.astro
+[2m01:34:09[22m [34m[200][39m /en/about [2m72ms[22m
+[2m01:34:26[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\Timeline.tsx, /src/styles/global.css
+[2m01:34:26[22m [34m[watch][39m src/components/Resume/Timeline.tsx
+[31m[1m01:34:26[22m [ERROR] [vite][39m [31mInternal server error: I:\Work\develop\lovanya.github.io\src\components\Resume\Timeline.tsx: Unexpected token, expected ":" (130:11)
+
+[0m [90m 128 |[31m               )}
+ [90m 129 |[31m             [33m<[31m[33m/[31m[33mdiv[31m[33m>[31m
+[31m[1m>[22m[31m[90m 130 |[31m           )[33m;[31m
+ [90m     |[31m            [31m[1m^[22m[31m
+ [90m 131 |[31m         })}
+ [90m 132 |[31m       [33m<[31m[33m/[31m[33mdiv[31m[33m>[31m
+ [90m 133 |[31m[0m[39m
+  Plugin: [35mvite:react-babel[39m
+  File: [36mI:/Work/develop/lovanya.github.io/src/components/Resume/Timeline.tsx[39m:130:11
+[33m  128|                )}
+  129|              </div>
+  130|            );
+     |             ^
+  131|          })}
+  132|        </div>[39m
+      at constructor (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:365:19)
+      at TypeScriptParserMixin.raise (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:6616:19)
+      at TypeScriptParserMixin.unexpected (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:6636:16)
+      at TypeScriptParserMixin.expect (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:6916:12)
+      at TypeScriptParserMixin.parseConditional (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10909:12)
+      at TypeScriptParserMixin.parseConditional (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9620:18)
+      at TypeScriptParserMixin.parseMaybeConditional (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10902:17)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9803:20)
+      at TypeScriptParserMixin.parseExpressionBase (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10801:23)
+      at I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10797:39
+      at TypeScriptParserMixin.allowInAnd (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:12443:12)
+      at TypeScriptParserMixin.parseExpression (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10797:17)
+      at TypeScriptParserMixin.jsxParseExpressionContainer (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:4644:31)
+      at TypeScriptParserMixin.jsxParseElementAt (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:4723:36)
+      at TypeScriptParserMixin.jsxParseElement (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:4761:17)
+      at TypeScriptParserMixin.parseExprAtom (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:4771:19)
+      at TypeScriptParserMixin.parseExprSubscripts (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11098:23)
+      at TypeScriptParserMixin.parseUpdate (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10848:21)
+      at I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9792:39
+      at TypeScriptParserMixin.tryParse (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:6924:20)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9792:18)
+      at I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10817:39
+      at TypeScriptParserMixin.allowInAnd (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:12443:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10817:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:12510:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11692:28)
+      at TypeScriptParserMixin.parseExprAtom (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11348:23)
+      at TypeScriptParserMixin.parseExprAtom (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:4776:20)
+      at TypeScriptParserMixin.parseExprSubscripts (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11098:23)
+      at TypeScriptParserMixin.parseUpdate (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:9803:20)
+      at TypeScriptParserMixin.parseExpressionBase (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10801:23)
+      at I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10797:39
+      at TypeScriptParserMixin.allowInAnd (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:12438:16)
+      at TypeScriptParserMixin.parseExpression (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:10797:17)
+      at TypeScriptParserMixin.parseReturnStatement (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:13159:28)
+      at TypeScriptParserMixin.parseStatementContent (I:\Work\develop\lovanya.github.io\node_modules\@babel\parser\lib\index.js:12815:21)
+[2m01:34:45[22m [34m[watch][39m src/components/Resume/Hero.astro
+[31m[1m01:34:45[22m [ERROR][39m The character "}" is not valid inside a JSX element
+  [1mStack trace:[22m
+[2m    at I:/Work/develop/lovanya.github.io/src/components/Resume/Timeline.tsx:128:15
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m01:35:07[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\ProjectCard.tsx, /src/styles/global.css
+[2m01:35:07[22m [34m[watch][39m src/components/Resume/ProjectCard.tsx
+[31m[1m01:35:07[22m [ERROR][39m The character "}" is not valid inside a JSX element
+  [1mStack trace:[22m
+[2m    at I:/Work/develop/lovanya.github.io/src/components/Resume/Timeline.tsx:128:15
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m01:35:23[22m [ERROR][39m The character "}" is not valid inside a JSX element
+  [1mStack trace:[22m
+[2m    at failureErrorWithLog (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:1467:15)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[31m[1m01:35:23[22m [ERROR][39m The character "}" is not valid inside a JSX element
+  [1mStack trace:[22m
+[2m    at failureErrorWithLog (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:1467:15)
+    [...] See full stack trace in the browser, or rerun with --verbose.[22m
+[2m01:35:38[22m [34m[watch][39m /@fs/I:\Work\develop\lovanya.github.io\src\components\Resume\Timeline.tsx, /src/styles/global.css
+[2m01:35:38[22m [34m[watch][39m src/components/Resume/Timeline.tsx
+[2m01:35:38[22m [34m[200][39m /en/about [2m50ms[22m
+[2m01:35:46[22m [34m[200][39m /en/about [2m34ms[22m
+[2m01:35:53[22m [34m[200][39m /about [2m28ms[22m
+[2m01:35:53[22m [34m[200][39m /en/about [2m26ms[22m
+[2m01:37:52[22m [34m[200][39m /en/about [2m35ms[22m
+[2m01:38:10[22m [34m[200][39m /en/ [2m5ms[22m
+[2m01:38:13[22m [34m[200][39m /en/blog [2m3ms[22m
+[2m01:38:15[22m [34m[200][39m /en/about [2m34ms[22m
+[2m01:38:16[22m [34m[200][39m /en/ [2m4ms[22m
+[2m01:39:14[22m [34m[watch][39m src/pages/index.astro
+[2m01:39:14[22m [34m[watch][39m src/pages/index.astro
+[2m01:39:15[22m [34m[200][39m /en/ [2m22ms[22m
+[2m01:39:23[22m [34m[watch][39m src/pages/en/index.astro
+[2m01:39:23[22m [34m[watch][39m src/pages/en/index.astro
+[2m01:39:23[22m [34m[200][39m /en/ [2m25ms[22m
+[2m01:39:29[22m [34m[watch][39m src/pages/blog/index.astro
+[2m01:39:29[22m [34m[watch][39m src/pages/blog/index.astro
+[2m01:39:30[22m [34m[200][39m /en/ [2m23ms[22m
+[2m01:39:32[22m [34m[watch][39m src/pages/en/blog/index.astro
+[2m01:39:32[22m [34m[watch][39m src/pages/en/blog/index.astro
+[2m01:39:32[22m [34m[200][39m /en/ [2m24ms[22m
+[2m01:39:41[22m [34m[watch][39m src/pages/blog/[...slug].astro
+[2m01:39:41[22m [34m[200][39m /en/ [2m27ms[22m
+[2m01:39:46[22m [34m[watch][39m src/pages/en/blog/[...slug].astro
+[2m01:39:46[22m [34m[200][39m /en/ [2m32ms[22m
+[2m01:39:54[22m [34m[watch][39m src/components/Comments.astro
+[2m01:39:54[22m [34m[200][39m /en/ [2m25ms[22m
+[2m01:40:02[22m [34m[200][39m /en/blog [2m3ms[22m
+[2m01:40:04[22m [34m[200][39m /en/about [2m25ms[22m
+[2m01:40:06[22m [34m[200][39m /en/ [2m3ms[22m
+[2m01:40:06[22m [34m[watch][39m src/components/Blog/PostCard.astro
+[2m01:40:09[22m [34m[200][39m /en/blog/local-storage [2m46ms[22m
+[2m01:40:22[22m [34m[watch][39m src/components/Header.astro
+[2m01:40:22[22m [34m[watch][39m src/components/Header.astro
+[2m01:40:23[22m [34m[200][39m /en/blog/local-storage [2m28ms[22m
+[2m01:40:31[22m [34m[watch][39m src/layouts/BaseLayout.astro
+[2m01:40:31[22m [34m[200][39m /en/blog/local-storage [2m56ms[22m
+[2m01:40:49[22m [34m[200][39m /en/blog/local-storage [2m12ms[22m
+[2m01:40:58[22m [34m[200][39m / [2m5ms[22m
+[2m01:40:58[22m [34m[200][39m /blog [2m4ms[22m
+[2m01:40:58[22m [34m[200][39m /about [2m21ms[22m
+[2m01:40:58[22m [34m[200][39m /en/ [2m3ms[22m
+[2m01:40:59[22m [34m[200][39m /en/blog [2m3ms[22m
+[2m01:40:59[22m [34m[200][39m /en/about [2m25ms[22m
+[2m01:40:59[22m [34m[200][39m /blog/local-storage [2m8ms[22m
+[2m01:41:58[22m [34m[200][39m /en/about [2m27ms[22m
+[2m01:42:03[22m [34m[200][39m /en/blog [2m3ms[22m
+[2m01:42:05[22m [34m[200][39m /en/ [2m3ms[22m
+[2m01:42:25[22m [34m[200][39m / [2m3ms[22m
+[2m01:42:27[22m [34m[200][39m /en/ [2m3ms[22m
+[2m01:43:23[22m [34m[watch][39m src/components/LanguageSwitcher.astro
+[2m01:43:23[22m [34m[watch][39m src/components/LanguageSwitcher.astro
+[2m01:43:23[22m [34m[200][39m /en/ [2m25ms[22m
+[2m01:43:28[22m [34m[watch][39m src/components/ThemeToggle.astro
+[2m01:43:28[22m [34m[watch][39m src/components/ThemeToggle.astro
+[2m01:43:28[22m [34m[200][39m /en/ [2m27ms[22m
+[2m01:43:36[22m [34m[200][39m /en/ [2m3ms[22m
+[2m01:43:45[22m [34m[200][39m / [2m3ms[22m
+[2m01:43:51[22m [34m[200][39m / [2m3ms[22m
+[2m01:43:56[22m [34m[200][39m / [2m3ms[22m
+[2m01:44:01[22m [34m[200][39m / [2m3ms[22m
+[2m01:44:10[22m [34m[watch][39m src/components/LanguageSwitcher.astro
+[2m01:44:10[22m [34m[watch][39m src/components/LanguageSwitcher.astro
+[2m01:44:10[22m [34m[200][39m /en/ [2m26ms[22m
+[2m01:44:16[22m [34m[watch][39m src/components/ThemeToggle.astro
+[2m01:44:16[22m [34m[watch][39m src/components/ThemeToggle.astro
+[2m01:44:16[22m [34m[200][39m /en/ [2m28ms[22m
+[2m01:44:24[22m [34m[200][39m /en/ [2m4ms[22m
+[2m01:44:33[22m [34m[200][39m / [2m4ms[22m
+[2m01:47:11[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:47:11[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:47:13[22m [34m[200][39m /en/ [2m25ms[22m
+[2m01:47:19[22m [34m[200][39m /en/ [2m5ms[22m
+[2m01:47:27[22m [34m[200][39m / [2m4ms[22m
+[2m01:49:31[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:31[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:31[22m [34m[200][39m /en/ [2m27ms[22m
+[2m01:49:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:44[22m [34m[200][39m /en/ [2m29ms[22m
+[2m01:49:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:51[22m [34m[200][39m /en/ [2m27ms[22m
+[2m01:49:58[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:58[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:49:58[22m [34m[200][39m /en/ [2m29ms[22m
+[2m01:50:06[22m [34m[200][39m /en/ [2m4ms[22m
+[2m01:50:14[22m [34m[200][39m / [2m4ms[22m
+[2m01:50:18[22m [34m[200][39m /en/ [2m4ms[22m
+[2m01:50:21[22m [34m[200][39m /en/ [2m4ms[22m
+[2m01:50:24[22m [34m[200][39m /en/blog/oh-my-zsh [2m54ms[22m
+[2m01:50:43[22m [34m[200][39m /en/blog/oh-my-zsh [2m4ms[22m
+[2m01:50:45[22m [34m[200][39m /en/ [2m5ms[22m
+[2m01:51:15[22m [34m[200][39m /en/blog/local-storage [2m7ms[22m
+[2m01:52:33[22m [34m[200][39m /en/blog/local-storage [2m6ms[22m
+[2m01:53:23[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:53:23[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:53:23[22m [34m[200][39m /en/blog/local-storage [2m31ms[22m
+[2m01:53:31[22m [34m[200][39m /en/blog/local-storage [2m12ms[22m
+[2m01:53:41[22m [34m[200][39m / [2m3ms[22m
+[2m01:54:17[22m [34m[200][39m /en/blog/local-storage [2m9ms[22m
+[2m01:54:19[22m [34m[200][39m /en/ [2m6ms[22m
+[2m01:54:24[22m [34m[200][39m /en/about [2m39ms[22m
+[2m01:54:26[22m [34m[200][39m /about [2m30ms[22m
+[2m01:54:30[22m [34m[200][39m /about [2m31ms[22m
+[2m01:54:32[22m [34m[200][39m / [2m3ms[22m
+[2m01:54:35[22m [34m[200][39m / [2m3ms[22m
+[2m01:54:36[22m [34m[200][39m / [2m3ms[22m
+[2m01:54:50[22m [34m[200][39m / [2m3ms[22m
+[2m01:54:55[22m [34m[200][39m / [2m3ms[22m
+[2m01:55:06[22m [34m[200][39m / [2m3ms[22m
+[2m01:55:09[22m [34m[200][39m /about [2m30ms[22m
+[2m01:55:30[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:55:30[22m [34m[watch][39m src/scripts/cursor.ts
+[2m01:55:30[22m [34m[200][39m /about [2m64ms[22m
+[2m01:55:38[22m [34m[200][39m /about [2m34ms[22m
+[2m01:55:48[22m [34m[200][39m / [2m4ms[22m
+[2m01:58:06[22m [34m[200][39m /about [2m32ms[22m
+[2m01:58:40[22m [34m[200][39m /about [2m34ms[22m
+[2m01:58:52[22m [34m[200][39m /about [2m40ms[22m
+[2m01:58:59[22m [34m[200][39m / [2m4ms[22m
+[2m01:59:13[22m [34m[200][39m / [2m4ms[22m
+[2m01:59:40[22m [34m[200][39m / [2m3ms[22m
+[2m02:00:06[22m [34m[200][39m / [2m4ms[22m
+[2m02:00:14[22m [34m[200][39m / [2m4ms[22m
+[2m02:00:18[22m [34m[200][39m / [2m4ms[22m
+[2m02:00:23[22m [34m[200][39m / [2m4ms[22m
+[2m02:01:20[22m [34m[200][39m / [2m3ms[22m
+[2m02:01:53[22m [34m[200][39m / [2m3ms[22m
+[2m02:01:53[22m [34m[200][39m / [2m3ms[22m
+[2m02:02:38[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:02:38[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:02:38[22m [34m[200][39m / [2m29ms[22m
+[2m02:02:47[22m [34m[200][39m / [2m5ms[22m
+[2m02:02:57[22m [34m[200][39m / [2m5ms[22m
+[2m02:03:02[22m [34m[200][39m / [2m3ms[22m
+[2m02:03:24[22m [34m[200][39m / [2m4ms[22m
+[2m02:04:36[22m [34m[200][39m / [2m4ms[22m
+[2m02:05:19[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:05:19[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:05:19[22m [34m[200][39m / [2m28ms[22m
+[2m02:07:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:07:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:07:11[22m [34m[200][39m / [2m30ms[22m
+[31m[1m02:07:11[22m [ERROR] [vite][39m [31mInternal server error: Transform failed with 1 error:
+I:/Work/develop/lovanya.github.io/src/scripts/cursor.ts:528:47: ERROR: Expected ";" but found ")"[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mI:/Work/develop/lovanya.github.io/src/scripts/cursor.ts[39m:528:47
+[33m  
+  [33mExpected ";" but found ")"[33m
+  526|        // === Fins (3 per side, or 1 large per side for simplicity) ===
+  527|        // Left fin
+  528|        ctx!.fillStyle = `rgba(${neonRgb}, 0.85)`);
+     |                                                 ^
+  529|        ctx!.beginPath();
+  530|        ctx!.moveTo(-BODY_W / 2, BODY_H / 2 - FIN_H);
+  [39m
+      at failureErrorWithLog (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:1467:15)
+      at I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:736:50
+      at responseCallbacks.<computed> (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:603:9)
+      at handleIncomingPacket (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:658:12)
+      at Socket.readFromStdout (I:\Work\develop\lovanya.github.io\node_modules\vite\node_modules\esbuild\lib\main.js:581:7)
+      at Socket.emit (node:events:519:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+      at Pipe.callbackTrampoline (node:internal/async_hooks:130:17)
+[2m02:07:16[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:07:16[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:07:16[22m [34m[200][39m / [2m31ms[22m
+[2m02:07:29[22m [34m[200][39m / [2m4ms[22m
+[2m02:07:35[22m [34m[200][39m / [2m4ms[22m
+[2m02:10:27[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:27[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:28[22m [34m[200][39m / [2m26ms[22m
+[2m02:10:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:33[22m [34m[200][39m / [2m30ms[22m
+[2m02:10:41[22m [34m[200][39m /blog/oh-my-zsh [2m55ms[22m
+[2m02:10:44[22m [34m[200][39m / [2m3ms[22m
+[2m02:10:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:46[22m [34m[200][39m / [2m32ms[22m
+[2m02:10:52[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:52[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:10:52[22m [34m[200][39m / [2m33ms[22m
+[2m02:11:00[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:00[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:00[22m [34m[200][39m / [2m28ms[22m
+[2m02:11:23[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:23[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:23[22m [34m[200][39m / [2m31ms[22m
+[2m02:11:57[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:57[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:11:57[22m [34m[200][39m / [2m30ms[22m
+[2m02:12:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:12:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:12:33[22m [34m[200][39m / [2m31ms[22m
+[2m02:12:54[22m [34m[200][39m / [2m5ms[22m
+[2m02:13:05[22m [34m[200][39m / [2m4ms[22m
+[2m02:17:57[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:17:57[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:17:58[22m [34m[200][39m / [2m27ms[22m
+[2m02:18:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:10[22m [34m[200][39m / [2m27ms[22m
+[2m02:18:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:26[22m [34m[200][39m / [2m29ms[22m
+[2m02:18:32[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:32[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:32[22m [34m[200][39m / [2m31ms[22m
+[2m02:18:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:18:44[22m [34m[200][39m / [2m26ms[22m
+[2m02:18:49[22m [34m[200][39m / [2m4ms[22m
+[2m02:19:39[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:19:39[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:19:39[22m [34m[200][39m / [2m27ms[22m
+[2m02:20:17[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:17[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:17[22m [34m[200][39m / [2m24ms[22m
+[2m02:20:25[22m [34m[200][39m / [2m3ms[22m
+[2m02:20:28[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:28[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:28[22m [34m[200][39m / [2m31ms[22m
+[2m02:20:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:20:46[22m [34m[200][39m / [2m30ms[22m
+[2m02:21:05[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:05[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:05[22m [34m[200][39m / [2m31ms[22m
+[2m02:21:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:26[22m [34m[200][39m / [2m28ms[22m
+[2m02:21:40[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:40[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:40[22m [34m[200][39m / [2m23ms[22m
+[2m02:21:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:46[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:46[22m [34m[200][39m / [2m25ms[22m
+[2m02:21:53[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:53[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:21:54[22m [34m[200][39m / [2m24ms[22m
+[2m02:21:59[22m [34m[200][39m / [2m5ms[22m
+[2m02:22:01[22m [34m[200][39m / [2m4ms[22m
+[2m02:25:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:25:44[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:25:45[22m [34m[200][39m / [2m27ms[22m
+[2m02:26:09[22m [34m[200][39m / [2m3ms[22m
+[2m02:26:10[22m [34m[200][39m / [2m3ms[22m
+[2m02:26:11[22m [34m[200][39m / [2m3ms[22m
+[2m02:27:03[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:27:03[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:27:04[22m [34m[200][39m / [2m27ms[22m
+[2m02:27:09[22m [34m[200][39m / [2m4ms[22m
+[2m02:27:52[22m [34m[200][39m / [2m3ms[22m
+[2m02:30:20[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:20[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:21[22m [34m[200][39m / [2m32ms[22m
+[2m02:30:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:33[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:33[22m [34m[200][39m / [2m28ms[22m
+[2m02:30:47[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:47[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:30:47[22m [34m[200][39m / [2m28ms[22m
+[2m02:30:55[22m [34m[200][39m / [2m4ms[22m
+[2m02:32:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:32:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:32:52[22m [34m[200][39m / [2m24ms[22m
+[2m02:33:03[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:03[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:03[22m [34m[200][39m / [2m24ms[22m
+[2m02:33:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:10[22m [34m[200][39m / [2m25ms[22m
+[2m02:33:29[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:29[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:29[22m [34m[200][39m / [2m26ms[22m
+[2m02:33:42[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:42[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:33:42[22m [34m[200][39m / [2m28ms[22m
+[2m02:33:50[22m [34m[200][39m / [2m4ms[22m
+[2m02:36:58[22m [34m[200][39m / [2m4ms[22m
+[2m02:39:19[22m [34m[200][39m / [2m3ms[22m
+[2m02:39:47[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:39:47[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:39:47[22m [34m[200][39m / [2m25ms[22m
+[2m02:40:00[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:00[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:00[22m [34m[200][39m / [2m28ms[22m
+[2m02:40:03[22m [34m[watch][39m src/pages/blog/index.astro
+[2m02:40:03[22m [34m[watch][39m src/pages/blog/index.astro
+[2m02:40:04[22m [34m[200][39m / [2m33ms[22m
+[2m02:40:08[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:08[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:08[22m [34m[200][39m / [2m30ms[22m
+[2m02:40:12[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:12[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:40:12[22m [34m[200][39m / [2m32ms[22m
+[2m02:40:29[22m [34m[200][39m / [2m3ms[22m
+[2m02:40:54[22m [34m[200][39m / [2m4ms[22m
+[2m02:41:04[22m [34m[200][39m / [2m3ms[22m
+[2m02:42:56[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:42:56[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:42:56[22m [34m[200][39m / [2m25ms[22m
+[2m02:43:06[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:43:06[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:43:06[22m [34m[200][39m / [2m28ms[22m
+[2m02:43:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:43:10[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:43:10[22m [34m[200][39m / [2m26ms[22m
+[2m02:43:18[22m [34m[200][39m / [2m5ms[22m
+[2m02:43:34[22m [34m[200][39m /about [2m26ms[22m
+[2m02:48:40[22m [34m[watch][39m src/components/Resume/Hero.astro
+[2m02:48:41[22m [34m[200][39m /about [2m53ms[22m
+[2m02:48:56[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:48:56[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:48:57[22m [34m[200][39m /about [2m49ms[22m
+[2m02:49:17[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:17[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:17[22m [34m[200][39m /about [2m51ms[22m
+[2m02:49:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:26[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:26[22m [34m[200][39m /about [2m52ms[22m
+[2m02:49:37[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:37[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:49:38[22m [34m[200][39m /about [2m60ms[22m
+[2m02:50:43[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:50:43[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:50:45[22m [34m[200][39m /about [2m53ms[22m
+[2m02:50:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:50:51[22m [34m[watch][39m src/scripts/cursor.ts
+[2m02:50:51[22m [34m[200][39m /about [2m53ms[22m
+[2m02:50:58[22m [34m[200][39m /about [2m32ms[22m
+[2m02:56:35[22m [34m[200][39m /about [2m31ms[22m
+[2m02:56:47[22m [34m[200][39m /about [2m30ms[22m
+[2m02:58:15[22m [34m[watch][39m 2018/11/12/local-storage/index.html
+[2m02:58:15[22m [34m[watch][39m 2018/11/12/mongodb-install/index.html
+[2m02:58:15[22m [34m[watch][39m 2018/11/12/macos-git-branch/index.html
+[2m02:58:15[22m [34m[watch][39m 2018/12/22/oh-my-zsh/index.html
+[2m02:58:15[22m [34m[watch][39m index.html
+[2m02:58:15[22m [34m[watch][39m about/index.html
+[2m02:58:15[22m [34m[watch][39m archives/index.html
+[2m02:58:15[22m [34m[watch][39m categories/index.html
+[2m02:58:15[22m [34m[watch][39m tags/index.html
+[2m02:58:15[22m [34m[watch][39m categories/MacOS/index.html
+[2m02:58:15[22m [34m[watch][39m archives/2018/index.html
+[2m02:58:15[22m [34m[watch][39m categories/JavaScript/index.html
+[2m02:58:15[22m [34m[watch][39m tags/html5/index.html
+[2m02:58:15[22m [34m[watch][39m tags/git/index.html
+[2m02:58:15[22m [34m[watch][39m tags/mongodb/index.html
+[2m02:58:15[22m [34m[watch][39m tags/terminal/index.html
+[2m02:58:15[22m [34m[watch][39m tags/javascript/index.html
+[2m02:58:15[22m [34m[watch][39m archives/2018/12/index.html
+[2m02:58:15[22m [34m[watch][39m archives/2018/11/index.html
+[2m02:58:15[22m [34m[200][39m /about [2m40ms[22m
+[2m02:58:18[22m [34m[200][39m /about [2m36ms[22m
+[2m02:58:20[22m [34m[watch][39m 2018/11/12/local-storage/index.html
+[2m02:58:20[22m [34m[watch][39m 2018/11/12/macos-git-branch/index.html
+[2m02:58:20[22m [34m[watch][39m 2018/11/12/mongodb-install/index.html
+[2m02:58:20[22m [34m[watch][39m 2018/12/22/oh-my-zsh/index.html
+[2m02:58:20[22m [34m[watch][39m about/index.html
+[2m02:58:20[22m [34m[watch][39m archives/2018/11/index.html
+[2m02:58:20[22m [34m[watch][39m archives/2018/12/index.html
+[2m02:58:20[22m [34m[watch][39m archives/2018/index.html
+[2m02:58:20[22m [34m[watch][39m archives/index.html
+[2m02:58:20[22m [34m[watch][39m categories/JavaScript/index.html
+[2m02:58:20[22m [34m[watch][39m categories/MacOS/index.html
+[2m02:58:20[22m [34m[watch][39m categories/index.html
+[2m02:58:20[22m [34m[watch][39m index.html
+[2m02:58:20[22m [34m[watch][39m tags/git/index.html
+[2m02:58:20[22m [34m[watch][39m tags/html5/index.html
+[2m02:58:20[22m [34m[watch][39m tags/index.html
+[2m02:58:20[22m [34m[watch][39m tags/mongodb/index.html
+[2m02:58:20[22m [34m[watch][39m tags/terminal/index.html
+[2m02:58:20[22m [34m[watch][39m tags/javascript/index.html
+[2m02:58:20[22m [34m[200][39m /about [2m37ms[22m
+[2m02:58:28[22m [34m[200][39m /about [2m27ms[22m
+[2m02:58:30[22m [34m[200][39m /about [2m32ms[22m
+[2m03:00:59[22m [34m[200][39m /about [2m37ms[22m
+[2m03:02:45[22m [34m[200][39m /about/ [2m28ms[22m
+[2m03:02:51[22m [34m[200][39m /about/ [2m29ms[22m
+[2m03:05:17[22m [34m[watch][39m src/pages/about.astro
+[2m03:05:19[22m [34m[200][39m /about [2m53ms[22m
+[2m03:05:34[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:05:34[22m [34m[200][39m /about [2m44ms[22m
+[2m03:05:39[22m [34m[watch][39m src/layouts/BaseLayout.astro
+[2m03:05:39[22m [34m[200][39m /about [2m48ms[22m
+[2m03:05:50[22m [34m[200][39m /about [2m34ms[22m
+[2m03:06:37[22m [34m[200][39m /about [2m27ms[22m
+[2m03:06:48[22m [34m[200][39m /about [2m30ms[22m
+[2m03:07:41[22m [34m[watch][39m src/pages/about.astro
+[2m03:07:41[22m [34m[200][39m /about [2m66ms[22m
+[2m03:07:47[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:07:48[22m [34m[200][39m /about [2m51ms[22m
+[2m03:07:56[22m [34m[200][39m /about [2m29ms[22m
+[2m03:08:09[22m [34m[200][39m /about [2m29ms[22m
+[2m03:09:11[22m [34m[watch][39m src/pages/about.astro
+[2m03:09:13[22m [34m[200][39m /about [2m55ms[22m
+[2m03:09:20[22m [34m[watch][39m /src/pages/about.astro?astro&type=style&index=0&lang.css
+[2m03:09:20[22m [34m[watch][39m src/pages/about.astro
+[2m03:09:33[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:09:33[22m [34m[200][39m /about [2m59ms[22m
+[2m03:09:39[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:09:39[22m [34m[200][39m /about [2m52ms[22m
+[2m03:09:47[22m [34m[200][39m /about [2m39ms[22m
+[2m03:12:12[22m [34m[200][39m /about [2m36ms[22m
+[2m03:13:55[22m [34m[watch][39m src/pages/about.astro
+[2m03:13:56[22m [34m[200][39m /about [2m52ms[22m
+[2m03:13:59[22m [34m[watch][39m src/pages/about.astro
+[2m03:13:59[22m [34m[200][39m /about [2m54ms[22m
+[2m03:14:10[22m [34m[watch][39m .claude/skills/frontend-design/SKILL.md
+[2m03:14:10[22m [34m[watch][39m .claude/skills/frontend-design/SKILL.md
+[2m03:14:10[22m [34m[watch][39m .github/workflows/deploy.yml
+[2m03:14:10[22m [34m[watch][39m .github/workflows/deploy.yml
+[2m03:14:10[22m [34m[watch][39m .opencode/plans/migration-plan.md
+[2m03:14:10[22m [34m[watch][39m .opencode/plans/migration-plan.md
+[2m03:14:10[22m [34m[watch][39m .opencode/skills/frontend-design/SKILL.md
+[2m03:14:10[22m [34m[watch][39m .opencode/skills/frontend-design/SKILL.md
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/about-full.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/about-full.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/about-page.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/about-page.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-38-023Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-38-023Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-59-748Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-59-748Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-23-50-271Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-23-50-271Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-31-322Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-31-322Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-24-53-744Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-24-53-744Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-11-099Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-11-099Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-54-373Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-54-373Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-43-825Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-43-825Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-28-38-243Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-28-38-243Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-32-16-855Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-32-16-855Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-05-192Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-05-192Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-31-23-883Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-31-23-883Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-20-417Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-20-417Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-07-44-695Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-07-44-695Z.yml
+[2m03:14:10[22m [34m[watch][39m .vscode/extensions.json
+[2m03:14:10[22m [34m[watch][39m .vscode/extensions.json
+[2m03:14:10[22m [34m[watch][39m AGENTS.md
+[2m03:14:10[22m [34m[watch][39m AGENTS.md
+[2m03:14:10[22m [34m[watch][39m CLAUDE.md
+[2m03:14:10[22m [34m[watch][39m CLAUDE.md
+[2m03:14:10[22m [34m[watch][39m DESIGN.md
+[2m03:14:10[22m [34m[watch][39m DESIGN.md
+[2m03:14:10[22m [34m[watch][39m README.md
+[2m03:14:10[22m [34m[watch][39m README.md
+[2m03:14:10[22m [34m[watch][39m .vscode/launch.json
+[2m03:14:10[22m [34m[watch][39m .vscode/launch.json
+[2m03:14:10[22m Configuration file updated. Restarting...
+[2m03:14:10[22m [34m[watch][39m astro.config.mjs
+[2m03:14:10[22m [34m[watch][39m astro.config.mjs
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:10[22m [34m[vite][39m changed tsconfig file detected: I:/Work/develop/lovanya.github.io/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m03:14:10[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m03:14:12[22m [34m[content][39m Syncing content
+[2m03:14:12[22m [34m[content][39m Synced content
+[2m03:14:12[22m [34m[types][39m Generated [2m1.31s[22m
+[2m03:14:12[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m03:14:12[22m [34m[200][39m /about [2m116ms[22m
+[2m03:14:26[22m [34m[watch][39m .claude/skills/frontend-design/SKILL.md
+[2m03:14:26[22m [34m[watch][39m .claude/skills/frontend-design/SKILL.md
+[2m03:14:26[22m [34m[watch][39m .github/workflows/deploy.yml
+[2m03:14:26[22m [34m[watch][39m .github/workflows/deploy.yml
+[2m03:14:26[22m [34m[watch][39m .opencode/plans/migration-plan.md
+[2m03:14:26[22m [34m[watch][39m .opencode/plans/migration-plan.md
+[2m03:14:26[22m [34m[watch][39m .opencode/skills/frontend-design/SKILL.md
+[2m03:14:26[22m [34m[watch][39m .opencode/skills/frontend-design/SKILL.md
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/about-full.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/about-full.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/about-page.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/about-page.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-38-023Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-38-023Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-59-748Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-22-59-748Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-23-50-271Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-23-50-271Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-24-53-744Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-24-53-744Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-31-322Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-31-322Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-54-373Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-25-54-373Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-11-099Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-11-099Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-43-825Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-27-43-825Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-28-38-243Z.yml
+[2m03:14:26[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-28-38-243Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-29-52-480Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-05-192Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-05-192Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-31-23-883Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-31-23-883Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-32-16-855Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T13-32-16-855Z.yml
+[2m03:14:27[22m [34m[watch][39m .vscode/extensions.json
+[2m03:14:27[22m [34m[watch][39m .vscode/extensions.json
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-20-417Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-03-20-417Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-07-44-695Z.yml
+[2m03:14:27[22m [34m[watch][39m .playwright-mcp/page-2026-06-23T16-07-44-695Z.yml
+[2m03:14:27[22m [34m[watch][39m .vscode/launch.json
+[2m03:14:27[22m [34m[watch][39m .vscode/launch.json
+[2m03:14:27[22m [34m[watch][39m AGENTS.md
+[2m03:14:27[22m [34m[watch][39m AGENTS.md
+[2m03:14:27[22m [34m[watch][39m DESIGN.md
+[2m03:14:27[22m [34m[watch][39m DESIGN.md
+[2m03:14:27[22m [34m[watch][39m README.md
+[2m03:14:27[22m [34m[watch][39m README.md
+[2m03:14:27[22m Configuration file updated. Restarting...
+[2m03:14:27[22m [34m[watch][39m astro.config.mjs
+[2m03:14:27[22m [34m[watch][39m astro.config.mjs
+[2m03:14:27[22m [34m[watch][39m CLAUDE.md
+[2m03:14:27[22m [34m[watch][39m CLAUDE.md
+[2m03:14:27[22m [34m[watch][39m CLAUDE.md
+[2m03:14:27[22m [34m[watch][39m CLAUDE.md
+[2m03:14:27[22m [34m[vite][39m changed tsconfig file detected: I:/Work/develop/lovanya.github.io/tsconfig.json - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.
+[2m03:14:27[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m03:14:27[22m [34m[content][39m Syncing content
+[2m03:14:27[22m [34m[content][39m Synced content
+[2m03:14:27[22m [34m[types][39m Generated [2m709ms[22m
+[2m03:14:27[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+[2m03:14:28[22m [34m[200][39m /about [2m110ms[22m
+[2m03:15:45[22m [34m[watch][39m src/pages/about.astro
+[2m03:15:46[22m [34m[200][39m /about [2m53ms[22m
+[2m03:16:00[22m [34m[200][39m /about [2m32ms[22m
+[2m03:16:07[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:16:07[22m [34m[watch][39m src/pages/en/about.astro
+[2m03:16:07[22m [34m[200][39m /about [2m60ms[22m
+[2m03:16:28[22m [34m[200][39m /about [2m34ms[22m
+[2m03:17:06[22m [34m[200][39m /about [2m43ms[22m
+[2m03:18:21[22m [34m[watch][39m src/pages/about.astro
+[2m03:18:22[22m [34m[200][39m /about [2m69ms[22m
+[2m03:18:30[22m [34m[watch][39m src/layouts/BaseLayout.astro
+[2m03:18:30[22m [34m[200][39m /about [2m61ms[22m
+[2m03:19:07[22m [34m[watch][39m src/scripts/cursor.ts
+[2m03:19:07[22m [34m[watch][39m src/scripts/cursor.ts
+[2m03:19:07[22m [34m[200][39m /about [2m51ms[22m
+[2m03:21:30[22m [34m[200][39m /about [2m36ms[22m
+[2m03:24:14[22m [34m[watch][39m AGENTS.md
+[2m03:24:14[22m [34m[watch][39m AGENTS.md
+[2m03:24:14[22m [34m[200][39m /about [2m50ms[22m
+[2m03:24:42[22m [34m[watch][39m CLAUDE.md
+[2m03:24:42[22m [34m[watch][39m CLAUDE.md
+[2m03:24:43[22m [34m[200][39m /about [2m50ms[22m

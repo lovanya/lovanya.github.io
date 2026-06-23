@@ -1,0 +1,113 @@
+---
+title: MongoDB Installation Guide
+description: A detailed guide on how to install and configure MongoDB on macOS, including basic usage.
+pubDate: 2018-11-12
+tags: ['mongodb', 'database', 'macos']
+---
+
+## Introduction
+
+MongoDB is a popular NoSQL database known for its flexible document model and high performance. This post explains how to install MongoDB on macOS.
+
+## Install with Homebrew
+
+```bash
+# Add MongoDB tap
+brew tap mongodb/brew
+
+# Install MongoDB Community Edition
+brew install mongodb-community
+
+# Start MongoDB service
+brew services start mongodb-community
+```
+
+## Manual Installation
+
+### Download Package
+
+Visit the MongoDB official website to download the installation package for your version.
+
+### Configure Data Directory
+
+```bash
+# Create data directory
+sudo mkdir -p /data/db
+
+# Set permissions
+sudo chown -R $USER /data/db
+```
+
+### Start MongoDB
+
+```bash
+# Start MongoDB service
+mongod
+```
+
+## Basic Usage
+
+### Connect to Database
+
+```bash
+# Connect to local MongoDB
+mongo
+
+# Connect to specific database
+mongo mydatabase
+```
+
+### Common Commands
+
+```javascript
+// Show all databases
+show dbs
+
+// Switch database
+use mydatabase
+
+// Show collections in current database
+show collections
+
+// Insert document
+db.users.insertOne({ name: 'John', age: 25 })
+
+// Query documents
+db.users.find({ age: { $gte: 18 } })
+
+// Update document
+db.users.updateOne({ name: 'John' }, { $set: { age: 26 } })
+
+// Delete document
+db.users.deleteOne({ name: 'John' })
+```
+
+## Configure MongoDB
+
+### Create Configuration File
+
+```bash
+# Create config directory
+mkdir -p ~/.mongodb
+touch ~/.mongodb/mongod.conf
+```
+
+### Configuration Content
+
+```yaml
+systemLog:
+  destination: file
+  path: ~/.mongodb/mongod.log
+  logAppend: true
+
+storage:
+  dbPath: ~/.mongodb/data
+
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+```
+
+## Summary
+
+MongoDB is a powerful NoSQL database suitable for storing flexible document data. Following the steps in this article, you should be able to successfully install and configure MongoDB on macOS.

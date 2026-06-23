@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Resume/Hero.astro';
+import RadarChart from '../../components/Resume/RadarChart';
+import Timeline from '../../components/Resume/Timeline';
+import ProjectCard from '../../components/Resume/ProjectCard';
+import SkillTree from '../../components/Resume/SkillTree';
+import Comments from '../../components/Comments.astro';
+import { skills, experience, projects, techStack } from '../../data/resume';
+
+const title = 'About Me | Jian Lin';
+const description = '11 Years of Experience | Enterprise Web Architecture | Micro-Frontend / Cross-Platform / Performance';
+---
+
+<BaseLayout title={title} description={description} lang="en">
+  <!-- Hero Section (always visible) -->
+  <Hero lang="en" />
+
+  <!-- Next-section arrow button (right below Hero) -->
+  <button id="next-section-btn" class="next-section-btn" aria-label="Show next section">
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"></line>
+      <polyline points="19 12 12 19 5 12"></polyline>
+    </svg>
+  </button>
+
+  <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
+    <div class="flex flex-col" style="gap: var(--section-gap);">
+      <!-- Core Competencies -->
+      <section class="reveal step-section flex flex-col items-center w-full" data-step="0">
+        <h2 class="section-title">Core Competencies</h2>
+        <RadarChart client:load skills={skills} lang="en" />
+      </section>
+
+      <!-- Work Experience Timeline -->
+      <section class="reveal step-section flex flex-col items-center w-full" data-step="1">
+        <h2 class="section-title">Work Experience</h2>
+        <Timeline client:load experience={experience} lang="en" />
+      </section>
+
+      <!-- Key Projects -->
+      <section class="reveal step-section flex flex-col items-center w-full" data-step="2">
+        <h2 class="section-title">Key Projects</h2>
+        <ProjectCard client:load projects={projects} lang="en" />
+      </section>
+
+      <!-- Technical Stack — Solar System -->
+      <section class="reveal step-section flex flex-col items-center w-full" data-step="3">
+        <h2 class="section-title">Technical Stack</h2>
+        <SkillTree client:load techStack={techStack} lang="en" />
+      </section>
+
+      <!-- Comments (hidden until all sections shown) -->
+      <div id="comments-block" class="w-full step-comments" style="padding-top: var(--space-12); border-top: 1px solid var(--color-border);">
+        <Comments lang="en" />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  (function() {
+    const sections = document.querySelectorAll('.step-section');
+    const commentsBlock = document.getElementById('comments-block');
+    const btn = document.getElementById('next-section-btn');
+    if (!btn || sections.length === 0) return;
+
+    let currentStep = -1;
+
+    function showNext() {
+      currentStep++;
+      if (currentStep < sections.length) {
+        const section = sections[currentStep];
+        section.classList.add('visible');
+        setTimeout(() => {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+      if (currentStep >= sections.length - 1) {
+        if (commentsBlock) commentsBlock.classList.add('visible');
+        btn.style.display = 'none';
+      }
+    }
+
+    btn.addEventListener('click', showNext);
+  })();
+</script>
+
+<style>
+  .step-section {
+    display: none;
+  }
+  .step-section.visible {
+    display: flex;
+  }
+  .step-comments {
+    display: none;
+  }
+  .step-comments.visible {
+    display: block;
+  }
+  .next-section-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin: var(--space-12) auto 0;
+    border: 1px solid var(--color-accent);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-accent);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: bounce 2s infinite;
+  }
+  .next-section-btn:hover {
+    background: var(--color-accent);
+    color: var(--color-bg);
+    box-shadow: 0 0 20px var(--color-accent-glow);
+    transform: scale(1.1);
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(8px); }
+  }
+  section {
+    scroll-margin-top: 5rem;
+  }
+</style>

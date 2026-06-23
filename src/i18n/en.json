@@ -1,0 +1,39 @@
+{
+  "site": {
+    "title": "Jian Lin's Tech Blog",
+    "description": "11 Years of Experience | Enterprise Web Architecture | Micro-Frontend / Cross-Platform / Performance"
+  },
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "about": "About",
+    "tags": "Tags",
+    "categories": "Categories"
+  },
+  "resume": {
+    "title": "Jian Lin",
+    "subtitle": "Frontend Architect",
+    "tagline": "11 Years of Experience | Enterprise Web Architecture | Micro-Frontend / Cross-Platform / Performance",
+    "summary": "Senior frontend engineer with 11 years of experience designing and leading enterprise-scale web application architectures. Proven track record of leading the frontend architecture for an 800+ page ERP financial system rebuild.",
+    "skills": "Core Competencies",
+    "experience": "Work Experience",
+    "projects": "Key Projects",
+    "techStack": "Technical Stack"
+  },
+  "blog": {
+    "readMore": "Read More",
+    "backToList": "Back to List",
+    "publishedAt": "Published",
+    "updatedAt": "Updated",
+    "minRead": "min read"
+  },
+  "footer": {
+    "copyright": "All Rights Reserved",
+    "poweredBy": "Powered by Astro"
+  },
+  "theme": {
+    "light": "Light Mode",
+    "dark": "Dark Mode",
+    "system": "System"
+  }
+}

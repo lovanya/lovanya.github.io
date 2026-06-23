@@ -1,0 +1,556 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════
+   Cold Tech Design System — 冷科技风
+   True Light + Dark mode
+   ═══════════════════════════════════════════════════ */
+
+:root {
+  /* Light mode (default) — Cold Tech "白" */
+  --color-bg: #f5f7fa;
+  --color-bg-secondary: #ffffff;
+  --color-text: #1a1f2e;
+  --color-text-secondary: #5a6478;
+  --color-accent: #0091ae;
+  --color-accent-hover: #006d85;
+  --color-accent-dim: rgba(0, 145, 174, 0.08);
+  --color-accent-glow: rgba(0, 145, 174, 0.15);
+  --color-neon: #00a86b;
+  --color-neon-dim: rgba(0, 168, 107, 0.1);
+  --color-border: #d8dde6;
+  --color-border-strong: #b8c0ce;
+  --color-card: rgba(255, 255, 255, 0.85);
+  --color-card-solid: #ffffff;
+  --color-card-hover: rgba(248, 250, 252, 0.95);
+  --color-code-bg: #f1f4f9;
+  --color-code-inline-bg: rgba(0, 145, 174, 0.08);
+  --color-shiki-light: #1a1f2e;
+  --color-shiki-light-bg: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 4px 20px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 12px rgba(0, 145, 174, 0.15), 0 0 30px rgba(0, 145, 174, 0.05);
+  --radius: 8px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Cursor canvas theme tokens (read by cursor.ts) */
+  --cursor-accent-rgb: 0, 145, 174;
+  --cursor-neon-rgb: 0, 168, 107;
+  --cursor-center: #ffffff;
+
+  /* ═══════════════════════════════════════════════════
+     Spacing Scale — 4px base, all layout spacing derives from here
+     DO NOT use arbitrary margin/padding values in components
+     ═══════════════════════════════════════════════════ */
+  --space-1:  0.25rem;  /*  4px — inline gaps */
+  --space-2:  0.5rem;   /*  8px — tag padding-y */
+  --space-3:  0.75rem;  /* 12px — small stack gaps */
+  --space-4:  1rem;     /* 16px — card inner text gap */
+  --space-5:  1.25rem;  /* 20px */
+  --space-6:  1.5rem;   /* 24px — card padding, section-title margin-bottom (mobile) */
+  --space-8:  2rem;     /* 32px — Hero element gap */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px — section-title margin-bottom (desktop), timeline row gap */
+  --space-16: 4rem;     /* 64px — Hero padding-y */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px — between-section vertical gap (Hero → content, section → section) */
+
+  /* Layout tokens — derived from spacing scale */
+  --section-gap:    var(--space-24);  /* 6rem — between every page section */
+  --title-gap:      var(--space-12);  /* 3rem — section title → content */
+  --card-padding:   var(--space-6);   /* 1.5rem — all .card padding */
+  --row-gap:        var(--space-12);  /* 3rem — timeline item gap */
+}
+
+:root.dark {
+  /* Dark mode — Cold Tech "黑" */
+  --color-bg: #06080d;
+  --color-bg-secondary: #0c1018;
+  --color-text: #c9d1d9;
+  --color-text-secondary: #6e7681;
+  --color-accent: #00e5ff;
+  --color-accent-hover: #00ff88;
+  --color-accent-dim: rgba(0, 229, 255, 0.08);
+  --color-accent-glow: rgba(0, 229, 255, 0.15);
+  --color-neon: #00ff88;
+  --color-neon-dim: rgba(0, 255, 136, 0.1);
+  --color-border: #1b2332;
+  --color-border-strong: #2a3344;
+  --color-card: rgba(12, 18, 30, 0.85);
+  --color-card-solid: #0c121e;
+  --color-card-hover: rgba(16, 24, 40, 0.95);
+  --color-code-bg: #0c121e;
+  --color-code-inline-bg: rgba(0, 229, 255, 0.08);
+  --color-shiki-light: #c9d1d9;
+  --color-shiki-light-bg: #0c121e;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 229, 255, 0.06);
+  --shadow-glow: 0 0 15px rgba(0, 229, 255, 0.2), 0 0 40px rgba(0, 229, 255, 0.08);
+  /* Cursor canvas theme tokens */
+  --cursor-accent-rgb: 0, 229, 255;
+  --cursor-neon-rgb: 0, 255, 136;
+  --cursor-center: #ffffff;
+}
+
+/* ─── Reset ─── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+/* ─── Body ─── */
+body {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.7;
+  transition: background-color var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Custom Cursor (desktop only) ─── */
+@media (min-width: 769px) {
+  body, a, button, input, textarea, select {
+    cursor: none !important;
+  }
+}
+
+/* ─── Links ─── */
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* ─── Container ─── */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+}
+
+/* ═══════════════════════════════════════════════════
+   Glass Card — 玻璃拟态卡片
+   ═══════════════════════════════════════════════════ */
+.card {
+  background: var(--color-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--card-padding);
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent 40%, var(--color-accent-glow) 50%, transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ═══════════════════════════════════════════════════
+   Buttons — 霓虹按钮
+   ═══════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition: all var(--transition);
+  border: 1px solid var(--color-accent);
+  background: transparent;
+  color: var(--color-accent);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 769px) {
+  .btn { cursor: none !important; }
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  opacity: 0;
+  transition: opacity var(--transition);
+  z-index: 0;
+}
+
+.btn:hover {
+  color: #ffffff;
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
+}
+
+:root.dark .btn:hover {
+  color: var(--color-bg);
+}
+
+.btn:hover::before {
+  opacity: 1;
+}
+
+.btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-solid {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+:root.dark .btn-solid {
+  color: var(--color-bg);
+}
+
+.btn-solid:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ═══════════════════════════════════════════════════
+   Tags — 霓虹胶囊
+   ═══════════════════════════════════════════════════ */
+.tag {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--color-accent-dim);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-glow);
+  transition: all var(--transition);
+}
+
+.tag:hover {
+  background: var(--color-accent);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--color-accent-glow);
+}
+
+:root.dark .tag:hover {
+  color: var(--color-bg);
+}
+
+/* ═══════════════════════════════════════════════════
+   Section Styles
+   ═══════════════════════════════════════════════════ */
+.section {
+  padding: 5rem 0;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--title-gap);
+  text-align: center;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--color-accent);
+  margin: var(--space-3) auto 0;
+  box-shadow: 0 0 8px var(--color-accent-glow);
+}
+
+/* ═══════════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.3; }
+  94% { opacity: 1; }
+  96% { opacity: 0.5; }
+  97% { opacity: 1; }
+}
+
+@keyframes data-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes circuit-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--color-accent)); }
+  50% { filter: drop-shadow(0 0 8px var(--color-accent)); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-flicker {
+  animation: flicker 8s linear infinite;
+}
+
+/* ─── Scroll reveal ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════
+   Prose — Blog Content
+   ═══════════════════════════════════════════════════ */
+.prose {
+  color: var(--color-text);
+  line-height: 1.8;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: var(--color-accent);
+  font-weight: 700;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+  line-height: 1.3;
+}
+
+.prose h1 { font-size: 2rem; }
+.prose h2 {
+  font-size: 1.5rem;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.prose h3 { font-size: 1.25rem; }
+
+.prose p { margin-bottom: 1.25rem; }
+
+.prose a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* ─── Inline code ─── */
+.prose code {
+  background: var(--color-code-inline-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* ─── Code block ─── */
+.prose pre {
+  background: var(--color-code-bg);
+  border-radius: var(--radius);
+  padding: var(--space-5) var(--space-6);
+  overflow-x: auto;
+  margin: 0 0 var(--space-6) 0;
+  border: 1px solid var(--color-border);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  font-weight: inherit;
+  border-radius: 0;
+}
+
+/* ─── Shiki dual themes (Astro 5 uses .astro-code class) ─── */
+/* Light mode: Shiki's inline `color:#XXX` already provides github-light colors.
+   Only override the background to match the design system's code background. */
+:root .astro-code {
+  background-color: var(--color-code-bg) !important;
+  font-style: var(--shiki-light-font-style) !important;
+  font-weight: var(--shiki-light-font-weight) !important;
+  text-decoration: var(--shiki-light-text-decoration) !important;
+}
+
+/* Dark mode: swap to github-dark colors via the --shiki-dark custom properties. */
+:root.dark .astro-code,
+:root.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+.prose pre::selection,
+.prose pre *::selection {
+  background: var(--color-accent) !important;
+  color: #fff !important;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 1.25rem;
+  padding-left: var(--space-6);
+}
+
+.prose li { margin-bottom: var(--space-2); }
+
+.prose blockquote {
+  border-left: 3px solid var(--color-accent);
+  padding: var(--space-3) var(--space-4);
+  margin-left: 0;
+  margin-bottom: var(--space-6);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  background: var(--color-accent-dim);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.prose img {
+  border-radius: var(--radius);
+  margin: var(--space-6) 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-6);
+}
+
+.prose th, .prose td {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.prose th {
+  background: var(--color-bg-secondary);
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.prose hr {
+  border: 0;
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-8) 0;
+}
+
+/* ═══════════════════════════════════════════════════
+   Scan Line Effect (全局装饰, 暗色更明显)
+   ═══════════════════════════════════════════════════ */
+.scan-line {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 145, 174, 0.015) 2px,
+    rgba(0, 145, 174, 0.015) 4px
+  );
+  opacity: 0.5;
+}
+
+:root.dark .scan-line {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 229, 255, 0.015) 2px,
+    rgba(0, 229, 255, 0.015) 4px
+  );
+  opacity: 0.8;
+}
+
+/* ═══════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .section { padding: 3rem 0; }
+  .section-title { font-size: 1.25rem; margin-bottom: var(--space-8); }
+  .container { padding: 0 1.25rem; }
+  .prose h2 { font-size: 1.35rem; }
+  .prose pre { padding: 1rem; font-size: 0.8125rem; }
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,182 @@
+---
+title: Local Storage 使用指南
+description: 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。
+pubDate: 2018-11-12
+tags: ['javascript', 'html5', 'browser']
+---
+
+## 前言
+
+Local Storage 是 HTML5 提供的客户端存储方案，允许在浏览器中保存键值对数据。本文介绍 Local Storage 的基本概念和使用方法。
+
+## 基本概念
+
+### 特性
+
+- **持久化存储**：数据不会过期，除非手动清除
+- **同源策略**：只能访问同源的数据
+- **容量限制**：通常为 5-10MB
+- **同步 API**：操作会阻塞主线程
+
+### 与 Session Storage 的区别
+
+| 特性 | Local Storage | Session Storage |
+|------|---------------|-----------------|
+| 生命周期 | 永久 | 会话期间 |
+| 作用域 | 同源 | 同源 + 标签页 |
+| 容量 | 5-10MB | 5-10MB |
+
+## 基本使用
+
+### 存储数据
+
+```javascript
+// 存储字符串
+localStorage.setItem('username', 'John');
+
+// 存储对象（需要序列化）
+const user = { name: 'John', age: 25 };
+localStorage.setItem('user', JSON.stringify(user));
+
+// 存储数组
+const tags = ['javascript', 'html5', 'css3'];
+localStorage.setItem('tags', JSON.stringify(tags));
+```
+
+### 读取数据
+
+```javascript
+// 读取字符串
+const username = localStorage.getItem('username');
+
+// 读取对象（需要反序列化）
+const user = JSON.parse(localStorage.getItem('user'));
+
+// 读取数组
+const tags = JSON.parse(localStorage.getItem('tags'));
+```
+
+### 删除数据
+
+```javascript
+// 删除单个项
+localStorage.removeItem('username');
+
+// 清空所有数据
+localStorage.clear();
+```
+
+## 使用场景
+
+### 保存用户偏好
+
+```javascript
+// 保存主题设置
+localStorage.setItem('theme', 'dark');
+
+// 保存语言设置
+localStorage.setItem('language', 'zh-CN');
+```
+
+### 缓存数据
+
+```javascript
+// 缓存 API 响应
+async function fetchData(url) {
+  const cacheKey = `cache_${url}`;
+  const cached = localStorage.getItem(cacheKey);
+  
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  localStorage.setItem(cacheKey, JSON.stringify(data));
+  return data;
+}
+```
+
+### 表单自动保存
+
+```javascript
+// 保存表单数据
+function saveFormData() {
+  const formData = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+  };
+  localStorage.setItem('formData', JSON.stringify(formData));
+}
+
+// 恢复表单数据
+function restoreFormData() {
+  const formData = JSON.parse(localStorage.getItem('formData'));
+  if (formData) {
+    document.getElementById('name').value = formData.name;
+    document.getElementById('email').value = formData.email;
+  }
+}
+```
+
+## 最佳实践
+
+### 错误处理
+
+```javascript
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    console.error('localStorage setItem failed:', e);
+    return false;
+  }
+}
+
+function safeGetItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('localStorage getItem failed:', e);
+    return null;
+  }
+}
+```
+
+### 封装工具类
+
+```javascript
+const storage = {
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error('Storage set error:', e);
+    }
+  },
+  
+  get(key, defaultValue = null) {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (e) {
+      console.error('Storage get error:', e);
+      return defaultValue;
+    }
+  },
+  
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.error('Storage remove error:', e);
+    }
+  }
+};
+```
+
+## 总结
+
+Local Storage 是一个简单易用的客户端存储方案，适合保存用户偏好、缓存数据等场景。使用时要注意错误处理和数据序列化。

@@ -1,0 +1,39 @@
+{
+  "site": {
+    "title": "林健的技术博客",
+    "description": "11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化"
+  },
+  "nav": {
+    "home": "首页",
+    "blog": "博客",
+    "about": "关于我",
+    "tags": "标签",
+    "categories": "分类"
+  },
+  "resume": {
+    "title": "林健",
+    "subtitle": "前端架构师",
+    "tagline": "11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化",
+    "summary": "11 年前端开发经验，长期深耕企业级 Web 系统架构设计与跨端开发。主导过 800+ 页面的大型 ERP 系统全栈重构项目，具备完整的微前端架构设计、跨端开发、团队管理与跨部门协作能力。",
+    "skills": "核心能力",
+    "experience": "工作经历",
+    "projects": "项目经历",
+    "techStack": "技术栈"
+  },
+  "blog": {
+    "readMore": "阅读更多",
+    "backToList": "返回列表",
+    "publishedAt": "发布于",
+    "updatedAt": "更新于",
+    "minRead": "分钟阅读"
+  },
+  "footer": {
+    "copyright": "版权所有",
+    "poweredBy": "由 Astro 驱动"
+  },
+  "theme": {
+    "light": "亮色模式",
+    "dark": "暗色模式",
+    "system": "跟随系统"
+  }
+}

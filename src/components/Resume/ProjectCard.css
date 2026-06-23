@@ -1,0 +1,81 @@
+.project-card-container {
+  perspective: 1200px;
+  height: 400px;
+  cursor: pointer;
+}
+
+.project-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.project-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  background: var(--color-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+/* Glow border on hover */
+.project-card-container:hover .project-card-face {
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.08), 0 4px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Corner accents */
+.project-card-face::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-top: 2px solid var(--color-accent);
+  border-left: 2px solid var(--color-accent);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.project-card-face::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom: 2px solid var(--color-accent);
+  border-right: 2px solid var(--color-accent);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.project-card-container:hover .project-card-face::before,
+.project-card-container:hover .project-card-face::after {
+  opacity: 0.7;
+}
+
+.project-card-front {
+  z-index: 2;
+}
+
+.project-card-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}

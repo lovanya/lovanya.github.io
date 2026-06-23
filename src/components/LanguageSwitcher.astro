@@ -1,0 +1,30 @@
+---
+interface Props {
+  lang: 'zh' | 'en';
+  currentPath: string;
+}
+
+const { lang, currentPath } = Astro.props;
+
+// Generate the other language URL
+function getOtherLangPath(): string {
+  if (lang === 'zh') {
+    return '/en' + currentPath;
+  } else {
+    return currentPath.replace(/^\/en/, '') || '/';
+  }
+}
+
+const otherLangPath = getOtherLangPath();
+const otherLangLabel = lang === 'zh' ? 'EN' : '中';
+---
+
+<a
+  href={otherLangPath}
+  class="flex items-center justify-center rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-card-hover)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)] font-medium border border-[var(--color-border)] transition-all"
+  style="width: 1.5rem; height: 1.5rem; font-size: 0.625rem; letter-spacing: 0.05em; line-height: 1;"
+  title={lang === 'zh' ? 'Switch to English' : '切换到中文'}
+  aria-label={lang === 'zh' ? 'Switch to English' : '切换到中文'}
+>
+  {otherLangLabel}
+</a>

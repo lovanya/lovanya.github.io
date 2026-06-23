@@ -1,0 +1,98 @@
+---
+title: Install Oh My Zsh on Mac
+description: A detailed guide on how to install and configure Oh My Zsh on macOS to make your terminal more efficient and beautiful.
+pubDate: 2018-12-22
+tags: ['terminal', 'macos', 'zsh']
+---
+
+## Introduction
+
+Oh My Zsh is an open-source framework for managing Zsh configuration. It provides a huge collection of themes and plugins to make your terminal more efficient and beautiful.
+
+## Install Zsh
+
+First, check if Zsh is already installed:
+
+```bash
+zsh --version
+```
+
+If not installed, use Homebrew:
+
+```bash
+brew install zsh
+```
+
+After installation, switch the default shell to zsh:
+
+```bash
+chsh -s $(which zsh)
+```
+
+Restart your terminal to apply the changes.
+
+## Install Oh My Zsh
+
+Use the official installation script:
+
+```bash
+sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+After installation, you'll see a nice ASCII art pattern.
+
+## Configure Theme
+
+Edit the `~/.zshrc` file and find the `ZSH_THEME` configuration:
+
+```bash
+ZSH_THEME="robbyrussell"
+```
+
+Recommended themes:
+- `robbyrussell` - Default theme, minimal
+- `agnoster` - Feature-rich, requires Powerline fonts
+- `spaceship` - Shows Git info and Node version
+
+## Recommended Plugins
+
+### Git Plugin
+
+Oh My Zsh comes with a git plugin that provides many git command aliases:
+
+```bash
+plugins=(git)
+```
+
+Common aliases:
+- `gst` = `git status`
+- `ga` = `git add`
+- `gc` = `git commit`
+- `gp` = `git push`
+- `gl` = `git pull`
+
+### zsh-autosuggestions Plugin
+
+Auto-suggests commands you've typed before:
+
+```bash
+git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+```
+
+Add to `~/.zshrc`:
+
+```bash
+plugins=(git zsh-autosuggestions)
+```
+
+### zsh-syntax-highlighting Plugin
+
+Command syntax highlighting:
+
+```bash
+git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+```
+
+## Summary
+
+Oh My Zsh is a powerful terminal enhancement tool. With proper configuration, it can significantly improve your development efficiency. Choose themes and plugins based on your needs.

@@ -1,0 +1,107 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  heroImage?: string;
+  tags?: string[];
+  slug: string;
+  lang: 'zh' | 'en';
+}
+
+const { title, description, pubDate, updatedDate, heroImage, tags = [], slug, lang } = Astro.props;
+
+const formatDate = (date: Date) => {
+  return date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const readTime = Math.ceil(description.length / 200);
+---
+
+<article class="card group overflow-hidden post-card h-full">
+  <a href={lang === 'zh' ? `/blog/${slug}` : `/en/blog/${slug}`} class="flex flex-col h-full" style="gap: var(--space-3);">
+    {heroImage && (
+      <div class="-mx-6 -mt-6 overflow-hidden relative">
+        <img
+          src={heroImage}
+          alt={title}
+          class="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-[var(--color-card)] via-transparent to-transparent"></div>
+        <div
+          class="absolute inset-0 opacity-20"
+          style="background-image: linear-gradient(rgba(0,229,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.1) 1px, transparent 1px); background-size: 20px 20px;"
+        ></div>
+      </div>
+    )}
+
+    <div class="flex flex-col flex-1" style="gap: var(--space-3);">
+      <!-- Meta line -->
+      <div class="flex items-center text-xs text-[var(--color-text-secondary)] font-mono" style="gap: var(--space-2);">
+        <span class="text-[var(--color-accent)] opacity-50">&gt;</span>
+        <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+        {updatedDate && (
+          <span class="opacity-70">
+            · {lang === 'zh' ? '更新' : 'Updated'} {formatDate(updatedDate)}
+          </span>
+        )}
+        <span class="opacity-70">· {readTime} min</span>
+      </div>
+
+      <!-- Title -->
+      <h2 class="text-lg font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors leading-snug">
+        {title}
+      </h2>
+
+      <!-- Description -->
+      <p class="text-sm text-[var(--color-text-secondary)] line-clamp-2 leading-relaxed">
+        {description}
+      </p>
+
+      <!-- Tags -->
+      {tags.length > 0 && (
+        <div class="flex flex-wrap" style="gap: var(--space-2);">
+          {tags.map((tag) => (
+            <span class="tag text-xs">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <!-- Spacer to push indicator to bottom -->
+      <div class="flex-1"></div>
+
+      <!-- Read more indicator -->
+      <div class="flex items-center text-xs text-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity font-mono" style="gap: var(--space-2);">
+        <span>{lang === 'zh' ? '阅读全文' : 'Read more'}</span>
+        <span class="transition-transform group-hover:translate-x-1">→</span>
+      </div>
+    </div>
+  </a>
+</article>
+
+<style>
+  .post-card {
+    position: relative;
+  }
+
+  .post-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .post-card:hover::after {
+    opacity: 0.5;
+  }
+</style>

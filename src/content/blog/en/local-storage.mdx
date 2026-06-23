@@ -1,0 +1,182 @@
+---
+title: Local Storage Usage Guide
+description: An introduction to HTML5 Local Storage concepts, usage methods, and best practices.
+pubDate: 2018-11-12
+tags: ['javascript', 'html5', 'browser']
+---
+
+## Introduction
+
+Local Storage is a client-side storage solution provided by HTML5, allowing you to save key-value pairs in the browser. This post covers the basic concepts and usage of Local Storage.
+
+## Basic Concepts
+
+### Features
+
+- **Persistent Storage**: Data doesn't expire unless manually cleared
+- **Same-Origin Policy**: Can only access data from the same origin
+- **Capacity Limit**: Typically 5-10MB
+- **Synchronous API**: Operations block the main thread
+
+### Comparison with Session Storage
+
+| Feature | Local Storage | Session Storage |
+|---------|---------------|-----------------|
+| Lifetime | Permanent | Session duration |
+| Scope | Same origin | Same origin + tab |
+| Capacity | 5-10MB | 5-10MB |
+
+## Basic Usage
+
+### Storing Data
+
+```javascript
+// Store string
+localStorage.setItem('username', 'John');
+
+// Store object (needs serialization)
+const user = { name: 'John', age: 25 };
+localStorage.setItem('user', JSON.stringify(user));
+
+// Store array
+const tags = ['javascript', 'html5', 'css3'];
+localStorage.setItem('tags', JSON.stringify(tags));
+```
+
+### Reading Data
+
+```javascript
+// Read string
+const username = localStorage.getItem('username');
+
+// Read object (needs deserialization)
+const user = JSON.parse(localStorage.getItem('user'));
+
+// Read array
+const tags = JSON.parse(localStorage.getItem('tags'));
+```
+
+### Deleting Data
+
+```javascript
+// Remove single item
+localStorage.removeItem('username');
+
+// Clear all data
+localStorage.clear();
+```
+
+## Use Cases
+
+### Save User Preferences
+
+```javascript
+// Save theme setting
+localStorage.setItem('theme', 'dark');
+
+// Save language setting
+localStorage.setItem('language', 'zh-CN');
+```
+
+### Cache Data
+
+```javascript
+// Cache API response
+async function fetchData(url) {
+  const cacheKey = `cache_${url}`;
+  const cached = localStorage.getItem(cacheKey);
+  
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  const response = await fetch(url);
+  const data = await response.json();
+  
+  localStorage.setItem(cacheKey, JSON.stringify(data));
+  return data;
+}
+```
+
+### Auto-save Form Data
+
+```javascript
+// Save form data
+function saveFormData() {
+  const formData = {
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+  };
+  localStorage.setItem('formData', JSON.stringify(formData));
+}
+
+// Restore form data
+function restoreFormData() {
+  const formData = JSON.parse(localStorage.getItem('formData'));
+  if (formData) {
+    document.getElementById('name').value = formData.name;
+    document.getElementById('email').value = formData.email;
+  }
+}
+```
+
+## Best Practices
+
+### Error Handling
+
+```javascript
+function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (e) {
+    console.error('localStorage setItem failed:', e);
+    return false;
+  }
+}
+
+function safeGetItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.error('localStorage getItem failed:', e);
+    return null;
+  }
+}
+```
+
+### Utility Wrapper
+
+```javascript
+const storage = {
+  set(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error('Storage set error:', e);
+    }
+  },
+  
+  get(key, defaultValue = null) {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (e) {
+      console.error('Storage get error:', e);
+      return defaultValue;
+    }
+  },
+  
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.error('Storage remove error:', e);
+    }
+  }
+};
+```
+
+## Summary
+
+Local Storage is a simple and easy-to-use client-side storage solution, suitable for saving user preferences, caching data, and similar scenarios. Remember to handle errors and serialize data properly when using it.

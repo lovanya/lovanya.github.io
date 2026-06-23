@@ -1,0 +1,353 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e3]:
+      - link "Jian Lin" [ref=e4] [cursor=pointer]:
+        - /url: /en/
+      - generic [ref=e5]:
+        - list [ref=e6]:
+          - listitem [ref=e7]:
+            - link "Home" [ref=e8] [cursor=pointer]:
+              - /url: /en/
+          - listitem [ref=e9]:
+            - link "Blog" [ref=e10] [cursor=pointer]:
+              - /url: /en/blog
+          - listitem [ref=e11]:
+            - link "About" [ref=e12] [cursor=pointer]:
+              - /url: /en/about
+        - generic [ref=e13]:
+          - link "中" [ref=e14] [cursor=pointer]:
+            - /url: /about
+          - button "Toggle theme" [ref=e15]:
+            - img [ref=e16]
+  - main [ref=e18]:
+    - generic [ref=e20]:
+      - img "Jian Lin" [ref=e23]
+      - heading "Jian Lin" [level=1] [ref=e25]:
+        - generic [ref=e26]: Jian Lin
+      - paragraph [ref=e27]: Frontend Architect
+      - paragraph [ref=e28]: 11 Years of Experience | Enterprise Web Architecture | Micro-Frontend / Cross-Platform / Performance
+      - generic [ref=e29]:
+        - link "job.ziya@outlook.com" [ref=e30] [cursor=pointer]:
+          - /url: mailto:job.ziya@outlook.com
+          - img [ref=e31]
+          - text: job.ziya@outlook.com
+        - generic [ref=e33]:
+          - img [ref=e34]
+          - text: Central South University · B.S. Computer Science (2015)
+        - generic [ref=e38]:
+          - img [ref=e39]
+          - text: Chinese (Native) / English (Professional)
+      - img [ref=e42]
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - heading "Core Competencies" [level=2] [ref=e46]
+        - img [ref=e50]:
+          - generic [ref=e67]: Architecture
+          - generic [ref=e68]: Performance
+          - generic [ref=e69]: Cross-Platform
+          - generic [ref=e70]: Team Leadership
+          - generic [ref=e71]: Engineering
+          - generic [ref=e72]: Enterprise Apps
+      - generic [ref=e73]:
+        - heading "Work Experience" [level=2] [ref=e74]
+        - generic [ref=e76]:
+          - generic [ref=e81] [cursor=pointer]:
+            - generic [ref=e82]: 2022.01 – 2026.04
+            - heading "SF Express Technology Co., Ltd." [level=3] [ref=e83]
+            - paragraph [ref=e84]: Senior Frontend Engineer
+            - list [ref=e85]:
+              - listitem [ref=e86]:
+                - img [ref=e87]
+                - generic [ref=e89]: Led frontend architecture for ERP financial system full-stack rebuild (800+ pages)
+              - listitem [ref=e90]:
+                - img [ref=e91]
+                - generic [ref=e93]: Designed and implemented Module Federation micro-frontend architecture
+              - listitem [ref=e94]:
+                - img [ref=e95]
+                - generic [ref=e97]: Built FinSpread tool, reducing licensing costs by ~30%
+              - listitem [ref=e98]:
+                - img [ref=e99]
+                - generic [ref=e101]: Managed 3-5 person contractor team with code review and quality control
+              - listitem [ref=e102]:
+                - img [ref=e103]
+                - generic [ref=e105]: Led performance optimization (40%+ improvement in first-load time)
+            - generic [ref=e106]:
+              - img [ref=e107]
+              - generic [ref=e109]: Expand
+          - generic [ref=e113] [cursor=pointer]:
+            - generic [ref=e114]: 2018.09 – 2021.12
+            - heading "Shenzhen Royole Technologies" [level=3] [ref=e115]
+            - paragraph [ref=e116]: Senior Frontend Engineer
+            - list [ref=e117]:
+              - listitem [ref=e118]:
+                - img [ref=e119]
+                - generic [ref=e121]: Architected SSO unified permission management system across 5+ business lines
+              - listitem [ref=e122]:
+                - img [ref=e123]
+                - generic [ref=e125]: Built in-house UI component library based on iView, improving efficiency by ~40%
+              - listitem [ref=e126]:
+                - img [ref=e127]
+                - generic [ref=e129]: Defined frontend coding standards and RESTful API conventions
+            - generic [ref=e130]:
+              - img [ref=e131]
+              - generic [ref=e133]: Expand
+          - generic [ref=e137] [cursor=pointer]:
+            - generic [ref=e138]: 2017.06 – 2018.07
+            - heading "Shenzhen Sundray Technologies" [level=3] [ref=e139]
+            - paragraph [ref=e140]: Frontend Engineer
+            - list [ref=e141]:
+              - listitem [ref=e142]:
+                - img [ref=e143]
+                - generic [ref=e145]: Led frontend architecture for Cloud Management Platform using Vue.js + Webpack
+              - listitem [ref=e146]:
+                - img [ref=e147]
+                - generic [ref=e149]: Built mobile app using Ionic + Angular + TypeScript
+              - listitem [ref=e150]:
+                - img [ref=e151]
+                - generic [ref=e153]: Built Node.js Mock Server for offline development
+            - generic [ref=e154]:
+              - img [ref=e155]
+              - generic [ref=e157]: Expand
+          - generic [ref=e161] [cursor=pointer]:
+            - generic [ref=e162]: 2015.07 – 2017.03
+            - heading "Shenzhen Lianyou Technology Co., Ltd." [level=3] [ref=e163]
+            - paragraph [ref=e164]: Frontend Engineer
+            - list [ref=e165]:
+              - listitem [ref=e166]:
+                - img [ref=e167]
+                - generic [ref=e169]: Built enterprise mobile apps using Framework7 + Cordova
+              - listitem [ref=e170]:
+                - img [ref=e171]
+                - generic [ref=e173]: Developed PC-side OA system using EasyUI + jQuery
+              - listitem [ref=e174]:
+                - img [ref=e175]
+                - generic [ref=e177]: Gained early experience in hybrid cross-platform development
+            - generic [ref=e178]:
+              - img [ref=e179]
+              - generic [ref=e181]: Expand
+      - generic [ref=e182]:
+        - heading "Key Projects" [level=2] [ref=e183]
+        - generic [ref=e185]:
+          - generic [ref=e187] [cursor=pointer]:
+            - generic [ref=e188]:
+              - generic [ref=e191]:
+                - generic [ref=e192]: 2024.06 – 2026.04
+                - heading "ERP Financial System Full-Stack Rebuild" [level=3] [ref=e193]
+                - paragraph [ref=e194]: Frontend Architect
+                - paragraph [ref=e195]: Full-stack rebuild with 800+ pages, serving core financial business
+                - generic [ref=e196]:
+                  - generic [ref=e197]: Vue 3
+                  - generic [ref=e198]: Vite 4
+                  - generic [ref=e199]: FinUI
+                  - generic [ref=e200]: "+2"
+              - generic [ref=e201]: Click for details →
+            - generic [ref=e202]:
+              - generic [ref=e203]:
+                - heading "Key Highlights" [level=4] [ref=e204]
+                - list [ref=e205]:
+                  - listitem [ref=e206]:
+                    - img [ref=e207]
+                    - generic [ref=e209]: Designed Module Federation micro-frontend architecture
+                  - listitem [ref=e210]:
+                    - img [ref=e211]
+                    - generic [ref=e213]: Built semi-low-code system for high-frequency page generation
+                  - listitem [ref=e214]:
+                    - img [ref=e215]
+                    - generic [ref=e217]: Introduced Web Components for cross-technology-stack reuse
+                - generic [ref=e218]:
+                  - generic [ref=e219]: Vue 3
+                  - generic [ref=e220]: Vite 4
+                  - generic [ref=e221]: FinUI
+                  - generic [ref=e222]: SpreadJS
+                  - generic [ref=e223]: Module Federation
+              - generic [ref=e224]: ← Back
+          - generic [ref=e226] [cursor=pointer]:
+            - generic [ref=e227]:
+              - generic [ref=e230]:
+                - generic [ref=e231]: 2024.06 – 2024.11
+                - heading "FinSpread Internal Tool" [level=3] [ref=e232]
+                - paragraph [ref=e233]: Lead Developer
+                - paragraph [ref=e234]: Encapsulated SpreadJS via iframe, reducing licensing costs by ~30%
+                - generic [ref=e235]:
+                  - generic [ref=e236]: SpreadJS
+                  - generic [ref=e237]: iframe
+                  - generic [ref=e238]: postMessage
+              - generic [ref=e239]: Click for details →
+            - generic [ref=e240]:
+              - generic [ref=e241]:
+                - heading "Key Highlights" [level=4] [ref=e242]
+                - list [ref=e243]:
+                  - listitem [ref=e244]:
+                    - img [ref=e245]
+                    - generic [ref=e247]: Designed unified postMessage communication protocol
+                  - listitem [ref=e248]:
+                    - img [ref=e249]
+                    - generic [ref=e251]: Produced complete integration documentation
+                  - listitem [ref=e252]:
+                    - img [ref=e253]
+                    - generic [ref=e255]: Adopted across multiple business systems
+                - generic [ref=e256]:
+                  - generic [ref=e257]: SpreadJS
+                  - generic [ref=e258]: iframe
+                  - generic [ref=e259]: postMessage
+              - generic [ref=e260]: ← Back
+          - generic [ref=e262] [cursor=pointer]:
+            - generic [ref=e263]:
+              - generic [ref=e266]:
+                - generic [ref=e267]: 2018.09 – 2021.12
+                - heading "SSO Unified Permission System" [level=3] [ref=e268]
+                - paragraph [ref=e269]: Frontend Lead
+                - paragraph [ref=e270]: Unified authentication across 5+ business lines
+                - generic [ref=e271]:
+                  - generic [ref=e272]: Vue 2.6
+                  - generic [ref=e273]: iView
+                  - generic [ref=e274]: Nuxt.js
+                  - generic [ref=e275]: "+1"
+              - generic [ref=e276]: Click for details →
+            - generic [ref=e277]:
+              - generic [ref=e278]:
+                - heading "Key Highlights" [level=4] [ref=e279]
+                - list [ref=e280]:
+                  - listitem [ref=e281]:
+                    - img [ref=e282]
+                    - generic [ref=e284]: Implemented dynamic routing and permission directives
+                  - listitem [ref=e285]:
+                    - img [ref=e286]
+                    - generic [ref=e288]: Built custom component library with 20+ components
+                  - listitem [ref=e289]:
+                    - img [ref=e290]
+                    - generic [ref=e292]: Adopted by all management systems, improving efficiency by 40%
+                - generic [ref=e293]:
+                  - generic [ref=e294]: Vue 2.6
+                  - generic [ref=e295]: iView
+                  - generic [ref=e296]: Nuxt.js
+                  - generic [ref=e297]: Less
+              - generic [ref=e298]: ← Back
+          - generic [ref=e300] [cursor=pointer]:
+            - generic [ref=e301]:
+              - generic [ref=e304]:
+                - generic [ref=e305]: 2019.10 – 2020.04
+                - heading "Rouyu Note PC (Electron)" [level=3] [ref=e306]
+                - paragraph [ref=e307]: Core Developer
+                - paragraph [ref=e308]: Cross-platform desktop app for handwriting and drawing
+                - generic [ref=e309]:
+                  - generic [ref=e310]: Electron
+                  - generic [ref=e311]: Vue 2.6
+                  - generic [ref=e312]: Node.js
+                  - generic [ref=e313]: "+1"
+              - generic [ref=e314]: Click for details →
+            - generic [ref=e315]:
+              - generic [ref=e316]:
+                - heading "Key Highlights" [level=4] [ref=e317]
+                - list [ref=e318]:
+                  - listitem [ref=e319]:
+                    - img [ref=e320]
+                    - generic [ref=e322]: Implemented hardware driver communication and real-time canvas rendering
+                  - listitem [ref=e323]:
+                    - img [ref=e324]
+                    - generic [ref=e326]: Handled cross-platform compatibility and performance
+                  - listitem [ref=e327]:
+                    - img [ref=e328]
+                    - generic [ref=e330]: Implemented file import/export functionality
+                - generic [ref=e331]:
+                  - generic [ref=e332]: Electron
+                  - generic [ref=e333]: Vue 2.6
+                  - generic [ref=e334]: Node.js
+                  - generic [ref=e335]: Less
+              - generic [ref=e336]: ← Back
+      - generic [ref=e337]:
+        - heading "Technical Stack" [level=2] [ref=e338]
+        - generic [ref=e341]:
+          - generic [ref=e342]:
+            - button "Frameworks (5)" [ref=e343]:
+              - generic [ref=e344]:
+                - img [ref=e345]
+                - generic [ref=e347]: Frameworks
+                - generic [ref=e348]: (5)
+            - generic [ref=e351]:
+              - generic [ref=e352]: Vue 3
+              - generic [ref=e353]: Vue 2
+              - generic [ref=e354]: React 18
+              - generic [ref=e355]: Angular
+              - generic [ref=e356]: Nuxt.js
+          - generic [ref=e357]:
+            - button "Build Tools (4)" [ref=e358]:
+              - generic [ref=e359]:
+                - img [ref=e360]
+                - generic [ref=e362]: Build Tools
+                - generic [ref=e363]: (4)
+            - generic [ref=e365]:
+              - generic [ref=e366]: Vite 4
+              - generic [ref=e367]: Webpack
+              - generic [ref=e368]: Rspack
+              - generic [ref=e369]: Monorepo
+          - generic [ref=e370]:
+            - button "Architecture (4)" [ref=e371]:
+              - generic [ref=e372]:
+                - img [ref=e373]
+                - generic [ref=e375]: Architecture
+                - generic [ref=e376]: (4)
+            - generic [ref=e378]:
+              - generic [ref=e379]: Module Federation
+              - generic [ref=e380]: Web Components
+              - generic [ref=e381]: SSR
+              - generic [ref=e382]: SPA
+          - generic [ref=e383]:
+            - button "Cross-Platform (4)" [ref=e384]:
+              - generic [ref=e385]:
+                - img [ref=e386]
+                - generic [ref=e388]: Cross-Platform
+                - generic [ref=e389]: (4)
+            - generic [ref=e391]:
+              - generic [ref=e392]: Electron
+              - generic [ref=e393]: Taro
+              - generic [ref=e394]: Cordova
+              - generic [ref=e395]: Ionic
+          - generic [ref=e396]:
+            - button "Languages (4)" [ref=e397]:
+              - generic [ref=e398]:
+                - img [ref=e399]
+                - generic [ref=e401]: Languages
+                - generic [ref=e402]: (4)
+            - generic [ref=e404]:
+              - generic [ref=e405]: TypeScript
+              - generic [ref=e406]: JavaScript
+              - generic [ref=e407]: HTML5
+              - generic [ref=e408]: CSS3
+          - generic [ref=e409]:
+            - button "UI Libraries (4)" [ref=e410]:
+              - generic [ref=e411]:
+                - img [ref=e412]
+                - generic [ref=e414]: UI Libraries
+                - generic [ref=e415]: (4)
+            - generic [ref=e417]:
+              - generic [ref=e418]: Element Plus
+              - generic [ref=e419]: iView
+              - generic [ref=e420]: Ant Design
+              - generic [ref=e421]: FinUI
+          - generic [ref=e422]:
+            - button "Backend (4)" [ref=e423]:
+              - generic [ref=e424]:
+                - img [ref=e425]
+                - generic [ref=e427]: Backend
+                - generic [ref=e428]: (4)
+            - generic [ref=e430]:
+              - generic [ref=e431]: Node.js
+              - generic [ref=e432]: Express
+              - generic [ref=e433]: Koa
+              - generic [ref=e434]: RESTful API
+          - generic [ref=e435]:
+            - button "Business (3)" [ref=e436]:
+              - generic [ref=e437]:
+                - img [ref=e438]
+                - generic [ref=e440]: Business
+                - generic [ref=e441]: (3)
+            - generic [ref=e443]:
+              - generic [ref=e444]: SpreadJS
+              - generic [ref=e445]: ECharts
+              - generic [ref=e446]: Rich Text Editor
+      - heading "Comments" [level=3] [ref=e448]
+  - contentinfo [ref=e450]:
+    - generic [ref=e451]:
+      - paragraph [ref=e452]: © 2026 Jian Lin. All Rights Reserved
+      - paragraph [ref=e453]: Powered by Astro

@@ -1,0 +1,208 @@
+---
+interface Props {
+  lang: 'zh' | 'en';
+}
+
+const { lang } = Astro.props;
+---
+
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden">
+  <!-- Canvas layers -->
+  <div class="absolute inset-0" id="hero-canvas-wrap">
+    <div class="matrix-rain-host absolute inset-0"></div>
+    <div class="particle-field-host absolute inset-0"></div>
+  </div>
+
+  <!-- Gradient overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-transparent via-[var(--color-bg)]/60 to-[var(--color-bg)] pointer-events-none"></div>
+
+  <!-- Scan line decoration -->
+  <div class="absolute inset-0 pointer-events-none opacity-30">
+    <div class="absolute w-full h-px bg-gradient-to-r from-transparent via-[var(--color-accent)] to-transparent" style="animation: scan-line 8s linear infinite;"></div>
+  </div>
+
+  <div class="relative z-10 w-full max-w-3xl mx-auto px-6">
+    <div class="flex flex-col items-center text-center py-20" style="gap: var(--space-8);">
+      <!-- Avatar with tech ring -->
+      <div class="relative inline-block" data-avatar-launch>
+        <div class="w-32 h-32 rounded-full overflow-hidden border-2 border-[var(--color-accent)] shadow-[var(--shadow-glow)] animate-float">
+          <img
+            src="/images/avatar.png"
+            alt={lang === 'zh' ? '林健' : 'Jian Lin'}
+            class="w-full h-full object-cover"
+          />
+        </div>
+        <!-- Tech ring -->
+        <div class="absolute -inset-3 rounded-full border border-[var(--color-accent)]/20 animate-spin-slow"></div>
+        <div class="absolute -inset-6 rounded-full border border-dashed border-[var(--color-accent)]/10 animate-spin-reverse"></div>
+        <!-- Glow -->
+        <div class="absolute -inset-4 bg-[var(--color-accent)]/5 rounded-full blur-2xl animate-glow"></div>
+      </div>
+
+      <!-- Name with glitch -->
+      <h1 class="text-5xl md:text-7xl font-bold tracking-tight glitch-text leading-none" data-text={lang === 'zh' ? '林健' : 'Jian Lin'}>
+        <span class="text-[var(--color-text)]">{lang === 'zh' ? '林' : 'Jian'}</span><span class="text-[var(--color-accent)]">{lang === 'zh' ? '健' : ' Lin'}</span>
+      </h1>
+
+      <!-- Title + Tagline stacked -->
+      <div class="flex flex-col items-center" style="gap: var(--space-3);">
+        <p class="text-base md:text-lg text-[var(--color-accent)] font-mono tracking-widest uppercase">
+          &lt;{lang === 'zh' ? '前端架构师' : 'Frontend Architect'} /&gt;
+        </p>
+        <p class="text-sm md:text-base text-[var(--color-text-secondary)] max-w-xl leading-relaxed font-mono">
+          {lang === 'zh'
+            ? '// 11 年前端经验 · 企业级中后台架构 · 微前端 / 跨端 / 性能优化'
+            : '// 11 Years of Experience · Enterprise Web Architecture · Micro-Frontend / Cross-Platform / Performance'
+          }
+        </p>
+      </div>
+
+      <!-- Contact info -->
+      <div class="flex flex-wrap justify-center text-xs text-[var(--color-text-secondary)] font-mono" style="gap: var(--space-3) var(--space-6);">
+        <a href="mailto:job.ziya@outlook.com" class="flex items-center gap-2 hover:text-[var(--color-accent)] transition-colors group">
+          <span class="text-[var(--color-accent)] opacity-50 group-hover:opacity-100 transition-opacity">[</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          job.ziya@outlook.com
+          <span class="text-[var(--color-accent)] opacity-50 group-hover:opacity-100 transition-opacity">]</span>
+        </a>
+        <span class="flex items-center gap-2">
+          <span class="text-[var(--color-neon)] opacity-50">~</span>
+          {lang === 'zh' ? '中南大学 · 计算机科学 (2015)' : 'Central South University · B.S. CS (2015)'}
+        </span>
+        <span class="flex items-center gap-2">
+          <span class="text-[var(--color-neon)] opacity-50">$</span>
+          {lang === 'zh' ? '中文 / English' : 'Chinese / English'}
+        </span>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-wrap justify-center" style="gap: var(--space-3);">
+        <a href="/about" class="btn">
+          <span>{lang === 'zh' ? '查看简历' : 'View Resume'}</span>
+        </a>
+        <a href="/blog" class="btn btn-outline">
+          <span>{lang === 'zh' ? '阅读博客' : 'Read Blog'}</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
+    <span class="text-xs font-mono text-[var(--color-text-secondary)]">SCROLL</span>
+    <div class="w-px h-8 bg-gradient-to-b from-[var(--color-accent)] to-transparent animate-pulse"></div>
+  </div>
+</section>
+
+<style>
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes spin-reverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 20s linear infinite;
+  }
+
+  .animate-spin-reverse {
+    animation: spin-reverse 30s linear infinite;
+  }
+
+  /* Glitch text effect */
+  .glitch-text {
+    position: relative;
+  }
+
+  .glitch-text::before,
+  .glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .glitch-text::before {
+    color: var(--color-accent);
+    animation: glitch-1 4s infinite linear alternate-reverse;
+    clip-path: inset(0 0 80% 0);
+    opacity: 0.3;
+  }
+
+  .glitch-text::after {
+    color: var(--color-neon);
+    animation: glitch-2 4s infinite linear alternate-reverse;
+    clip-path: inset(80% 0 0 0);
+    opacity: 0.2;
+  }
+
+  @keyframes glitch-1 {
+    0%, 90%, 100% { transform: translate(0); }
+    92% { transform: translate(2px, -1px); }
+    94% { transform: translate(-2px, 1px); }
+    96% { transform: translate(1px, -2px); }
+  }
+
+  @keyframes glitch-2 {
+    0%, 90%, 100% { transform: translate(0); }
+    91% { transform: translate(-2px, 1px); }
+    93% { transform: translate(2px, -1px); }
+    95% { transform: translate(-1px, 2px); }
+  }
+
+  .matrix-rain-host,
+  .particle-field-host {
+    position: absolute;
+    inset: 0;
+  }
+</style>
+
+<script>
+  // Lazy load Canvas components
+  async function initHeroCanvas() {
+    const matrixHost = document.querySelector('.matrix-rain-host');
+    const particleHost = document.querySelector('.particle-field-host');
+    if (!matrixHost || !particleHost) return;
+
+    const [matrixMod, particleMod] = await Promise.all([
+      import('../Canvas/MatrixRain'),
+      import('../Canvas/ParticleField'),
+    ]);
+
+    const MatrixRain = matrixMod.default;
+    const ParticleField = particleMod.default;
+
+    const { createElement } = await import('react');
+    const { createRoot } = await import('react-dom/client');
+
+    const matrixRoot = createRoot(matrixHost);
+    matrixRoot.render(createElement(MatrixRain));
+
+    const particleRoot = createRoot(particleHost);
+    particleRoot.render(createElement(ParticleField));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeroCanvas);
+  } else {
+    initHeroCanvas();
+  }
+</script>

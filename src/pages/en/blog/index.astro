@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostCard from '../../../components/Blog/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+  .filter((post) => post.id.startsWith('en/'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const title = 'Blog | Jian Lin';
+const description = 'Sharing knowledge about web development';
+---
+
+<BaseLayout title={title} description={description} lang="en">
+  <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
+    <div class="flex flex-col items-center" style="gap: var(--title-gap);">
+      <header class="text-center flex flex-col items-center" style="gap: var(--space-3);">
+        <h1 class="text-4xl font-bold text-[var(--color-text)]">Blog</h1>
+        <p class="text-[var(--color-text-secondary)]">{description}</p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full" style="gap: var(--space-6);">
+        {posts.map((post) => (
+          <PostCard
+            title={post.data.title}
+            description={post.data.description}
+            pubDate={post.data.pubDate}
+            updatedDate={post.data.updatedDate}
+            heroImage={post.data.heroImage}
+            slug={post.id.replace('en/', '')}
+            lang="en"
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>

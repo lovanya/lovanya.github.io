@@ -1,0 +1,12 @@
+[      70ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/@astrojs_react_client__js.js?v=337b4d5f:20103
+[      74ms] TypeError: Cannot read properties of null (reading 'src')
+    at https://giscus.app/client.js:1:403
+    at https://giscus.app/client.js:7:500
+[   53784ms] TypeError: Cannot read properties of null (reading 'src')
+    at https://giscus.app/client.js:1:403
+    at https://giscus.app/client.js:7:500
+[   53787ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/@astrojs_react_client__js.js?v=337b4d5f:20103
+[   60360ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/@astrojs_react_client__js.js?v=337b4d5f:20103
+[   60390ms] TypeError: Cannot read properties of null (reading 'src')
+    at https://giscus.app/client.js:1:403
+    at https://giscus.app/client.js:7:500

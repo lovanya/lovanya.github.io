@@ -1,0 +1,162 @@
+- generic [active] [ref=e1] [box=0,-200,981,4370]:
+  - banner [ref=e2] [box=0,0,981,65]:
+    - navigation [ref=e3] [box=0,0,981,64]:
+      - link "林健" [ref=e4] [cursor=pointer] [box=0,18,40,28]:
+        - /url: /
+      - generic [ref=e5] [box=823,19,157,26]:
+        - list [ref=e6] [box=823,19,106,26]:
+          - listitem [ref=e7] [box=823,19,28,26]:
+            - link "首页" [ref=e8] [cursor=pointer] [box=823,23,28,18]:
+              - /url: /
+          - listitem [ref=e9] [box=855,19,28,26]:
+            - link "博客" [ref=e10] [cursor=pointer] [box=855,23,28,18]:
+              - /url: /blog
+          - listitem [ref=e11] [box=887,19,42,26]:
+            - link "关于我" [ref=e12] [cursor=pointer] [box=887,23,42,18]:
+              - /url: /about
+        - generic [ref=e13] [box=937,23,43,18]:
+          - link "EN" [ref=e14] [cursor=pointer] [box=938,23,17,18]:
+            - /url: /en/about
+          - button "Toggle theme" [ref=e15] [box=963,23,18,18]:
+            - img [ref=e16] [box=964,24,16,16]
+  - main [ref=e18] [box=0,-135,981,4258]:
+    - generic [ref=e20] [box=141,49,700,292]:
+      - img "林健" [ref=e23] [box=422,46,136,136]
+      - heading "林健" [level=1] [ref=e25] [box=141,199,700,60]
+      - paragraph [ref=e26] [box=141,259,700,32]: 前端架构师
+      - paragraph [ref=e27] [box=141,291,672,29]: 11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化
+      - generic [ref=e28] [box=141,320,700,20]:
+        - link "job.ziya@outlook.com" [ref=e29] [cursor=pointer] [box=141,320,161,20]:
+          - /url: mailto:job.ziya@outlook.com
+          - img [ref=e30] [box=141,322,16,16]
+          - text: job.ziya@outlook.com
+        - generic [ref=e32] [box=326,320,245,20]:
+          - img [ref=e33] [box=326,322,16,16]
+          - text: 中南大学 · 计算机科学与技术 (2015)
+        - generic [ref=e37] [box=595,320,245,20]:
+          - img [ref=e38] [box=595,322,16,16]
+          - text: 中文（母语）/ English（工作沟通）
+      - img [ref=e41] [box=478,278,24,24]
+    - generic [ref=e43] [box=0,524,981,3599]:
+      - generic [ref=e44] [box=40,524,901,645]:
+        - heading "核心能力" [level=2] [ref=e45] [box=40,604,901,45]
+        - img [ref=e49] [box=176,689,400,400]:
+          - generic [ref=e66] [box=352,693,48,16]: 架构设计
+          - generic [ref=e67] [box=513,786,48,16]: 性能优化
+          - generic [ref=e68] [box=513,972,48,16]: 跨端开发
+          - generic [ref=e69] [box=352,1065,48,16]: 团队管理
+          - generic [ref=e70] [box=185,972,60,16]: 前端工程化
+          - generic [ref=e71] [box=185,786,60,16]: 大型中后台
+      - generic [ref=e72] [box=40,1265,901,610]:
+        - heading "工作经历" [level=2] [ref=e73] [box=40,1345,901,45]
+        - generic [ref=e75] [box=40,1430,896,365]:
+          - generic [ref=e81] [cursor=pointer] [box=40,1430,416,91]:
+            - generic [ref=e82] [box=41,1437,97,16]: 2022.01 – 2026.04
+            - heading "顺丰科技有限公司" [level=3] [ref=e83] [box=41,1456,414,28]
+            - paragraph [ref=e84] [box=41,1484,414,20]: 高级前端开发工程师
+            - list [ref=e85] [box=41,1504,414,281]
+            - generic [ref=e114] [box=41,1504,414,16]
+          - generic [ref=e122] [cursor=pointer] [box=520,1521,416,91]:
+            - generic [ref=e123] [box=521,1528,93,16]: 2018.09 – 2021.12
+            - heading "深圳柔宇电子技术有限公司" [level=3] [ref=e124] [box=521,1547,414,28]
+            - paragraph [ref=e125] [box=521,1575,414,20]: 高级前端开发工程师
+            - list [ref=e126] [box=521,1595,414,201]
+            - generic [ref=e147] [box=521,1595,414,16]
+          - generic [ref=e155] [cursor=pointer] [box=40,1612,416,91]:
+            - generic [ref=e156] [box=41,1619,94,16]: 2017.06 – 2018.07
+            - heading "深圳信锐网科技术有限公司" [level=3] [ref=e157] [box=41,1638,414,28]
+            - paragraph [ref=e158] [box=41,1666,414,20]: 前端开发工程师
+            - list [ref=e159] [box=41,1686,414,141]
+            - generic [ref=e176] [box=41,1686,414,16]
+          - generic [ref=e184] [cursor=pointer] [box=520,1703,416,91]:
+            - generic [ref=e185] [box=521,1710,94,16]: 2015.07 – 2017.03
+            - heading "深圳联友科技有限公司" [level=3] [ref=e186] [box=521,1730,414,28]
+            - paragraph [ref=e187] [box=521,1758,414,20]: 前端开发工程师
+            - list [ref=e188] [box=521,1778,414,161]
+            - generic [ref=e205] [box=521,1778,414,16]
+      - generic [ref=e209] [box=40,1970,901,1029]:
+        - heading "项目经历" [level=2] [ref=e210] [box=40,2050,901,45]
+        - generic [ref=e212] [box=40,2135,901,784]:
+          - generic [ref=e214] [cursor=pointer] [box=40,2135,438,380]:
+            - generic [ref=e215] [box=40,2135,438,380]
+            - generic [ref=e227] [box=40,2135,438,380]
+          - generic [ref=e264] [cursor=pointer] [box=502,2135,438,380]:
+            - generic [ref=e265] [box=502,2135,438,380]
+            - generic [ref=e277] [box=502,2135,438,380]
+          - generic [ref=e308] [cursor=pointer] [box=40,2539,438,380]:
+            - generic [ref=e309] [box=40,2539,438,380]
+            - generic [ref=e321] [box=40,2539,438,380]
+          - generic [ref=e353] [cursor=pointer] [box=502,2539,438,380]:
+            - generic [ref=e354] [box=502,2539,438,380]
+            - generic [ref=e366] [box=502,2539,438,380]
+      - generic [ref=e396] [box=40,3095,901,803]:
+        - heading "技术栈" [level=2] [ref=e397] [box=40,3175,901,45]
+        - img [ref=e401] [box=40,3260,901,558]:
+          - generic [ref=e410] [box=313,3325,170,120]:
+            - generic [ref=e414] [box=313,3325,23,14]: 框架
+            - generic [ref=e418] [box=358,3345,21,11]: Vue 3
+            - generic [ref=e422] [box=355,3366,21,11]: Vue 2
+            - generic [ref=e426] [box=348,3388,31,11]: React 18
+            - generic [ref=e430] [box=346,3410,29,11]: Angular
+            - generic [ref=e434] [box=346,3431,25,11]: Nuxt.js
+          - generic [ref=e435] [box=278,3415,205,98]:
+            - generic [ref=e439] [box=278,3415,22,14]: 架构
+            - generic [ref=e443] [box=299,3435,68,11]: Module Federation
+            - generic [ref=e447] [box=297,3456,66,11]: Web Components
+            - generic [ref=e451] [box=321,3478,14,11]: SSR
+            - generic [ref=e455] [box=318,3500,14,11]: SPA
+          - generic [ref=e456] [box=296,3515,187,98]:
+            - generic [ref=e460] [box=296,3515,22,14]: 语言
+            - generic [ref=e464] [box=331,3534,38,11]: TypeScript
+            - generic [ref=e468] [box=330,3556,37,11]: JavaScript
+            - generic [ref=e472] [box=333,3577,26,11]: HTML5
+            - generic [ref=e476] [box=334,3599,18,11]: CSS3
+          - generic [ref=e477] [box=301,3614,182,98]:
+            - generic [ref=e481] [box=301,3614,44,14]: 后端协作
+            - generic [ref=e485] [box=364,3633,28,11]: Node.js
+            - generic [ref=e489] [box=362,3655,27,11]: Express
+            - generic [ref=e493] [box=366,3676,13,11]: Koa
+            - generic [ref=e497] [box=350,3698,40,11]: RESTful API
+          - generic [ref=e498] [box=499,3361,215,98]:
+            - generic [ref=e502] [box=645,3361,22,14]: 构建
+            - generic [ref=e506] [box=664,3381,22,11]: Vite 4
+            - generic [ref=e510] [box=661,3402,34,11]: Webpack
+            - generic [ref=e514] [box=668,3424,26,11]: Rspack
+            - generic [ref=e518] [box=664,3446,38,11]: Monorepo
+          - generic [ref=e519] [box=499,3460,233,98]:
+            - generic [ref=e523] [box=663,3460,22,14]: 跨端
+            - generic [ref=e527] [box=679,3480,29,11]: Electron
+            - generic [ref=e531] [box=687,3502,16,11]: Taro
+            - generic [ref=e535] [box=683,3523,30,11]: Cordova
+            - generic [ref=e539] [box=693,3545,17,11]: Ionic
+          - generic [ref=e540] [box=499,3560,206,98]:
+            - generic [ref=e544] [box=636,3560,25,14]: UI 库
+            - generic [ref=e548] [box=643,3579,46,11]: Element Plus
+            - generic [ref=e552] [box=659,3601,20,11]: iView
+            - generic [ref=e556] [box=651,3622,40,11]: Ant Design
+            - generic [ref=e560] [box=665,3644,18,11]: FinUI
+          - generic [ref=e561] [box=499,3659,222,77]:
+            - generic [ref=e565] [box=654,3659,33,14]: 业务库
+            - generic [ref=e569] [box=668,3678,33,11]: SpreadJS
+            - generic [ref=e573] [box=673,3700,27,11]: ECharts
+            - generic [ref=e577] [box=662,3721,55,11]: Rich Text Editor
+      - heading "评论" [level=3] [ref=e581] [box=40,3995,901,28]
+  - contentinfo [ref=e583] [box=0,4123,981,46]:
+    - generic [ref=e584] [box=0,4124,981,46]:
+      - paragraph [ref=e585] [box=40,4124,901,26]: © 2026 林健. 版权所有
+      - paragraph [ref=e586] [box=40,4150,901,20]: 由 Astro 驱动
+  - generic [ref=e589] [box=404,925,173,40]:
+    - button "Menu" [ref=e590] [box=404,925,42,40]:
+      - img [ref=e592] [box=417,935,20,20]
+      - generic [box=399,844,56,26]: Menu
+    - button "Inspect" [ref=e596] [box=446,925,44,40]:
+      - img [ref=e598] [box=458,935,20,20]
+      - generic [box=435,844,66,26]: Inspect
+    - button "Audit" [ref=e600] [box=490,925,44,40]:
+      - generic [ref=e601] [box=502,935,20,20]:
+        - img [ref=e602] [box=502,935,20,20]
+        - img [ref=e605] [box=518,931,10,10]
+      - generic [box=485,844,54,26]: Audit
+    - button "Settings" [ref=e608] [box=535,925,42,40]:
+      - img [ref=e610] [box=544,935,20,20]
+      - generic [box=518,844,72,26]: Settings

@@ -1,0 +1,91 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Comments from '../../components/Comments.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts
+    .filter((post) => !post.id.startsWith('en/'))
+    .map((post) => ({
+      params: { slug: post.id },
+      props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const title = `${post.data.title} | 林健`;
+---
+
+<BaseLayout title={title} description={post.data.description} lang="zh">
+  <div class="container max-w-4xl" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
+    <article class="flex flex-col w-full" style="gap: var(--title-gap);">
+      <!-- Back link -->
+      <a
+        href="/blog"
+        class="inline-flex items-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors self-start"
+        style="gap: var(--space-2);"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        <span class="text-sm font-mono">返回列表</span>
+      </a>
+
+      <!-- Header -->
+      <header class="flex flex-col w-full" style="gap: var(--space-6);">
+        {post.data.heroImage && (
+          <img
+            src={post.data.heroImage}
+            alt={post.data.title}
+            class="w-full h-64 object-cover rounded-[var(--radius)]"
+          />
+        )}
+
+        <div class="flex flex-col" style="gap: var(--space-4);">
+          <h1 class="text-4xl font-bold text-[var(--color-text)] leading-tight">
+            {post.data.title}
+          </h1>
+
+          <div class="flex flex-wrap items-center text-sm text-[var(--color-text-secondary)] font-mono" style="gap: var(--space-3) var(--space-4);">
+            <time datetime={post.data.pubDate.toISOString()}>
+              发布于 {post.data.pubDate.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </time>
+            {post.data.updatedDate && (
+              <span>
+                更新于 {post.data.updatedDate.toLocaleDateString('zh-CN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </span>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="prose prose-lg max-w-none">
+        <Content />
+      </div>
+
+      <!-- Comments -->
+      <Comments lang="zh" />
+    </article>
+  </div>
+</BaseLayout>
+
+<style is:global>
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    color: var(--color-accent);
+  }
+</style>
