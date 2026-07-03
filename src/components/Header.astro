@@ -49,16 +49,16 @@ function isActive(href: string): boolean {
             <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
           </radialGradient>
         </defs>
-        {/* Outer halo (matches cursor's 22px radial gradient) */}
-        <circle cx="16" cy="16" r="14" fill="url(#logo-halo)" />
-        {/* Outer ring (matches cursor's 16px stroke) */}
-        <circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.75" />
-        {/* Inner ring (matches cursor's 10px stroke) */}
-        <circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1" stroke-opacity="0.4" />
-        {/* Filled core (matches cursor's 4px fill) */}
-        <circle cx="16" cy="16" r="3" fill="currentColor" />
-        {/* Bright center dot (matches cursor's 1.5px white/dark center) */}
-        <circle cx="16" cy="16" r="1" fill="currentColor" stroke="currentColor" stroke="var(--color-bg)" stroke-width="0.5" />
+        {/* Outer halo — fills the 32px viewBox */}
+        <circle cx="16" cy="16" r="16" fill="url(#logo-halo)" />
+        {/* Outer ring */}
+        <circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-opacity="0.75" />
+        {/* Inner ring */}
+        <circle cx="16" cy="16" r="8" fill="none" stroke="currentColor" stroke-width="1" stroke-opacity="0.4" />
+        {/* Filled core */}
+        <circle cx="16" cy="16" r="4" fill="currentColor" />
+        {/* Bright center dot */}
+        <circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="var(--color-bg)" stroke-width="0.5" />
       </svg>
     </a>
 
