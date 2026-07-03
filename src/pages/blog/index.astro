@@ -7,7 +7,7 @@ const posts = (await getCollection('blog'))
   .filter((post) => !post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const title = '博客 | 林健';
+const title = '博客 | 紫牙';
 const description = '分享 Web 开发、AI 工程化与架构实践';
 
 // All unique tags across all posts (for the filter bar).
@@ -51,7 +51,8 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
             type="search"
             placeholder="搜索博客标题、内容或标签…"
             aria-label="搜索博客"
-            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 py-2 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            style="height: 32px; padding: 2px 12px;"
           />
         </div>
 

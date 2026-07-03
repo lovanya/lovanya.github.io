@@ -51,7 +51,8 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
             type="search"
             placeholder="Search posts by title, content, or tag…"
             aria-label="Search blog"
-            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 py-2 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            style="height: 32px; padding: 2px 12px;"
           />
         </div>
 
