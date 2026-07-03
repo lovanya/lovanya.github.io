@@ -52,17 +52,18 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
             placeholder="搜索博客标题、内容或标签…"
             aria-label="搜索博客"
             class="w-full bg-[var(--color-bg-secondary)] text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/40"
-            style="height: 32px; padding: 2px 12px 2px 36px; border-radius: 9999px; border: 1px solid var(--color-accent-glow);"
+            style="height: 32px; padding: 2px 12px 2px 36px; border-radius: 4px; border: 1px solid var(--color-accent-glow);"
           />
         </div>
 
-        {/* Tag filter chips */}
+        {/* Tag filter chips — angular, cosmic-tech feel */}
         {allTags.length > 0 && (
           <div class="flex flex-wrap items-center justify-center" style="gap: var(--space-2);">
             <button
               type="button"
               data-tag=""
-              class="blog-tag-chip tag text-xs transition-colors border bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+              class="blog-tag-chip text-xs font-mono transition-colors border bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+              style="padding: 4px 10px; border-radius: 4px;"
             >
               全部 ({posts.length})
             </button>
@@ -70,9 +71,10 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
               <button
                 type="button"
                 data-tag={tag}
-                class="blog-tag-chip tag text-xs transition-colors border opacity-80 hover:opacity-100 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
+                class="blog-tag-chip text-xs font-mono transition-colors border opacity-80 hover:opacity-100 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
+                style="padding: 4px 10px; border-radius: 4px;"
               >
-                #{tag} ({tagCounts[tag]})
+                {tag} ({tagCounts[tag]})
               </button>
             ))}
           </div>

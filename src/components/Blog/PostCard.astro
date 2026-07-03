@@ -84,16 +84,15 @@ const tagHref = (tag: string) =>
     {description}
   </p>
 
-  {/* Tags (clickable filter chips — sibling links, never nested) */}
+  {/* Tags (simple inline text links with underline, no chip styling) */}
   {tags.length > 0 && (
-    <div class="flex flex-wrap justify-start" style="gap: var(--space-1);">
+    <div class="flex flex-wrap justify-start" style="gap: var(--space-3);">
       {tags.map((tag) => (
         <a
           href={tagHref(tag)}
-          class="tag transition-colors border border-transparent hover:border-[var(--color-accent)]/30"
-          style="text-decoration: none;"
+          class="text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:underline underline-offset-4 transition-colors"
         >
-          #{tag}
+          {tag}
         </a>
       ))}
     </div>
