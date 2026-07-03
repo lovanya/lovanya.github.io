@@ -26,86 +26,84 @@ const readTime = Math.ceil(description.length / 200);
 // can read it from a data attribute without a fetch.
 const searchHaystack = `${title} ${description} ${tags.join(' ')}`.toLowerCase();
 
+const postHref = lang === 'zh' ? `/blog/${slug}` : `/en/blog/${slug}`;
 const tagHref = (tag: string) =>
   lang === 'zh' ? `/blog?tag=${encodeURIComponent(tag)}` : `/en/blog?tag=${encodeURIComponent(tag)}`;
 ---
 
 <article
-  class="card post-card group flex flex-col"
+  class="card post-card flex flex-col"
   data-search={searchHaystack}
   data-tags={tags.join(',')}
+  style="gap: var(--space-3);"
 >
-  <a
-    href={lang === 'zh' ? `/blog/${slug}` : `/en/blog/${slug}`}
-    class="flex flex-col h-full no-underline"
-    style="gap: var(--space-3);"
+  {heroImage && (
+    <a href={postHref} class="block -mx-6 -mt-6 overflow-hidden relative">
+      <img
+        src={heroImage}
+        alt={title}
+        class="w-full h-48 object-cover transform hover:scale-105 transition-transform duration-500"
+      />
+      <div class="absolute inset-0 bg-gradient-to-t from-[var(--color-card)] via-transparent to-transparent"></div>
+      <div
+        class="absolute inset-0 opacity-20"
+        style="background-image: linear-gradient(rgba(0,229,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.1) 1px, transparent 1px); background-size: 20px 20px;"
+      ></div>
+    </a>
+  )}
+
+  {/* Meta line */}
+  <div
+    class="flex items-center text-xs text-[var(--color-text-secondary)] font-mono flex-wrap"
+    style="gap: var(--space-2);"
   >
-    {heroImage && (
-      <div class="-mx-6 -mt-6 overflow-hidden relative">
-        <img
-          src={heroImage}
-          alt={title}
-          class="w-full h-48 object-cover transform group-hover:scale-105 transition-transform duration-500"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-[var(--color-card)] via-transparent to-transparent"></div>
-        <div
-          class="absolute inset-0 opacity-20"
-          style="background-image: linear-gradient(rgba(0,229,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.1) 1px, transparent 1px); background-size: 20px 20px;"
-        ></div>
-      </div>
+    <span class="text-[var(--color-accent)] opacity-50">&gt;</span>
+    <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
+    {updatedDate && (
+      <span class="opacity-70">
+        · {lang === 'zh' ? '更新' : 'Updated'} {formatDate(updatedDate)}
+      </span>
     )}
+    <span class="opacity-70">· {readTime} min</span>
+  </div>
 
-    {/* Meta line */}
-    <div class="flex items-center text-xs text-[var(--color-text-secondary)] font-mono flex-wrap" style="gap: var(--space-2);">
-      <span class="text-[var(--color-accent)] opacity-50">&gt;</span>
-      <time datetime={pubDate.toISOString()}>{formatDate(pubDate)}</time>
-      {updatedDate && (
-        <span class="opacity-70">
-          · {lang === 'zh' ? '更新' : 'Updated'} {formatDate(updatedDate)}
-        </span>
-      )}
-      <span class="opacity-70">· {readTime} min</span>
-    </div>
-
-    {/* Title */}
-    <h2
-      class="text-lg font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors"
-      style="line-height: 1.5;"
-    >
-      {title}
-    </h2>
-
-    {/* Description */}
-    <p
-      class="text-sm text-[var(--color-text-secondary)]"
-      style="line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
-    >
-      {description}
-    </p>
-
-    {/* Tags (clickable filter chips) */}
-    {tags.length > 0 && (
-      <div class="flex flex-wrap justify-start" style="gap: var(--space-1);">
-        {tags.map((tag) => (
-          <a
-            href={tagHref(tag)}
-            class="tag transition-colors border border-transparent hover:border-[var(--color-accent)]/30"
-            style="text-decoration: none;"
-            onclick="event.stopPropagation()"
-          >
-            #{tag}
-          </a>
-        ))}
-      </div>
-    )}
+  {/* Title (now a standalone link, no longer wraps the whole card) */}
+  <a
+    href={postHref}
+    class="text-lg font-semibold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors"
+    style="line-height: 1.5; text-decoration: none;"
+  >
+    {title}
   </a>
+
+  {/* Description */}
+  <p
+    class="text-sm text-[var(--color-text-secondary)]"
+    style="line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"
+  >
+    {description}
+  </p>
+
+  {/* Tags (clickable filter chips — sibling links, never nested) */}
+  {tags.length > 0 && (
+    <div class="flex flex-wrap justify-start" style="gap: var(--space-1);">
+      {tags.map((tag) => (
+        <a
+          href={tagHref(tag)}
+          class="tag transition-colors border border-transparent hover:border-[var(--color-accent)]/30"
+          style="text-decoration: none;"
+        >
+          #{tag}
+        </a>
+      ))}
+    </div>
+  )}
 </article>
 
 
 <style>
   .post-card {
     position: relative;
-    /* Make the card clickable as a whole; nested tag links override via z-index */
   }
 
   .post-card::after {
