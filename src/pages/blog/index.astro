@@ -36,7 +36,7 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
         <div class="relative w-full max-w-xl">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] pointer-events-none"
+            class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-accent)] pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -51,8 +51,8 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
             type="search"
             placeholder="搜索博客标题、内容或标签…"
             aria-label="搜索博客"
-            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
-            style="height: 32px; padding: 2px 12px;"
+            class="w-full bg-[var(--color-bg-secondary)] text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            style="height: 32px; padding: 2px 12px 2px 36px; border-radius: 9999px; border: 1px solid var(--color-accent-glow);"
           />
         </div>
 
