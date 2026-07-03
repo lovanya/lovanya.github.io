@@ -21,9 +21,20 @@ const formatDate = (date: Date) => {
 };
 
 const readTime = Math.ceil(description.length / 200);
+
+// Encode the post's searchable text once so the client-side search script
+// can read it from a data attribute without a fetch.
+const searchHaystack = `${title} ${description} ${tags.join(' ')}`.toLowerCase();
+
+const tagHref = (tag: string) =>
+  lang === 'zh' ? `/blog?tag=${encodeURIComponent(tag)}` : `/en/blog?tag=${encodeURIComponent(tag)}`;
 ---
 
-<article class="card group overflow-hidden post-card h-full">
+<article
+  class="card group overflow-hidden post-card h-full"
+  data-search={searchHaystack}
+  data-tags={tags.join(',')}
+>
   <a href={lang === 'zh' ? `/blog/${slug}` : `/en/blog/${slug}`} class="flex flex-col h-full" style="gap: var(--space-3);">
     {heroImage && (
       <div class="-mx-6 -mt-6 overflow-hidden relative">
@@ -63,11 +74,17 @@ const readTime = Math.ceil(description.length / 200);
         {description}
       </p>
 
-      <!-- Tags -->
+      <!-- Tags (clickable filter chips) -->
       {tags.length > 0 && (
         <div class="flex flex-wrap" style="gap: var(--space-2);">
           {tags.map((tag) => (
-            <span class="tag text-xs">{tag}</span>
+            <a
+              href={tagHref(tag)}
+              class="tag text-xs transition-colors border border-transparent hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
+              onclick="event.stopPropagation()"
+            >
+              #{tag}
+            </a>
           ))}
         </div>
       )}
@@ -83,6 +100,7 @@ const readTime = Math.ceil(description.length / 200);
     </div>
   </a>
 </article>
+
 
 <style>
   .post-card {

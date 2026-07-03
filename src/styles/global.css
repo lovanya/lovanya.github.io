@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4.
+   Without this, `dark:` variants only respond to prefers-color-scheme,
+   but ThemeToggle.astro switches the .dark class on <html> at runtime. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ═══════════════════════════════════════════════════
    Cold Tech Design System — 冷科技风
    True Light + Dark mode

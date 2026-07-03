@@ -8,7 +8,18 @@ const posts = (await getCollection('blog'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 const title = '博客 | 林健';
-const description = '分享 Web 开发的相关知识';
+const description = '分享 Web 开发、AI 工程化与架构实践';
+
+// All unique tags across all posts (for the filter bar).
+const allTags = Array.from(
+  new Set(posts.flatMap((post) => post.data.tags ?? [])),
+).sort();
+
+// Tag counts so the filter bar can show "(N)" next to each tag.
+const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
+  acc[tag] = posts.filter((p) => p.data.tags?.includes(tag)).length;
+  return acc;
+}, {});
 ---
 
 <BaseLayout title={title} description={description} lang="zh">
@@ -19,7 +30,68 @@ const description = '分享 Web 开发的相关知识';
         <p class="text-[var(--color-text-secondary)]">{description}</p>
       </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full" style="gap: var(--space-6);">
+      {/* Search + tag filter controls (pure client-side filtering) */}
+      <div class="w-full flex flex-col" style="gap: var(--space-4);">
+        {/* Search input */}
+        <div class="relative w-full max-w-xl mx-auto">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path stroke-linecap="round" d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            id="blog-search"
+            type="search"
+            placeholder="搜索博客标题、内容或标签…"
+            aria-label="搜索博客"
+            class="w-full rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] pl-9 pr-3 py-2 text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-accent)]/60 focus:ring-1 focus:ring-[var(--color-accent)]/40"
+          />
+        </div>
+
+        {/* Tag filter chips */}
+        {allTags.length > 0 && (
+          <div class="flex flex-wrap items-center justify-center" style="gap: var(--space-2);">
+            <button
+              type="button"
+              data-tag=""
+              class="blog-tag-chip tag text-xs transition-colors border bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+            >
+              全部 ({posts.length})
+            </button>
+            {allTags.map((tag) => (
+              <button
+                type="button"
+                data-tag={tag}
+                class="blog-tag-chip tag text-xs transition-colors border opacity-80 hover:opacity-100 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
+              >
+                #{tag} ({tagCounts[tag]})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Active-filter indicator + result count */}
+        <div class="flex items-center justify-center text-xs font-mono text-[var(--color-text-secondary)]" style="gap: var(--space-3);">
+          <span id="blog-active-tag-row" class="hidden items-center" style="gap: var(--space-2);">
+            <span>已过滤标签</span>
+            <span id="blog-active-tag" class="text-[var(--color-accent)]"></span>
+            <button id="blog-clear-filter" type="button" class="underline hover:text-[var(--color-accent)]">清除</button>
+          </span>
+          <span id="blog-result-count" data-total={posts.length}>
+            {posts.length} 篇文章
+          </span>
+        </div>
+      </div>
+
+      {/* Posts grid */}
+      <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full" style="gap: var(--space-6);">
         {posts.map((post) => (
           <PostCard
             title={post.data.title}
@@ -27,11 +99,131 @@ const description = '分享 Web 开发的相关知识';
             pubDate={post.data.pubDate}
             updatedDate={post.data.updatedDate}
             heroImage={post.data.heroImage}
+            tags={post.data.tags}
             slug={post.id}
             lang="zh"
           />
         ))}
       </div>
+
+      {/* Empty state for client-side search */}
+      <div
+        id="blog-empty"
+        class="hidden w-full text-center text-sm text-[var(--color-text-secondary)] font-mono"
+        style="padding: var(--space-12) 0;"
+      >
+        没有匹配的博客。试试别的关键词？
+      </div>
     </div>
   </div>
 </BaseLayout>
+
+<script>
+  // Client-side filtering for both text search and tag chips.
+  // The site is statically generated, so we read query params from
+  // window.location and filter the already-rendered grid in the DOM.
+  type State = { q: string; tag: string };
+
+  function initBlogList() {
+    const input = document.getElementById('blog-search') as HTMLInputElement | null;
+    const grid = document.getElementById('blog-grid');
+    const empty = document.getElementById('blog-empty');
+    const counter = document.getElementById('blog-result-count');
+    const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.blog-tag-chip'));
+    const activeTagRow = document.getElementById('blog-active-tag-row');
+    const activeTagLabel = document.getElementById('blog-active-tag');
+    const clearBtn = document.getElementById('blog-clear-filter');
+    if (!input || !grid || !empty || !counter || !activeTagRow || !activeTagLabel) return;
+
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.post-card'));
+    const totalLabel = counter.dataset.total ?? String(cards.length);
+
+    const state: State = { q: '', tag: '' };
+
+    const updateUrl = () => {
+      const params = new URLSearchParams();
+      if (state.q) params.set('q', state.q);
+      if (state.tag) params.set('tag', state.tag);
+      const qs = params.toString();
+      const url = qs ? `?${qs}` : location.pathname;
+      history.replaceState(null, '', url);
+    };
+
+    const updateChips = () => {
+      chips.forEach((chip) => {
+        const t = chip.dataset.tag ?? '';
+        const isActive = t === state.tag;
+        chip.classList.toggle('bg-[var(--color-accent)]/15', isActive);
+        chip.classList.toggle('text-[var(--color-accent)]', isActive);
+        chip.classList.toggle('border-[var(--color-accent)]/30', isActive);
+        chip.classList.toggle('opacity-80', !isActive);
+      });
+    };
+
+    const updateActiveTagLabel = () => {
+      if (state.tag) {
+        activeTagLabel.textContent = `#${state.tag}`;
+        activeTagRow.classList.remove('hidden');
+        activeTagRow.classList.add('flex');
+      } else {
+        activeTagRow.classList.add('hidden');
+        activeTagRow.classList.remove('flex');
+      }
+    };
+
+    const apply = () => {
+      const q = state.q.toLowerCase();
+      const tag = state.tag;
+      let visible = 0;
+      cards.forEach((card) => {
+        const haystack = (card.dataset.search ?? '').toLowerCase();
+        const tags = (card.dataset.tags ?? '').split(',').filter(Boolean);
+        const matchText = !q || haystack.includes(q);
+        const matchTag = !tag || tags.includes(tag);
+        const match = matchText && matchTag;
+        card.classList.toggle('hidden', !match);
+        if (match) visible += 1;
+      });
+      empty.classList.toggle('hidden', visible !== 0);
+      counter.textContent = q || tag
+        ? `${visible} / ${totalLabel} 篇文章`
+        : `${totalLabel} 篇文章`;
+      updateChips();
+      updateActiveTagLabel();
+      updateUrl();
+    };
+
+    input.addEventListener('input', () => {
+      state.q = input.value.trim();
+      apply();
+    });
+
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const t = chip.dataset.tag ?? '';
+        state.tag = state.tag === t ? '' : t;
+        apply();
+      });
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      state.tag = '';
+      apply();
+    });
+
+    // Pre-fill from query string
+    const params = new URLSearchParams(location.search);
+    const initialQ = params.get('q');
+    const initialTag = params.get('tag') ?? '';
+    if (initialQ) {
+      input.value = initialQ;
+      state.q = initialQ.trim();
+    }
+    if (initialTag) state.tag = initialTag;
+
+    apply();
+  }
+
+  initBlogList();
+  document.addEventListener('astro:page-load', initBlogList);
+</script>
