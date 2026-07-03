@@ -7,7 +7,7 @@ const posts = (await getCollection('blog'))
   .filter((post) => !post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const siteTitle = '林健的技术博客';
+const siteTitle = '紫牙的技术博客';
 const siteDescription = '11 年前端经验 | 企业级中后台架构设计 | 微前端 / 跨端 / 性能优化';
 ---
 
@@ -25,7 +25,7 @@ const siteDescription = '11 年前端经验 | 企业级中后台架构设计 | �
           <p class="font-mono text-xs text-[var(--color-accent)] tracking-widest opacity-60">{'// WELCOME TO MY BLOG'}</p>
           <div class="flex flex-col items-center" style="gap: var(--space-4);">
             <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-text)] tracking-tight">
-              你好，我是<span class="text-[var(--color-accent)]">林健</span>
+              你好，我是<span class="text-[var(--color-accent)]">紫牙</span>
             </h1>
             <p class="text-base md:text-lg text-[var(--color-text-secondary)] max-w-2xl leading-relaxed font-mono">
               {siteDescription}

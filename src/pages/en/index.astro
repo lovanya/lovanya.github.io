@@ -7,7 +7,7 @@ const posts = (await getCollection('blog'))
   .filter((post) => post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const siteTitle = "Jian Lin's Tech Blog";
+const siteTitle = "Ziya's Tech Blog";
 const siteDescription = '11 Years of Experience | Enterprise Web Architecture | Micro-Frontend / Cross-Platform / Performance';
 ---
 
@@ -24,7 +24,7 @@ const siteDescription = '11 Years of Experience | Enterprise Web Architecture | 
           <p class="font-mono text-xs text-[var(--color-accent)] tracking-widest opacity-60">{'// WELCOME TO MY BLOG'}</p>
           <div class="flex flex-col items-center" style="gap: var(--space-4);">
             <h1 class="text-4xl md:text-5xl font-bold text-[var(--color-text)] tracking-tight">
-              Hi, I'm <span class="text-[var(--color-accent)]">Jian Lin</span>
+              Hi, I'm <span class="text-[var(--color-accent)]">Ziya</span>
             </h1>
             <p class="text-base md:text-lg text-[var(--color-text-secondary)] max-w-2xl leading-relaxed font-mono">
               {siteDescription}

@@ -7,7 +7,7 @@ const posts = (await getCollection('blog'))
   .filter((post) => post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const title = 'Blog | Jian Lin';
+const title = 'Blog | Ziya';
 const description = 'Notes on web development, AI engineering, and architecture';
 
 // All unique tags across all posts (for the filter bar).
@@ -51,12 +51,13 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
             type="search"
             placeholder="Search posts by title, content, or tag…"
             aria-label="Search blog"
-            class="w-full bg-[var(--color-bg-secondary)] text-sm font-mono text-[var(--color-text)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/40"
+            class="w-full bg-[var(--color-bg-secondary)] text-sm font-mono text-[var(--color-accent)] placeholder:text-[var(--color-text-secondary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]/40"
             style="height: 32px; padding: 2px 12px 2px 36px; border-radius: 4px; border: 1px solid var(--color-accent-glow);"
           />
         </div>
 
-        {/* Tag filter chips — angular, cosmic-tech feel */}
+        {/* Tag filter chips — angular, cosmic-tech feel. Inactive chips use a
+            muted accent (opacity + /20 border) so the active one stands out. */}
         {allTags.length > 0 && (
           <div class="flex flex-wrap items-center justify-center" style="gap: var(--space-2);">
             <button
@@ -71,8 +72,8 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
               <button
                 type="button"
                 data-tag={tag}
-                class="blog-tag-chip text-xs font-mono transition-colors border opacity-80 hover:opacity-100 hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
-                style="padding: 4px 10px; border-radius: 4px;"
+                class="blog-tag-chip text-xs font-mono transition-colors border hover:opacity-100"
+                style="padding: 4px 10px; border-radius: 4px; color: var(--color-accent); opacity: 0.6; border-color: var(--color-accent);"
               >
                 {tag} ({tagCounts[tag]})
               </button>
@@ -156,10 +157,17 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
       chips.forEach((chip) => {
         const t = chip.dataset.tag ?? '';
         const isActive = t === state.tag;
-        chip.classList.toggle('bg-[var(--color-accent)]/15', isActive);
-        chip.classList.toggle('text-[var(--color-accent)]', isActive);
-        chip.classList.toggle('border-[var(--color-accent)]/30', isActive);
-        chip.classList.toggle('opacity-80', !isActive);
+        if (isActive) {
+          chip.style.opacity = '1';
+          chip.style.background = 'var(--color-accent)';
+          chip.style.color = 'var(--color-bg)';
+          chip.style.borderColor = 'var(--color-accent)';
+        } else {
+          chip.style.opacity = '0.6';
+          chip.style.background = 'transparent';
+          chip.style.color = 'var(--color-accent)';
+          chip.style.borderColor = 'var(--color-accent)';
+        }
       });
     };
 

@@ -1,6 +1,6 @@
 export const SITE_TITLE = {
-  zh: '林健的技术博客',
-  en: "Jian Lin's Tech Blog",
+  zh: '紫牙的博客',
+  en: "Ziya's Tech Blog",
 };
 
 export const SITE_DESCRIPTION = {

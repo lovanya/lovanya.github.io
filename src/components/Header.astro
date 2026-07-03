@@ -26,40 +26,72 @@ function isActive(href: string): boolean {
   <!-- Top accent line -->
   <div class="h-px w-full bg-gradient-to-r from-transparent via-[var(--color-accent)]/40 to-transparent"></div>
 
-  <nav class="max-w-6xl mx-auto flex items-center justify-between" style="padding: 0 var(--space-8); height: 3.5rem;">
-    <a href={lang === 'zh' ? '/' : '/en/'} class="text-lg font-bold text-[var(--color-text)] hover:text-[var(--color-accent)] transition-colors font-mono tracking-tight">
-      <span class="text-[var(--color-accent)]">&lt;</span>{lang === 'zh' ? '林健' : 'Jian Lin'}<span class="text-[var(--color-accent)]"> /&gt;</span>
+  <nav
+    class="max-w-6xl mx-auto grid grid-cols-3 items-center"
+    style="padding: 0 var(--space-8); height: 3.5rem; column-gap: var(--space-4);"
+  >
+    {/* Left: galaxy icon (replaces "&lt;紫牙 /&gt;" text logo) */}
+    <a
+      href={lang === 'zh' ? '/' : '/en/'}
+      class="flex items-center justify-self-start text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] transition-colors"
+      aria-label={lang === 'zh' ? '返回首页' : 'Home'}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        class="h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        {/* Spiral galaxy: 3 arms around a glowing core */}
+        <circle cx="16" cy="16" r="2" fill="currentColor" />
+        <path d="M16 14 A6 6 0 0 1 22 16" />
+        <path d="M18 16 A6 6 0 0 1 16 22" />
+        <path d="M14 18 A6 6 0 0 1 10 16" />
+        <path d="M16 10 A6 6 0 0 0 10 14" />
+        {/* Star sparkles around the galaxy */}
+        <path d="M27 5 L27.5 6.5 L29 7 L27.5 7.5 L27 9 L26.5 7.5 L25 7 L26.5 6.5 Z" fill="currentColor" stroke="none" />
+        <path d="M5 25 L5.4 26 L6.4 26.4 L5.4 26.8 L5 27.8 L4.6 26.8 L3.6 26.4 L4.6 26 Z" fill="currentColor" stroke="none" />
+        <circle cx="27" cy="22" r="0.8" fill="currentColor" stroke="none" />
+        <circle cx="6" cy="9" r="0.6" fill="currentColor" stroke="none" />
+      </svg>
     </a>
 
-    <div class="flex items-center" style="gap: var(--space-2);">
-      <ul class="hidden md:flex items-center" style="gap: var(--space-1);">
-        {navItems.map((item) => (
-          <li>
-            <a
-              href={item.href}
-              class:list={[
-                'rounded text-xs font-mono transition-all',
-                isActive(item.href)
-                  ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20'
-                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-secondary)]',
-              ]}
-              style="padding: var(--space-2) var(--space-4);"
-            >
-              {item.label}
-            </a>
-          </li>
-        ))}
-      </ul>
+    {/* Center: nav links (truly centered thanks to grid 3-col) */}
+    <ul class="hidden md:flex items-center justify-center" style="gap: var(--space-1);">
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class:list={[
+              'rounded text-xs font-mono transition-all',
+              isActive(item.href)
+                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20'
+                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-secondary)]',
+            ]}
+            style="padding: var(--space-2) var(--space-4);"
+          >
+            {item.label}
+          </a>
+        </li>
+      ))}
+    </ul>
 
+    {/* Right: language + theme */}
+    <div class="flex items-center justify-self-end" style="gap: var(--space-2);">
       <div
-        class="flex items-center border-l border-[var(--color-border)]"
-        style="gap: var(--space-2); margin-left: var(--space-2); padding-left: var(--space-2);"
+        class="hidden md:flex items-center border-l border-[var(--color-border)]"
+        style="gap: var(--space-2); padding-left: var(--space-2);"
       >
         <LanguageSwitcher lang={lang} currentPath={currentPath} />
         <ThemeToggle />
       </div>
 
-      <!-- Mobile menu button -->
+      {/* Mobile menu button */}
       <button
         id="mobile-menu-btn"
         class="md:hidden rounded text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
