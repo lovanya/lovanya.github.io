@@ -31,9 +31,9 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
       </header>
 
       {/* Search + tag filter controls (pure client-side filtering) */}
-      <div class="w-full flex flex-col" style="gap: var(--space-4);">
+      <div class="w-full flex flex-col items-center" style="gap: var(--space-4);">
         {/* Search input */}
-        <div class="relative w-full max-w-xl mx-auto">
+        <div class="relative w-full max-w-xl">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-secondary)] pointer-events-none"
