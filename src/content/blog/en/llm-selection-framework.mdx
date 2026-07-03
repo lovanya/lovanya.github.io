@@ -1,0 +1,209 @@
+---
+title: "Closed vs Open-Source LLMs: An Architect's Decision Framework"
+description: Stop picking models by gut feel — 5 evaluation dimensions, three selection tiers, API vs self-hosting cost math, and a hybrid routing strategy.
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'selection']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The previous two posts laid out the LLM fundamentals and prompt craft. From here on, we move into **engineering decisions**. The first is: **which model do you actually pick?**
+
+In 2023-2024 the answer was simple: OpenAI for closed, Llama for open. The 2026 reality is messier:
+
+- On the closed side, Anthropic Claude has caught up or pulled ahead on coding and long-context tasks.
+- On the open side, Qwen and DeepSeek are matching or beating GPT-4o on multiple benchmarks.
+- Model selection is now a multi-objective optimization problem.
+
+This post gives you an **architect-grade decision framework** so picking a model becomes accounting + needs-matching, not vibes.
+
+## 1. Five Evaluation Dimensions
+
+Selecting an LLM is like selecting a database — there's no "best", only "best fit." Score each new project along these five axes:
+
+<Mermaid client:load caption="Figure 1: 5-dimension selection radar" chart={`flowchart TD
+  A[LLM Selection] --> B[Capability]
+  A --> C[Cost]
+  A --> D[Privacy / Compliance]
+  A --> E[Latency]
+  A --> F[Customization]`} />
+
+### Dimension 1: Capability
+
+"Can it do the job" is the floor. Capability splits into:
+
+- **General reasoning / math / code**: MMLU, HumanEval, LiveCodeBench
+- **Chinese-language performance**: C-Eval, CMMLU — many English benchmarks miss this
+- **Long-context handling**: NIAH (Needle-in-a-Haystack), Lost-in-the-Middle robustness
+- **Function calling / tool use**: structured-output accuracy
+- **Multimodal**: image understanding, chart parsing (if needed)
+
+> **Pitfall.** Benchmark scores ≠ real-world business outcomes. **Always run 30-50 case evaluations on your own data** (a dedicated eval post is coming later).
+
+### Dimension 2: Cost
+
+Pricing is per-token, but **four hidden variables** change the math:
+
+- **Input vs output price spread** — output is typically 3-4x more expensive.
+- **Prompt-cache discounts** — OpenAI and Anthropic hit cache at 90% off.
+- **Batch API discounts** — offline workloads on batch endpoints are 50% cheaper.
+- **Long-context premiums** — some models surcharge beyond 200K.
+
+Back-of-envelope: **monthly cost ≈ monthly requests × avg (input_tokens × input_price + output_tokens × output_price)**.
+
+### Dimension 3: Privacy / Compliance
+
+- Customer / medical / financial data → **must** self-host or use a private cloud
+- Internal knowledge bases → closed APIs usually fine, but strip PII first
+- Cross-border users → GDPR / CCPA; open-source self-hosting is the most controllable option
+
+**Hard rule:** compliance is a hard requirement, not a trade-off. **If it doesn't pass compliance, it's out. No exceptions.**
+
+### Dimension 4: Latency
+
+- Real-time interaction (chat / autocomplete): P95 < 2s
+- Background batch (document summarization): 10s+ is fine
+- Streaming TTFT (time-to-first-token): under 1s feels great
+
+Bigger models are typically **5-10x slower** than smaller ones. For latency-sensitive workloads, 70B is far more practical than 405B.
+
+### Dimension 5: Customization
+
+Includes:
+
+- **Fine-tuning capability** — open weights support full / LoRA / quantized tuning; closed APIs only OpenAI / Anthropic / Google offer fine-tuning endpoints
+- **Prompt-cache behavior** — caching support, hit rates, invalidation rules
+- **Tool-use protocol** — each vendor differs
+- **Data flywheel** — whether call data feeds back into training (many vendors default to opt-in; read the ToS)
+
+## 2. Closed-Source — When API Wins
+
+### Players: OpenAI GPT-4o / o1, Anthropic Claude Sonnet / Opus, Google Gemini
+
+**Strengths**:
+
+- **Capability lead** — still ahead on the hardest reasoning, coding, and long-context tasks
+- **Zero ops** — no GPU procurement, no inference optimization, no model upgrades to manage
+- **Fast iteration** — vendor upgrades ship to you instantly
+- **Enterprise SLA** — availability, compliance, audit all covered
+
+**Weaknesses**:
+
+- **Cost** — expensive, especially with long context and large outputs
+- **Data egress / privacy** — risk
+- **Vendor lock-in** — switching models means rewriting prompts, system messages, fine-tuning data
+- **Loss of control** — models can be deprecated, API behavior can change without notice
+
+**When to use**:
+
+- Small team, fast validation
+- Non-sensitive data + < 1M tokens / month
+- Need top-tier reasoning (financial analysis / complex code / multi-step planning)
+- No GPU ops capacity
+
+## 3. Open-Source — When Self-Hosting Pays Off
+
+### Players: Llama 3.x, Qwen 2.5, DeepSeek V3/V4, Mistral, GLM
+
+Take Qwen 2.5 as a concrete example (the [official Qwen blog](https://qwenlm.github.io/blog/qwen2.5-llm/) lists 7 sizes from 0.5B to 72B; the most production-relevant 7B / 14B / 32B all support 128K context):
+
+| Model | Params | Context | License |
+|------|-------|---------|---------|
+| Qwen2.5-7B | 7.6B | 128K | Apache 2.0 |
+| Qwen2.5-14B | 14.7B | 128K | Apache 2.0 |
+| Qwen2.5-32B | 32.5B | 128K | Apache 2.0 |
+| Qwen2.5-72B | 72.7B | 128K | Qwen License |
+
+DeepSeek has multiple generations live on Hugging Face ([deepseek-ai org page](https://huggingface.co/deepseek-ai)); V3 / V4 approach top closed models on many benchmarks, yet their API pricing is **a small fraction of GPT-4o** — the most dramatic cost-curve shift of 2025-2026.
+
+**Strengths**:
+
+- **Data control** — deploy in your own VPC
+- **Tunable** — full-parameter / LoRA / quantization all available
+- **Predictable cost** — one-time hardware + power, no per-token bill
+- **No lock-in** — weights are downloadable
+
+**Weaknesses**:
+
+- **High upfront investment** — GPU clusters (H100 / A100 / domestic alternatives)
+- **Heavy ops** — vLLM / TGI / TensorRT-LLM, monitoring, autoscaling
+- **Capability gap** — still 5-15% behind top closed on hardest benchmarks
+- **Licensing matters** — Qwen2.5-72B uses the Qwen License (not pure open source); Llama's Meta License has its own commercial limits
+
+**When to use**:
+
+- Hard data-compliance requirements
+- Large call volume (self-hosting ROI usually kicks in around **5M-10M tokens/day**)
+- Need deep customization (domain fine-tuning)
+- GPU ops capacity or budget
+
+## 4. Self-Hosting vs API — The Cost Math
+
+Rough comparison at July 2026 pricing:
+
+| Setup | Upfront | Monthly Ops | Capability Ceiling | Data Control |
+|-------|---------|-------------|--------------------|--------------|
+| Closed API (OpenAI/Anthropic) | $0 | Per-token | Top tier | Low |
+| Open API (DeepSeek / Qwen) | $0 | Per-token | Near top | Medium |
+| Self-host 7B (1× H100) | ~$30K | ~$1K/mo | Medium | High |
+| Self-host 70B (8× H100) | ~$250K | ~$8K/mo | Medium-high | High |
+| Self-host 405B (multi-node) | ~$1M+ | ~$30K/mo | Top tier | High |
+
+**Heuristics**:
+
+- **< 5M tokens/day** — closed API is always cheaper
+- **5M-50M tokens/day** — open APIs (DeepSeek / Qwen) are the value sweet spot
+- **> 50M tokens/day + compliance** — self-hosting starts to pay off
+- **Spiky traffic** — APIs scale elastically; self-hosting needs spare capacity
+
+## 5. Hybrid Architecture — Routing + Fallback
+
+In production, **one model rarely covers every use case.** Mature architectures look like this:
+
+<Mermaid client:load caption="Figure 2: LLM routing architecture" chart={`flowchart LR
+  U[User Request] --> R{Router}
+  R -->|Simple query| S[Small Model<br/>7B / Haiku]
+  R -->|Hard reasoning| L[Large Model<br/>Claude Opus / GPT-4o]
+  R -->|Sensitive data| P[Private Deploy<br/>Qwen-72B]
+  R -->|Fallback| F[Backup Vendor<br/>Bedrock / DeepSeek]
+  L --> A[Aggregate]
+  S --> A
+  P --> A
+  F --> A`} />
+
+**Implementation notes**:
+
+1. **The router is itself a small model or heuristic** (prompt length, keyword classification, etc.)
+2. **Always have a fallback path** — primary vendor outage should auto-route to backup
+3. **A/B test the routing logic** — run an eval set to confirm which queries should go where
+4. **Standardize the interface** — wrap multiple APIs with Vercel AI SDK, LangChain, or LiteLLM so switching is a config change
+
+## Pitfalls for Senior Architects
+
+1. **Don't be fooled by "open-source is free."** Self-hosting hardware + ops can cost 10x more than API at low volume. **For small workloads, closed APIs are always cheaper.**
+2. **Read the license carefully.** Llama 3 7B+ has commercial restrictions (free below 700M MAU; contact Meta above). Qwen2.5-72B is on the Qwen License, not Apache. **Legal review before production launch is mandatory.**
+3. **Don't trust MMLU / HumanEval alone.** Both saturated in 2024; two models within 1 point on these benchmarks can differ 30% on real business tasks. **You need a domain-specific eval set.**
+4. **Don't lock in on day one.** Spend the first 2 weeks running multiple APIs in parallel (OpenAI + Anthropic + DeepSeek) on real traffic. **That data beats any leaderboard.**
+5. **Build an escape hatch from day one.** Route every API call through a unified layer (Vercel AI SDK, LangChain, LiteLLM). The vendor that's winning today might not be winning in 12 months.
+
+## Summary
+
+Five takeaways:
+
+- **5-dim scorecard**: capability / cost / privacy / latency / customization. Score every new project on all five.
+- **Closed (OpenAI / Anthropic / Google)**: capability lead, zero ops; best for small teams and non-sensitive data.
+- **Open (Qwen / DeepSeek / Llama)**: by 2025-2026 they have closed the gap to the best closed models; best for compliance and high call volume.
+- **Cost break-even**: < 5M tokens/day → API; 5M-50M → open API; > 50M → consider self-hosting.
+- **Always run a hybrid architecture in production**: router + multiple vendors + fallback path. **Don't put all your eggs in one basket.**
+
+**Next up**: [RAG: From Naive RAG to Production-Grade Architecture](/en/blog/rag-from-naive-to-production) — entering the RAG core patterns.
+
+## References
+
+- [Qwen2.5 LLM Official Release Blog](https://qwenlm.github.io/blog/qwen2.5-llm/) — first-party info on Qwen2.5 model sizes, context lengths, and licenses
+- [LLaMA: Open and Efficient Foundation Language Models (Touvron et al., 2023)](https://arxiv.org/abs/2302.13971) — the original LLaMA paper, basis for the open-weights era
+- [DeepSeek on Hugging Face](https://huggingface.co/deepseek-ai) — DeepSeek's model hub (V3, V4 Flash, V4 Pro)
+- [Stanford HELM: Holistic Evaluation of Language Models](https://crfm.stanford.edu/helm/latest/#/leaderboard) — multi-axis LLM benchmark covering capability, fairness, bias, efficiency
+- [Hugging Face Open LLM Leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard) — mainstream benchmark rankings for open LLMs

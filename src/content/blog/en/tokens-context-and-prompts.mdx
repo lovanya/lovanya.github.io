@@ -1,0 +1,255 @@
+---
+title: "Tokens, Context Window & Prompt Engineering Patterns"
+description: Turning the LLM fundamentals into prompt craft — tokenization economics, context boundaries, and five patterns that actually work.
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'prompt-engineering']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+In the previous post we built a mental model of Transformers and the training pipeline. This one answers a far more engineering-shaped question: **how do you get an LLM to actually do what you want?**
+
+Many teams treat prompts as a "wording problem" and blame the model when things fail. But prompt failures are 80% caused by not understanding two things: **how tokens are counted** and **where the context window's edges actually are**. The remaining 20% comes from not knowing a handful of well-validated prompt patterns.
+
+This post focuses on four things:
+
+1. How tokenization works and what it means for cost
+2. The physical limits of context windows and the "lost in the middle" problem
+3. Five prompt patterns you'll reach for constantly
+4. A production-grade prompt example with code
+
+## 1. Tokenization — From Text to Numbers
+
+LLMs do **not** process text directly. They process token ids. Each token is a chunk (a "subword unit") of the original text. In English, 1 token ≈ 4 characters on average. In Chinese — which has no spaces — the density is much less regular.
+
+The dominant approach is **BPE (Byte Pair Encoding)**, introduced to NLP by Sennrich et al. in 2016 ([arXiv:1508.07909](https://arxiv.org/abs/1508.07909)). The recipe is roughly:
+
+1. Start with every character as the initial vocabulary.
+2. Repeatedly merge the **most frequent adjacent pair** until the vocabulary reaches the target size.
+3. At inference, apply the same merge rules to split text.
+
+The consequence: **the same word tokenizes differently across models.** The Chinese phrase `"你好"` might be 2-4 tokens in GPT-4's vocabulary but 1-2 in Qwen's.
+
+<Mermaid client:load caption="Figure 1: Tokenization pipeline" chart={`flowchart LR
+  T[Input Text] --> N[Normalize]
+  N --> P[Pre-tokenize<br/>by whitespace / Unicode]
+  P --> B[BPE Merge]
+  B --> V[Token IDs]
+  V --> L[LLM]`} />
+
+### Measure, Don't Estimate — tiktoken
+
+Never estimate cost by character count. Use `tiktoken`:
+
+```typescript
+import { encoding_for_model } from 'tiktoken';
+
+const enc = encoding_for_model('gpt-4o');
+
+// 1 Chinese character ≈ 1-2 tokens (varies by word)
+console.log(enc.encode('你好世界').length);  // usually 2-3
+
+// 1 short English word ≈ 1 token, long words get split
+console.log(enc.encode('Hello world').length);  // 2
+console.log(enc.encode('anthropomorphization').length);  // 4-5
+
+// Compute real prompt cost
+const text = 'Summarize transformer self-attention in one sentence';
+console.log(`${enc.encode(text).length} tokens, ~$${(enc.encode(text).length * 0.000005).toFixed(6)}`);
+```
+
+> **Pitfalls.**
+> - **Don't write "answer in under 500 characters"** in your prompt. Count tokens: 500 Chinese characters ≈ 750-1000 tokens. Models care about tokens, not characters.
+> - **Code is more expensive than you think.** `function getUserById(id: string)` is ~10+ tokens. Feeding a 2000-line file can easily cost tens of thousands of tokens.
+> - **Markdown / JSON punctuation costs tokens too.** Every `{}`, `:`, `,` is a separate token.
+
+## 2. Context Window — Bigger Isn't Always Better
+
+A context window is the **maximum number of tokens a model can see at once**. 200K and even 1M context windows are increasingly common, but there are three costs teams tend to underestimate:
+
+### 2.1 Cost
+
+Most APIs bill per input token. A 200K-context prompt is **~50x more expensive** than a 4K one for a single call — and LLM pricing is essentially linear in tokens.
+
+### 2.2 Latency
+
+As we covered in the previous post, KV cache memory scales with `seq_len × hidden_dim`. Long context isn't just slower — **batching hurts much more** when individual requests are already long.
+
+### 2.3 Lost in the Middle
+
+Liu et al. (2023, [arXiv:2307.03172](https://arxiv.org/abs/2307.03172)) found a counter-intuitive phenomenon: **LLMs attend significantly more to the beginning and end of long contexts than to the middle.** Burying a critical fact in the middle of a 100K context can drop accuracy by 30%+ compared to placing it at the start.
+
+<Mermaid client:load caption="Figure 2: U-shaped attention curve (simplified)" chart={`flowchart LR
+  A[Context Start] --> B[High Attention]
+  B --> C[Middle<br/>Attention Drops]
+  C --> D[Context End]
+  D --> E[High Attention]`} />
+
+### Practical Strategies
+
+1. **Critical information at the edges.** System prompt first, specific instructions last.
+2. **Pre-summarize instead of dumping raw context.** RAG or summarization to 8-16K beats handing the model 200K and hoping.
+3. **Exploit prompt caching.** OpenAI and Anthropic both cache repeated prefixes (90% cheaper on cache hits). Put the stable system block at the very front.
+4. **Label retrieved chunks.** Tag RAG results as `"[Doc 1]"`, `"[Doc 2]"` so the model knows which piece answers the question.
+
+## 3. Five Prompt Patterns You'll Use Constantly
+
+Anthropic's official [Prompt Engineering Interactive Tutorial](https://github.com/anthropics/prompt-eng-interactive-tutorial) (36.8k stars) is the canonical survey of the techniques that survive contact with real applications. Here are the five I reach for most.
+
+### Pattern 1: Zero-shot with Explicit Constraints
+
+**When:** the task is clear and the model can do it directly.
+
+```
+Translate the following English paragraph to Simplified Chinese.
+Keep the tone formal. Do not translate code blocks.
+
+The Transformer is a sequence-to-sequence model...
+```
+
+The key is **making the input/output constraints explicit** — length, tone, format. Models are not mind readers.
+
+### Pattern 2: Few-shot
+
+**When:** unusual output format, or a domain the model isn't trained heavily on.
+
+```
+Summarize meeting notes in this format:
+
+---
+Meeting: Project Sync
+Date: 2026-07-01
+Attendees: Alice, Bob, Carol
+Key decisions:
+- Launch delayed to 7/15
+- Dark mode removed for v1
+Action items:
+- Alice: notify customers
+- Bob: update changelog
+---
+
+Meeting: Q3 Budget Review
+Date: 2026-07-02
+Attendees: Dave, Eve
+Key decisions:
+- Q3 budget cut by 15%
+Action items:
+- Dave: submit revised budgets per team
+---
+```
+
+> **Pitfall.** More examples is not better. **3-5 examples is usually enough.** Beyond that you add noise and the model overfits to your example style.
+
+### Pattern 3: Chain-of-Thought (CoT)
+
+**When:** math, multi-step reasoning, planning tasks.
+
+```
+Lily has 5 apples. She eats 2, then buys 3 times as many as she had left.
+How many does she have now?
+
+Think step by step:
+```
+
+Or more structurally:
+
+```
+Follow these steps:
+1. Extract the known facts from the problem
+2. Walk through each operation in order
+3. Verify the final answer is reasonable
+```
+
+CoT's essence: **give the model a thinking budget.** Asking for the answer directly encourages impulsiveness; asking for reasoning first lifts quality significantly.
+
+### Pattern 4: Role Prompting
+
+**When:** specific tone, perspective, or domain knowledge required.
+
+```
+You are a senior frontend architect with 10 years of experience,
+reviewing a colleague's pull request. Point out issues in a
+constructive, specific tone, and suggest actionable fixes.
+
+Here is the code:
+...
+```
+
+> **Pitfall.** Don't make roles outlandish. "You are the world's greatest poet" doesn't help. **Domain + experience + task** is what works.
+
+### Pattern 5: Structured Output
+
+**When:** anything that needs JSON, a table, or a strict schema.
+
+The most reliable path is **tool calling** (next post covers this in depth). Prompting is the second-best:
+
+```
+Analyze the sentiment and key topics of this review. Output as JSON:
+{
+  "sentiment": "positive" | "negative" | "neutral",
+  "topics": ["string"],
+  "confidence": number  // 0-1
+}
+
+Review: The service was mediocre, but the coffee was great.
+```
+
+But remember: **prompt-engineered JSON is never 100% reliable.** In production, validate the output and retry on failure. We'll cover `zod` + `instructor` for forced structured output in a later post.
+
+## 4. Production Prompts — The System + User + Tool Stack
+
+In real code, a prompt is not a single string. It's a **layered structure**. Vercel AI SDK's design reflects this directly:
+
+```typescript
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: [
+    'You are a senior frontend architect.',
+    'When answering, prioritize: maintainability, performance, testability.',
+    'Code samples must be TypeScript.',
+    'Keep answers under 200 words unless the user explicitly asks for more detail.',
+  ].join('\n'),
+  messages: [
+    { role: 'user', content: 'We are overusing useEffect to fetch data in our app. How should we refactor?' },
+  ],
+});
+```
+
+**Key design principles:**
+
+- **System prompt holds stable, long-lived, cross-request content** (role, rules, voice).
+- **User messages hold dynamic, per-request content** (specific question, context).
+- **Put the system prompt first** (prompt-cache friendly + Lost-in-Middle friendly).
+- **Avoid "You must / You should"** — describing expected behavior outperforms imperative commands (Anthropic's internal prompt-engineering teams report this consistently).
+
+## Pitfalls for Senior Architects
+
+1. **Don't mix system and user roles.** Different models treat system-role "authority" differently. Keep rules in system, never shout them at the model from user messages in CAPS.
+2. **Few-shot examples don't belong in system.** Examples are task demonstrations, not system rules. Put them in user messages — the model treats them as references, not instructions.
+3. **CoT belongs in user messages, not system.** Otherwise the model may "think" it's explaining a rule rather than answering a question.
+4. **Avoid deeply nested YAML / JSON templates in prompts.** LLMs make mistakes in deep nesting. Flat 1-2 level structures are far more reliable.
+5. **Don't put secrets in the system prompt.** In many setups the system prompt is captured by logging, monitoring, or even training flywheels. **If it's truly confidential, inject it via tool calls or ephemeral user messages.**
+
+## Summary
+
+Five takeaways:
+
+- **Tokens ≠ characters.** 1 Chinese char ≈ 1-2 tokens, 1 short English word ≈ 1 token, code costs more than you think. **Use tiktoken to measure, every time.**
+- **A larger context window is not always better.** Lost-in-the-middle, KV cache memory, and linear pricing make long context a double-edged sword.
+- **Critical info goes at the edges.** System prompt at the start, specific instructions at the end; the middle is an attention valley.
+- **Five patterns cover ~90% of cases**: zero-shot with constraints / few-shot / CoT / role / structured output.
+- **In production, use a structured System + User + Tool stack.** Don't cram a wall of prompt into a single string.
+
+**Next up**: [Closed vs Open-Source LLMs: An Architect's Decision Framework](/en/blog/llm-selection-framework) — turning today's capability map into a selection checklist.
+
+## References
+
+- [Neural Machine Translation of Rare Words with Subword Units (Sennrich et al., 2016)](https://arxiv.org/abs/1508.07909) — the original BPE-for-NLP paper
+- [Lost in the Middle: How Language Models Use Long Contexts (Liu et al., 2023)](https://arxiv.org/abs/2307.03172) — empirical study of long-context attention degradation
+- [Anthropic Prompt Engineering Interactive Tutorial](https://github.com/anthropics/prompt-eng-interactive-tutorial) — official 9-chapter prompt-engineering curriculum
+- [tiktoken (OpenAI, GitHub)](https://github.com/openai/tiktoken) — fast BPE tokenizer, the basis of all token-counting examples in this post

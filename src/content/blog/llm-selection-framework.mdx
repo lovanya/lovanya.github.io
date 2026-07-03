@@ -1,0 +1,208 @@
+---
+title: "闭源 vs 开源 LLM：架构师选型决策框架"
+description: 不再"凭感觉选模型"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'selection']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+前两篇我们把 LLM 底层和 prompt 技法讲清楚了。从这一篇开始进入**工程化决策**。第一个决策就是——**用什么模型？**
+
+这个问题在 2023-2024 年有简单答案：闭源里 OpenAI 领先，开源里 Llama 领先。但 2026 年的现实是：
+
+- 闭源里 Anthropic Claude 在 coding / 长 context 场景反超
+- 开源里 Qwen / DeepSeek 在多个基准追上甚至超过 GPT-4o
+- 选型已经变成多目标优化题
+
+这一篇给你一个**架构师视角的决策框架**，让选型从"凭感觉"变成"算账 + 对齐需求"。
+
+## 一、5 个评估维度
+
+选 LLM 就像选数据库——没有"最好"，只有"最适合"。我建议每次新项目从这 5 个维度打分：
+
+<Mermaid client:load caption="图 1：5 维选型雷达" chart={`flowchart TD
+  A[LLM 选型决策] --> B[能力<br/>Capability]
+  A --> C[成本<br/>Cost]
+  A --> D[隐私 / 合规<br/>Privacy]
+  A --> E[延迟<br/>Latency]
+  A --> F[可控性<br/>Customization]`} />
+
+### 维度 1：能力（Capability）
+
+"能不能做"是底线。能力可拆成几个子项：
+
+- **通用推理 / 数学 / 代码**：用 MMLU、HumanEval、LiveCodeBench 测
+- **中文能力**：很多英文基准测不出来，要看 C-Eval、CMMLU
+- **长 context 处理**：NIAH（Needle-in-a-Haystack）、Lost in the Middle 鲁棒性
+- **Function calling / Tool use**：结构化输出准确率
+- **多模态**：图文理解、图表解析（如需要）
+
+**踩坑**：跑分 ≠ 真实业务效果。**一定要在自己数据上做 30-50 条 case 评测**（后续会有专门一篇讲 eval）。
+
+### 维度 2：成本（Cost）
+
+按 token 计费，**但有 4 个隐藏变量**：
+
+- **输入 vs 输出价差**：通常输出贵 3-4 倍
+- **Prompt cache 折扣**：OpenAI / Anthropic 命中缓存可省 90%
+- **Batch API 折扣**：离线任务用 batch 接口便宜 50%
+- **超长 context 溢价**：200K 以上的请求部分模型要额外加价
+
+粗算公式：**月度成本 ≈ 月请求数 × 平均 (input_tokens × input_price + output_tokens × output_price)**。
+
+### 维度 3：隐私 / 合规
+
+- 客户数据 / 医疗 / 金融 → **必须**自托管或私有云
+- 内部知识库 → 闭源 API 通常问题不大，但敏感数据要先脱敏
+- 海外用户数据 → 注意 GDPR / CCPA，开源自托管可控性最高
+
+**决策点**：合规硬要求 = 闭源出局。**没有例外**。
+
+### 维度 4：延迟（Latency）
+
+- 用户实时交互（chat / autocomplete）：需要 P95 < 2s
+- 后台批处理（文档摘要）：10s+ 可以接受
+- 流式首字延迟（TTFT）：1s 内的体验已经很好
+
+大模型通常**比小模型慢 5-10 倍**。如果延迟敏感，70B 比 405B 实用得多。
+
+### 维度 5：可控性
+
+包括：
+- **微调能力**：开源可全参数 / LoRA 微调；闭源只有 OpenAI / Anthropic / Google 提供微调 API
+- **Prompt cache 行为**：是否支持、命中率、刷新机制
+- **Tool use 协议**：各家不同
+- **数据飞轮**：调用数据能否回流训练（很多供应商默认 opt-in，需要仔细看 ToS）
+
+## 二、闭源派：什么时候用 API 划算
+
+### 代表：OpenAI GPT-4o / o1、Anthropic Claude Sonnet / Opus、Google Gemini
+
+**优势**：
+
+- **能力领先**：在最难的推理 / coding / 长 context 任务上仍占优
+- **零运维**：没有 GPU 采购、推理优化、模型升级的痛苦
+- **快速迭代**：厂商一升级你立刻享受到
+- **企业级 SLA**：可用性、合规、审计都有保障
+
+**劣势**：
+
+- **成本**贵（尤其长 context + 大输出）
+- **数据出境 / 隐私**风险
+- **供应商锁定**：换模型意味着改 prompt、改 system、改微调数据
+- **不可控**：模型被下架、API 行为变更你只能接受
+
+**适用场景**：
+
+- 中小团队快速验证
+- 数据不敏感 + 月调用 < 1M tokens
+- 需要顶级推理能力（金融分析 / 复杂代码 / 多步规划）
+- 没有 GPU 运维能力
+
+## 三、开源派：什么时候自托管值得
+
+### 代表：Llama 3.x、Qwen 2.5、DeepSeek V3/V4、Mistral、GLM
+
+以 Qwen 2.5 为例（[Qwen 官方博客](https://qwenlm.github.io/blog/qwen2.5-llm/)），从 0.5B 到 72B 共 7 个尺寸，**最常用的 7B / 14B / 32B 都支持 128K context**：
+
+| 模型 | 参数量 | Context | License |
+|------|-------|---------|---------|
+| Qwen2.5-7B | 7.6B | 128K | Apache 2.0 |
+| Qwen2.5-14B | 14.7B | 128K | Apache 2.0 |
+| Qwen2.5-32B | 32.5B | 128K | Apache 2.0 |
+| Qwen2.5-72B | 72.7B | 128K | Qwen License |
+
+DeepSeek 在 Hugging Face 上线了多代模型（[deepseek-ai 主页](https://huggingface.co/deepseek-ai)），其中 V3 / V4 在多项基准上接近闭源最强模型，但 API 定价**只有 GPT-4o 的几十分之一**——这是 2025-2026 年最戏剧性的成本曲线变化。
+
+**优势**：
+
+- **数据可控**：私有化部署
+- **可微调**：全参数 / LoRA / 量化都行
+- **成本可预测**：一次硬件投入 + 电费，无按 token 计费
+- **无锁定**：模型权重可下载
+
+**劣势**：
+
+- **前期投入大**：GPU 集群（H100 / A100 / 国产替代）
+- **运维重**：vLLM / TGI / TensorRT-LLM 部署、监控、扩缩容
+- **能力有 gap**：和最顶级闭源仍有 5-15% 跑分差距
+- **许可要注意**：Qwen2.5-72B 用 Qwen License（不是纯开源），Llama 用 Meta License（也有一些限制条款）
+
+**适用场景**：
+
+- 数据合规硬要求
+- 调用量大（自托管 ROI 拐点通常在**日均 5M-10M tokens**）
+- 需要深度定制（领域微调）
+- 有 GPU 运维能力或预算
+
+## 四、自托管 vs API：成本算账
+
+粗略对比（2026 年 7 月价格水平）：
+
+| 方案 | 前期投入 | 月度运营 | 能力上限 | 数据可控 |
+|------|---------|---------|---------|---------|
+| 闭源 API | 0 | 按 token 计费 | 顶级 | 低 |
+| 开源 API（DeepSeek 等） | 0 | 按 token 计费 | 接近顶级 | 中 |
+| 自托管 7B（1x H100） | ~$30K | ~$1K/月 | 中 | 高 |
+| 自托管 70B（8x H100） | ~$250K | ~$8K/月 | 中上 | 高 |
+| 自托管 405B（多机） | ~$1M+ | ~$30K/月 | 顶级 | 高 |
+
+**经验法则**：
+
+- **日均 < 5M tokens**：闭源 API 更划算
+- **日均 5M-50M tokens**：开源 API（DeepSeek / Qwen）性价比突出
+- **日均 > 50M tokens + 合规要求**：自托管开始回本
+- **有突发流量**：API 弹性更好；自托管要预留 buffer
+
+## 五、混合策略：路由 + 主备
+
+实际生产中，**单一模型很难覆盖所有场景**。成熟的架构通常长这样：
+
+<Mermaid client:load caption="图 2：LLM 路由架构" chart={`flowchart LR
+  U[用户请求] --> R{路由器<br/>Router}
+  R -->|简单 query| S[小模型<br/>7B / Sonnet Haiku]
+  R -->|复杂推理| L[大模型<br/>Claude Opus / GPT-4o]
+  R -->|敏感数据| P[私有部署<br/>Qwen-72B]
+  R -->|降级| F[备用供应商<br/>Bedrock / DeepSeek]
+  L --> A[聚合答案]
+  S --> A
+  P --> A
+  F --> A`} />
+
+**实施要点**：
+
+1. **路由器本身是个小模型或启发式规则**（如 prompt 长度 / 关键词分类）
+2. **降级路径必须有**：主供应商挂了能切到备用
+3. **A/B 测试路由逻辑**：用 eval 集验证不同 query 走哪个模型最优
+4. **统一接口层**：用 Vercel AI SDK 或 LangChain 把多家 API 包成统一调用
+
+## 踩坑提醒
+
+1. **不要被"开源免费"误导**。自托管的硬件 + 运维成本可能比 API 高 10 倍。日均调用量小时，**闭源永远更便宜**。
+2. **许可条款要看清**。Llama 7B+ 商用有限制（MAU 7 亿用户以下免费，超过要联系 Meta）。Qwen2.5-72B 用 Qwen License 不是 Apache。**生产前法务 review 必做**。
+3. **不要只看 MMLU / HumanEval**。这两个基准 2024 年起基本饱和，跑分接近的模型业务能力可能差 30%。**必须有领域评测集**。
+4. **不要在第一天就锁定**。前 2 周用多家 API 并行跑（OpenAI + Anthropic + DeepSeek），在真实流量上对比，**比任何 leaderboard 都准**。
+5. **预留 escape hatch**。所有 API 调用走统一接口（Vercel AI SDK、LangChain、LiteLLM），让切换成本降到小时级。供应商今天领先不代表明天领先。
+
+## 总结
+
+5 个 takeaway：
+
+- **5 维评估**：能力 / 成本 / 隐私 / 延迟 / 可控性，每次选型按这 5 项打分。
+- **闭源选 OpenAI/Anthropic/Google**：能力领先、零运维；适合中小团队、数据不敏感场景。
+- **开源选 Qwen / DeepSeek / Llama**：2025-2026 年开源已逼近闭源最强；适合合规要求或调用量大的场景。
+- **成本拐点**：日均 < 5M tokens 用 API，5M-50M 用开源 API，> 50M 考虑自托管。
+- **生产必走混合架构**：路由器 + 多供应商 + 降级路径，**别把所有鸡蛋放一个篮子**。
+
+**下一篇**：[RAG 检索增强生成：从基础 RAG 到生产级架构](/blog/rag-from-naive-to-production) — 进入 RAG 核心模式。
+
+## 参考资料
+
+- [Qwen2.5 LLM 官方发布博客](https://qwenlm.github.io/blog/qwen2.5-llm/) — Qwen2.5 模型族尺寸、context、license 一手信息
+- [LLaMA: Open and Efficient Foundation Language Models (Touvron et al., 2023)](https://arxiv.org/abs/2302.13971) — 开源 LLaMA 系列的初代论文，理解后续 2/3 的基础
+- [DeepSeek on Hugging Face](https://huggingface.co/deepseek-ai) — DeepSeek 全系列模型仓库（V3/V4 Flash/Pro）
+- [Stanford HELM: Holistic Evaluation of Language Models](https://crfm.stanford.edu/helm/latest/#/leaderboard) — 多维度 LLM 评测基准，覆盖能力 / 公平性 / 偏见 / 效率
+- [Hugging Face Open LLM Leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard) — 开源 LLM 主流基准排名

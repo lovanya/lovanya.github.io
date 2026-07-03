@@ -1,0 +1,253 @@
+---
+title: "Token、Context Window 与 Prompt Engineering 核心模式"
+description: 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'prompt-engineering']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+上一篇我们搭好了 Transformer 和训练 pipeline 的心智模型。这一篇要回答一个更工程化的问题：**怎么让 LLM 真的按你说的做？**
+
+很多团队把 prompt 当作"调调措辞"的事情，碰壁后归咎于"模型不够聪明"。但 prompt 失败 80% 是因为没理解两件事：**Token 怎么算的** 和 **Context Window 的边界在哪**。剩下的 20% 是没掌握几个被验证有效的 prompt 模式。
+
+这一篇聚焦四件事：
+
+1. Tokenization 的工作机制和实际成本影响
+2. Context Window 的物理限制与"中间丢失"问题
+3. 5 个必会的 prompt 模式（zero-shot / few-shot / CoT / role / structured）
+4. 一段生产级 prompt + 代码示例
+
+## 一、Tokenization：文本到数字的旅程
+
+LLM **不直接处理文字**，而是处理 token id。每个 token 是文本里的一段"片段"（subword unit）。英文里平均 1 token ≈ 4 字符；中文因为没有空格分词，密度更不规则。
+
+主流模型用 **BPE（Byte Pair Encoding）**，由 Sennrich 等人在 2016 年引入 NLP（[arXiv:1508.07909](https://arxiv.org/abs/1508.07909)）。基本思路是：
+
+1. 把所有字符作为初始词表
+2. 反复合并**出现频率最高**的相邻对，直到词表达到目标大小
+3. 推理时用同样的合并规则切词
+
+这意味着**同一个词在不同模型下切出的 token 数不同**。一个中文词 `"你好"` 在 GPT-4 词表里可能是 2-4 个 token，在 Qwen 词表里可能是 1-2 个。
+
+<Mermaid client:load caption="图 1：Tokenization pipeline" chart={`flowchart LR
+  T[输入文本] --> N[Normalize]
+  N --> P[Pre-tokenize<br/>按空格 / Unicode]
+  P --> B[BPE Merge]
+  B --> V[Token IDs]
+  V --> L[LLM]`} />
+
+### 实测一下：tiktoken
+
+不要按字符估算成本。用 `tiktoken` 算：
+
+```typescript
+import { encoding_for_model } from 'tiktoken';
+
+const enc = encoding_for_model('gpt-4o');
+
+// 中文 1 个汉字 ≈ 1-2 token（看具体词）
+console.log(enc.encode('你好世界').length);  // 通常 2-3
+
+// 英文 1 个短词 ≈ 1 token，长词会被切
+console.log(enc.encode('Hello world').length);  // 2
+console.log(enc.encode('anthropomorphization').length);  // 可能 4-5
+
+// 算 prompt 真实成本
+const text = '请用一句话总结 transformer 的 self-attention';
+console.log(`${enc.encode(text).length} tokens, 约 $${(enc.encode(text).length * 0.000005).toFixed(6)}`);
+```
+
+**踩坑提醒**：
+
+- **不要在 prompt 里写"用 500 字以内回答"**。你应该算 token：500 中文字 ≈ 750-1000 tokens。模型对 token 数比字符数敏感得多。
+- **代码 token 比想象中贵**。`function getUserById(id: string)` 这种 ≈ 10+ tokens。给 LLM 喂 2000 行代码 ≈ 几万 token，注意 cost。
+- **markdown / JSON 标点也要算**。每个 `{}`、`:`、`,` 都是独立 token。
+
+## 二、Context Window：不是越大越好
+
+Context Window 是模型**一次能看到的最大 token 数**。200K / 1M context 越来越常见，但有 3 个常被忽视的代价：
+
+### 2.1 成本
+
+大多数 API 按 input token 计费。200K context 的 prompt 比 4K context **贵 50 倍**（单次），而 LLM 定价基本随 token 线性增长。
+
+### 2.2 速度
+
+如上一篇所说，KV cache 显存占用与 `seq_len × hidden_dim` 成正比。长 context 不仅更慢，**batch 越大越慢**（多个长 prompt 并发请求会迅速打爆显存）。
+
+### 2.3 "Lost in the Middle"
+
+Liu 等人 2023 年的论文 [arXiv:2307.03172](https://arxiv.org/abs/2307.03172) 发现一个反直觉的现象：**模型对中段内容的注意力显著弱于首尾**。当你把关键信息藏在 100K context 的中间位置，准确率可能比放在开头低 30%+。
+
+<Mermaid client:load caption="图 2：U 形注意力曲线（简化版）" chart={`flowchart LR
+  A[Context 开头] --> B[高注意力]
+  B --> C[中段<br/>注意力下降]
+  C --> D[Context 末尾]
+  D --> E[高注意力]`} />
+
+### 实用策略
+
+1. **重要信息放首尾**：system prompt 在最前，具体指令在最后。
+2. **拆分长 context**：与其塞 200K 让模型乱找，不如先做 RAG / summarization 把 context 缩到 8-16K。
+3. **监控 prompt cache 命中**：OpenAI、Anthropic 都对**重复前缀**做 prompt cache（缓存命中便宜 90%）。把稳定的 system 部分放最前面。
+4. **明确引用位置**：在 RAG 返回的多个 chunk 上加 `"[Doc 1]"`、`"[Doc 2]"` 标签，让模型知道"哪段是答案"。
+
+## 三、5 个必会的 Prompt 模式
+
+Anthropic 官方的 [Prompt Engineering Tutorial](https://github.com/anthropics/prompt-eng-interactive-tutorial)（36.8k stars）系统梳理了 Claude / GPT 时代最有效的 prompt 模式。挑出 5 个我日常用得最多的：
+
+### 模式 1：Zero-shot with explicit constraints
+
+**适用**：任务定义清晰、模型能直接做。
+
+```
+把以下中文翻译成英文，保持语气正式：
+
+你好，很高兴见到你。
+```
+
+关键是**给清楚输入输出约束**：长度、风格、格式。模型不是读心者。
+
+### 模式 2：Few-shot
+
+**适用**：输出格式特殊，或模型不熟悉的领域。
+
+```
+把会议纪要按下面格式总结：
+
+---
+会议：项目周会
+日期：2026-07-01
+参会：Alice, Bob, Carol
+关键决策：
+- 上线时间推迟到 7/15
+- 临时去掉 dark mode
+行动项：
+- Alice: 通知客户
+- Bob: 更新 changelog
+---
+
+会议：Q3 预算评审
+日期：2026-07-02
+参会：Dave, Eve
+关键决策：
+- Q3 预算削减 15%
+行动项：
+- Dave: 提交各组预算调整方案
+---
+```
+
+**坑**：示例数量不是越多越好。**3-5 个**通常就够，太多反而会引入噪声、让模型"过度模仿"。
+
+### 模式 3：Chain-of-Thought（CoT）
+
+**适用**：数学、推理、多步规划任务。
+
+```
+小明有 5 个苹果，吃了 2 个，又买了 3 倍数量。现在有几个？
+
+请一步步思考：
+```
+
+或更结构化：
+
+```
+请按以下步骤：
+1. 提取已知条件
+2. 列出每一步操作
+3. 验证最终答案是否合理
+```
+
+CoT 的本质：**给模型"思考的预算"**。直接要答案会让模型冲动；让它先推理，答案质量显著提升。
+
+### 模式 4：Role Prompting
+
+**适用**：需要特定语气、视角、领域知识的输出。
+
+```
+你是一位有 10 年经验的前端架构师，正在 code review 同事的 PR。
+请用建设性、具体的语气指出问题，给出可操作的修改建议。
+
+代码如下：
+...
+```
+
+**坑**：角色不要太离谱。"你是世界上最伟大的诗人" 没意义，**领域 + 经验 + 任务** 才有效。
+
+### 模式 5：Structured Output
+
+**适用**：任何需要 JSON / 表格 / 严格 schema 的场景。
+
+最稳的做法是**用 tool calling**（下一篇会展开），prompt 引导是次选：
+
+```
+请分析这段用户评论的情感和关键主题，按如下 JSON 输出：
+{
+  "sentiment": "positive" | "negative" | "neutral",
+  "topics": ["string"],
+  "confidence": number  // 0-1
+}
+
+评论：这家店服务一般，但咖啡不错。
+```
+
+但请记住：**任何 prompt-based JSON 输出都不是 100% 可靠**。生产里要校验、必要时重试。后续 RAG / Agent 章节会讲 `zod` + `instructor` 这类强制结构化输出的方案。
+
+## 四、生产级 Prompt：System + User + Tool 的工程结构
+
+实战中一个 prompt 不是一个字符串，而是**分层结构**。Vercel AI SDK 的设计就体现了这点：
+
+```typescript
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: [
+    '你是一个高级前端架构师。',
+    '回答时优先考虑：可维护性、性能、可测试性。',
+    '代码示例必须用 TypeScript。',
+    '回答控制在 200 字以内，除非用户明确要求详细。',
+  ].join('\n'),
+  messages: [
+    { role: 'user', content: '我们项目里大量使用 useEffect 拉数据，怎么改造更好？' },
+  ],
+});
+```
+
+**关键设计原则**：
+
+- **System prompt 放稳定 / 长期 / 跨请求不变的部分**（角色、规则、风格）
+- **User message 放动态 / 每次请求不同的部分**（具体问题、上下文）
+- **System prompt 放最前**（prompt cache 友好 + Lost-in-Middle 友好）
+- **少用 "You must / You should"** — 描述期望行为比命令式更有效（Anthropic 内部提示词工程的反复经验）
+
+## 踩坑提醒（生产环境高频踩坑）
+
+1. **不要混用 system 和 user 角色**。不同模型对 system 角色的"权威性"理解不同。规则统一放 system 角色，不要塞到 user 里用大写加粗来"命令"。
+2. **Few-shot 示例不要放在 system 里**。示例是"任务演示"而非"系统规则"，放 user message 的开头或结尾，模型会把它当 reference 而不是 instruction。
+3. **CoT 写到 user 消息里，不要写到 system**。否则模型可能"以为"自己在解释规则而不是回答问题。
+4. **避免 prompt 里的 YAML / 多层嵌套 JSON 模板**。LLM 容易在多层嵌套里出错。1-2 层扁平结构最稳。
+5. **不要把敏感信息塞进 system prompt**。System prompt 在很多场景下会被日志、监控、训练回流捕获。**真要保密用工具调用或者在 user message 里临时注入**。
+
+## 总结
+
+5 个 takeaway：
+
+- **Token ≠ 字符**。1 个汉字 ≈ 1-2 token，1 个英文短词 ≈ 1 token，代码片段比想象贵。**用 tiktoken 实测，别按字符估算**。
+- **Context Window 不是越大越好**。Lost in the Middle + KV cache 显存 + 线性定价决定了长 context 是把双刃剑。
+- **重要信息放首尾**。System 在前、具体指令在后，中段是"注意力低谷"。
+- **5 个 prompt 模式覆盖 90% 场景**：zero-shot with constraints / few-shot / CoT / role / structured output。
+- **生产里用结构化 system + user + tool**，不要塞大段 prompt 进一个字符串。
+
+**下一篇**：[闭源 vs 开源 LLM：架构师选型决策框架](/blog/llm-selection-framework) — 把今天的能力地图转化为选型 checklist。
+
+## 参考资料
+
+- [Neural Machine Translation of Rare Words with Subword Units (Sennrich et al., 2016)](https://arxiv.org/abs/1508.07909) — BPE 引入 NLP 的原始论文
+- [Lost in the Middle: How Language Models Use Long Contexts (Liu et al., 2023)](https://arxiv.org/abs/2307.03172) — 长 context 中段注意力衰减的实证研究
+- [Anthropic Prompt Engineering Interactive Tutorial](https://github.com/anthropics/prompt-eng-interactive-tutorial) — 官方教程，9 章系统讲解 prompt 模式
+- [tiktoken (OpenAI, GitHub)](https://github.com/openai/tiktoken) — 快速 BPE tokenizer，本文所有 token 计数示例用此库
