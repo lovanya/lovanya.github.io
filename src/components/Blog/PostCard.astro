@@ -89,7 +89,8 @@ const tagHref = (tag: string) =>
         {tags.map((tag) => (
           <a
             href={tagHref(tag)}
-            class="tag text-xs transition-colors border border-transparent hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30"
+            class="tag transition-colors border border-transparent hover:border-[var(--color-accent)]/30"
+            style="text-decoration: none;"
             onclick="event.stopPropagation()"
           >
             #{tag}
