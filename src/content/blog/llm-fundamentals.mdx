@@ -1,0 +1,142 @@
+---
+title: "大模型入门：Transformer 与 LLM 是怎么工作的"
+description: 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'transformer']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+做前端架构的人要不要懂 Transformer？我的回答是**要**——不是去推导公式，而是要建立"模型在做什么"的直觉。原因有三：
+
+1. **你写的 prompt 不是黑盒**：理解 tokenization、context window、attention，你才能解释为什么"请逐步思考"有效、为什么超长 prompt 后半段容易被忽略。
+2. **生产排错需要它**：当 streaming 截断、温度参数没生效、function call 返回畸形 JSON 时，懂底层的人能 5 分钟定位，不懂的人只能瞎试。
+3. **技术选型不被忽悠**：闭源 vs 开源、7B vs 70B、encoder-only vs decoder-only，这些选择都有明确的工程权衡，依赖直觉很容易选错。
+
+这一篇是系列开篇。我会跳过数学推导，用架构图 + 简短 TS 代码 + 真实论文引用，把 Transformer / LLM 的工作原理讲清楚。下一篇会聊 Token、Context Window 和 Prompt Engineering 的核心模式。
+
+## 一、Transformer：LLM 的心脏
+
+LLM 的"骨架"是 **Transformer 架构**，由 Vaswani 等人在 2017 年提出，原论文标题就叫 *Attention Is All You Need*（[arXiv:1706.03762](https://arxiv.org/abs/1706.03762)）。在它之前，NLP 主流是 RNN/LSTM，按时间步串行处理。Transformer 改用了一种叫 **self-attention** 的机制，让序列里**任意两个位置可以直接对话**，并行训练效率大幅提升。
+
+一个 Transformer block 的核心流程（decoder-only，用于 LLM）：
+
+<Mermaid client:load caption="图 1：Transformer decoder block 的数据流" chart={`flowchart LR
+  X[Input Tokens] --> E[Token + Positional Embedding]
+  E --> A[Masked Self-Attention]
+  A --> N1[Add & Norm]
+  N1 --> F[Feed-Forward]
+  F --> N2[Add & Norm]
+  N2 --> O[Output Logits]
+  O --> S[Softmax → Next Token]`} />
+
+作为架构师，你只需要记住三件事：
+
+- **Self-Attention**：让每个 token 都能"看到"前文所有 token，并学到一个加权汇总。这正是 LLM 能理解长距离依赖的关键。
+- **Feed-Forward (FFN)**：attention 之后接一个全连接层，做"知识检索"——大量事实性知识就存在 FFN 的参数里。
+- **残差 + LayerNorm**：让上百层网络还能稳定训练，没有这些 trick，深度根本堆不上去。
+
+后来的 LLaMA 论文（[arXiv:2302.13971](https://arxiv.org/abs/2302.13971)）、Qwen、DeepSeek 等等，**结构都没跳出这个框架**，主要差异在训练数据、规模和一些 trick（RoPE 位置编码、SwiGLU 激活、Grouped Query Attention 等）。所以理解 Transformer 之后，所有"新模型"对你都不再是黑盒。
+
+## 二、LLM 是怎么"学会说话"的：训练三阶段
+
+一个 chat 模型从无到有，**至少**经历三个阶段（论文 *Training language models to follow instructions* / InstructGPT 详细描述了这个流程）：
+
+<Mermaid client:load caption="图 2：LLM 训练三阶段 pipeline" chart={`flowchart LR
+  P[海量原始文本<br/>TB 级] --> PT[阶段 1<br/>Pretrain<br/>Next-token Prediction]
+  PT --> SFT[阶段 2<br/>SFT<br/>指令微调]
+  SFT --> RLHF[阶段 3<br/>RLHF / DPO<br/>对齐人类偏好]
+  RLHF --> C[Chat Model]}`} />
+
+### 阶段 1：预训练（Pretrain）
+
+模型在几 TB 的网页、书籍、代码上做**自监督学习**：给定前 N 个 token，预测第 N+1 个。这阶段耗资最大（GPT-4 级别模型据说花费数千万到上亿美元），产生的是 **base model**（能续写，但不会问答）。
+
+### 阶段 2：监督微调（SFT）
+
+用人工编写的"指令—回答"对（数万到数十万条）继续训练。模型从"续写机器"变成"听话的助手"。这一步成本骤降，通常几卡天就能跑完。
+
+### 阶段 3：偏好对齐（RLHF / DPO）
+
+让人类对多个回答排序，用强化学习（RLHF，如 PPO）或直接偏好优化（DPO）把模型"调教"得更安全、更有用、更符合品牌语气。Anthropic 的 *Constitutional AI*、OpenAI 的 *InstructGPT* 都属于这一脉。
+
+**踩坑提醒**：你在 Hugging Face 上看到一个 `Base` 模型（如 `Qwen2.5-7B`），和一个 `Instruct` / `Chat` 模型（如 `Qwen2.5-7B-Instruct`），**它们的训练阶段不同**。Base 模型适合做续写、分类、embedding 微调；Instruct 模型才能直接拿来做 chat。**生产里几乎永远选 Instruct 版本**，除非你有专门的微调计划。
+
+## 三、推理时发生了什么
+
+训练完，模型进入**推理**（inference / serving）阶段。前端架构师真正打交道的是这一层。
+
+### 3.1 Token-by-Token 生成
+
+LLM 一次生成 **一个 token**（中文大约 1.5 个汉字），然后把它拼回 prompt 末尾，再生成下一个。这就是为什么我们看到的输出是**流式（streaming）**的——前端用 SSE / WebSocket 接收每个 chunk。
+
+```typescript
+// Vercel AI SDK — 流式生成（生产代码片段）
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const result = streamText({
+  model: openai('gpt-4o'),
+  prompt: '用一句话解释 Transformer 的 self-attention',
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+### 3.2 采样策略：为什么同一个 prompt 多次调用结果不同
+
+模型每一步输出的是一个**概率分布**（vocabulary size ≈ 50K-100K）。我们要从这个分布里挑一个 token：
+
+- **Greedy**：永远选概率最大的。确定性强，但容易重复、枯燥。
+- **Temperature**：高温（T > 1）拉平分布，结果更"发散"；低温（T < 1）拉尖分布，更"聚焦"。
+- **Top-p / Top-k**：只从概率最高的 k 个或累计概率到 p 的 token 里采样，过滤掉明显不合理的尾巴。
+
+Hugging Face 的 [LLM tutorial](https://huggingface.co/docs/transformers/llm_tutorial) 给了一个完整例子：`do_sample=True` + `temperature=0.7` 是 chat 场景的常用起点。
+
+### 3.3 KV Cache：为什么长 prompt 慢
+
+每生成一个 token，模型都要重新跑一遍 self-attention。**优化手段**是把之前每个 token 的 Key / Value 向量缓存下来，下次只用算新 token——这就是 **KV cache**。
+
+代价：KV cache 占用显存大致和 `batch × seq_len × hidden_dim` 成正比。**Context window 越长，显存占用越大**。这就是为什么 200K context 的模型要么贵、要么需要量化（PagedAttention、FlashAttention 等技术缓解，但不会消除）。
+
+## 四、Scaling Laws：模型为什么"越大越聪明"
+
+业界有一个被反复验证的经验规律（*Scaling Laws for Neural Language Models*，Kaplan et al. 2020）：**模型参数量 N、训练数据量 D、计算量 C 三者按幂律关系同步扩大时，loss 会平滑下降**。
+
+但这只是"平均能力"在涨。真正让人惊艳的是**涌现（emergent abilities）**：在某些任务（多步推理、代码生成）上，模型小到某个阈值之前几乎是 0 分，超过阈值后突然大幅跃升。这不是玄学，而是 scaling 让模型首次"看到足够多类似样本"后学会了某种通用解法。
+
+**Chinchilla**（Hoffmann et al. 2022，DeepMind）进一步指出：**对于给定算力，模型大小和数据量要按比例增长才最优**。这就是为什么后来大家都在"卷训练 tokens"——Llama 3 把训练数据推到 15T tokens。
+
+**避坑提醒**：当一个供应商宣传"我们用 1B 模型 + 领域数据微调，效果超过 GPT-4"时——大概率是在某个特定窄任务上做了过拟合。在通用 chat / 推理 / 复杂规划上，**模型规模仍是主导因素**。这不意味着大模型永远赢，但选型时要有清醒的预期。
+
+## 踩坑提醒（资深架构师请重点看）
+
+1. **不要把 base model 当 chat model 用**。`Llama-3-70B`（base）和 `Llama-3-70B-Instruct` 差别巨大，后者才有对话能力。
+2. **不要忽视 tokenization 边界**。中文 1 个汉字通常不是 1 个 token，而是 1-2 个。`"你好"` 在 Qwen tokenizer 下可能是 2-3 个 token。**算成本时永远用 tokenizer 实际计数，不要按字符估算**。
+3. **Streaming 截断 ≠ 错误**。前端处理 `data: [DONE]` 信号时，记得做 `try/finally` 关闭流，否则半截响应会卡住连接。
+4. **不要在 prompt 里塞 JSON Schema 让模型自己"格式化"**。用工具调用（tool use / function calling）让模型**结构化输出**，比 prompt 工程靠谱得多。下一篇和后续会详细讲。
+5. **Context 越长 ≠ 越好**。长 context 容易出现 "Lost in the Middle" 现象（Liu et al. 2023）——模型对中段内容的注意力会显著下降。重要信息放 prompt 开头或结尾。
+
+## 总结
+
+这一篇用 5 个关键事实把 LLM 底层串起来：
+
+- **Transformer** 用 self-attention 让任意两个 token 直接通信，是 LLM 的结构基石（Vaswani et al. 2017）。
+- **训练三阶段**：Pretrain → SFT → RLHF/DPO，缺一不可。
+- **推理**是 token-by-token 的概率采样；KV cache 让长 context 可行但吃显存。
+- **Scaling Laws** 解释了"为什么大就是好"；涌现能力让 scaling 物有所值。
+- **生产里**：选 Instruct 模型、用 tokenizer 算成本、流式 + 工具调用优于 prompt hack。
+
+**下一篇**：[Token、Context Window 与 Prompt Engineering 核心模式](/blog/tokens-context-and-prompts) — 把今天的底层知识落地为 prompt 设计技法。
+
+## 参考资料
+
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762) — Transformer 原始论文，所有现代 LLM 的结构起源
+- [Language Models are Few-Shot Learners (Brown et al., 2020)](https://arxiv.org/abs/2005.14165) — GPT-3 论文，175B 参数的 in-context learning 实验
+- [LLaMA: Open and Efficient Foundation Language Models (Touvron et al., 2023)](https://arxiv.org/abs/2302.13971) — 开源 LLaMA 系列的初代论文
+- [Hugging Face Transformers — LLM Tutorial](https://huggingface.co/docs/transformers/llm_tutorial) — 官方文档：`generate()`、采样策略、padding side 等工程细节
+- [Vercel AI SDK — Introduction](https://ai-sdk.dev/docs/introduction) — TypeScript 优先的 LLM 集成层，本文 streaming 代码用此框架

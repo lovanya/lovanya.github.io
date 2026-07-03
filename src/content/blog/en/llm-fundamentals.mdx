@@ -1,0 +1,142 @@
+---
+title: "LLM Fundamentals: How Transformers & LLMs Actually Work"
+description: A frontend architect's crash course on the LLM stack — Transformer, the three training stages, and what happens at inference.
+pubDate: 2026-07-03
+tags: ['llm', 'ai-engineering', 'transformer']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+Should a frontend architect understand Transformers? My answer is **yes** — not to derive the math, but to build intuition for *what the model is actually doing*. Three reasons:
+
+1. **Your prompt is not a black box.** Understanding tokenization, context window, and attention explains why "think step by step" works, and why long prompts lose their grip in the middle.
+2. **Production debugging demands it.** When streaming truncates, when temperature has no effect, when a function call returns malformed JSON — five minutes of root-cause beats five hours of guesswork.
+3. **Vendor pitches stop fooling you.** Closed vs open, 7B vs 70B, encoder-only vs decoder-only — every choice has a clear engineering trade-off, and going by gut feel is how you end up with the wrong model in production.
+
+This is the opening post of the series. We skip the math and lean on architecture diagrams, short TypeScript snippets, and real paper citations to make the Transformer / LLM stack concrete. The next post covers tokens, context windows, and the prompt patterns that actually move the needle.
+
+## 1. Transformer — The Heart of Every Modern LLM
+
+The skeleton of every modern LLM is the **Transformer architecture**, introduced by Vaswani et al. in 2017 under the (literally) declarative title *Attention Is All You Need* ([arXiv:1706.03762](https://arxiv.org/abs/1706.03762)). Before it, NLP was dominated by RNNs / LSTMs that processed sequences one step at a time. Transformer replaced recurrence with a mechanism called **self-attention**, which lets every position in a sequence talk directly to every other position — unlocking massive parallelization during training.
+
+A single Transformer decoder block (the structure used by virtually all chat LLMs) looks like this:
+
+<Mermaid client:load caption="Figure 1: Data flow inside a Transformer decoder block" chart={`flowchart LR
+  X[Input Tokens] --> E[Token + Positional Embedding]
+  E --> A[Masked Self-Attention]
+  A --> N1[Add & Norm]
+  N1 --> F[Feed-Forward]
+  F --> N2[Add & Norm]
+  N2 --> O[Output Logits]
+  O --> S[Softmax → Next Token]`} />
+
+As an architect, you only need to internalize three things:
+
+- **Self-Attention** lets every token "see" every prior token and learn a weighted summary. This is *the* mechanism behind long-range dependencies in modern LLMs.
+- **Feed-Forward (FFN)** is where most factual knowledge lives. After attention aggregates context, the FFN acts like a key-value lookup over what the model has memorized.
+- **Residual connections + LayerNorm** are what make 100+ layer stacks trainable at all. Without them, the gradients would never reach the early layers.
+
+The LLaMA paper ([arXiv:2302.13971](https://arxiv.org/abs/2302.13971)), Qwen, DeepSeek, and every other "new" model you're seeing in 2026 — **none of them escape this skeleton**. The differences are in training data, scale, and a handful of tricks: RoPE positional encoding, SwiGLU activations, Grouped Query Attention, etc. Once you understand the Transformer, no model is a black box anymore.
+
+## 2. How an LLM Learns to Talk — The Three Training Stages
+
+A chat model passes through **at least** three training stages. The clearest description is in *Training language models to follow instructions* (Ouyang et al., OpenAI 2022, the InstructGPT paper):
+
+<Mermaid client:load caption="Figure 2: The three-stage LLM training pipeline" chart={`flowchart LR
+  P[Massive raw text<br/>TB-scale] --> PT[Stage 1<br/>Pretrain<br/>Next-token Prediction]
+  PT --> SFT[Stage 2<br/>SFT<br/>Instruction tuning]
+  SFT --> RLHF[Stage 3<br/>RLHF / DPO<br/>Align to human preferences]
+  RLHF --> C[Chat Model]}`} />
+
+### Stage 1: Pretraining
+
+The model is trained on multi-terabyte corpora (web pages, books, code) with a self-supervised objective: given the first N tokens, predict token N+1. This is by far the most expensive stage — frontier-scale models reportedly cost tens to hundreds of millions of dollars. The output is a **base model**: it can continue text, but it cannot answer questions.
+
+### Stage 2: Supervised Fine-Tuning (SFT)
+
+A smaller, curated set of human-written "instruction → response" pairs (tens of thousands to a few hundred thousand) continues the training. The model shifts from "text completer" to "helpful assistant". This stage is orders of magnitude cheaper — a few GPU-days is often enough.
+
+### Stage 3: Preference Alignment (RLHF / DPO)
+
+Humans rank multiple candidate responses; reinforcement learning (PPO-based RLHF) or direct preference optimization (DPO) shapes the model toward safer, more helpful, brand-aligned outputs. Anthropic's *Constitutional AI* and OpenAI's *InstructGPT* both come from this lineage.
+
+> **Pitfall.** When you browse Hugging Face, you'll see a `Base` model (e.g. `Qwen2.5-7B`) and an `Instruct` / `Chat` model (e.g. `Qwen2.5-7B-Instruct`). **They went through different stages.** Base models are good for continuation, classification, or embedding fine-tuning. Instruct models are what you actually want for chat. **In production, default to the Instruct variant** unless you have a specific fine-tuning plan.
+
+## 3. What Happens at Inference
+
+After training, the model enters the **inference** (serving) stage. This is the layer you, as a frontend architect, actually touch.
+
+### 3.1 Token-by-Token Generation
+
+The LLM produces **one token at a time** (roughly 1.5 Chinese characters, or ~4 English characters), appends it to the prompt, and produces the next. That's why outputs arrive as a **stream** — the frontend receives chunks over SSE or WebSocket.
+
+```typescript
+// Vercel AI SDK — streaming generation (production-style snippet)
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const result = streamText({
+  model: openai('gpt-4o'),
+  prompt: 'Explain Transformer self-attention in one sentence.',
+});
+
+for await (const chunk of result.textStream) {
+  process.stdout.write(chunk);
+}
+```
+
+### 3.2 Sampling: Why the Same Prompt Gives Different Answers
+
+At every step, the model outputs a **probability distribution** over the entire vocabulary (typically 50K–100K tokens). Picking the next token is a sampling decision:
+
+- **Greedy** — always pick the highest-probability token. Deterministic, but tends to repeat and feels flat.
+- **Temperature** — values > 1 flatten the distribution (more "creative"); values < 1 sharpen it (more "focused").
+- **Top-p / Top-k** — sample only from the top-k tokens, or the smallest set whose cumulative probability reaches p. This trims the long tail of obviously bad choices.
+
+The Hugging Face [LLM tutorial](https://huggingface.co/docs/transformers/llm_tutorial) walks through the practical defaults: `do_sample=True` + `temperature=0.7` is a sane chat starting point.
+
+### 3.3 KV Cache — Why Long Prompts Get Expensive
+
+Generating each new token requires re-running self-attention over the entire growing context. The standard optimization is to **cache the Key / Value vectors of every previous token** so each new step only computes one fresh row. This is the **KV cache**.
+
+The cost: KV cache memory scales with `batch × seq_len × hidden_dim`. **The longer the context window, the more VRAM you burn.** This is why 200K-context models are either expensive or require aggressive optimization (PagedAttention, FlashAttention, quantization). Those techniques mitigate the problem — they don't eliminate it.
+
+## 4. Scaling Laws — Why "Bigger" Usually Wins
+
+A well-replicated empirical finding (*Scaling Laws for Neural Language Models*, Kaplan et al. 2020) is that **as you scale model size N, dataset size D, and compute C in lockstep, loss falls as a power law** smoothly. That's the boring-but-true part.
+
+The interesting part is **emergent abilities**: on tasks like multi-step reasoning or code synthesis, smaller models score near zero, then suddenly jump once a size threshold is crossed. This isn't mysticism — it's that scaling gives the model its first exposure to enough *similar* examples to learn a general solution.
+
+**Chinchilla** (Hoffmann et al. 2022, DeepMind) tightened the picture further: **for a fixed compute budget, model size and dataset size should grow in proportion**. That's why everyone is now "scaling tokens" — Llama 3 pushed training data to 15T tokens, and the trend has continued through 2025–2026.
+
+> **Caveat.** When a vendor says "our 1B model fine-tuned on domain data beats GPT-4" — they almost certainly mean "beats GPT-4 *on a narrow benchmark we overfit to*." On general chat, multi-step reasoning, or planning, **model scale still dominates**. Big isn't always right, but be skeptical of small-model supremacy claims without broad evaluation.
+
+## Pitfalls for Senior Architects
+
+1. **Don't use a base model for chat.** `Llama-3-70B` (base) and `Llama-3-70B-Instruct` are dramatically different products. Pick the latter.
+2. **Don't estimate cost by character count.** One Chinese character is usually 1–2 tokens, not 1. `tiktoken` and provider tokenizers exist for a reason — use them to count, every time.
+3. **A truncated stream is not an error.** When consuming SSE, treat `[DONE]` as a normal termination signal and always wrap consumption in `try/finally` to flush buffers. Otherwise half-responses leak.
+4. **Don't ask for JSON via prompt.** Use **tool calling / function calling / structured output** to get reliable structured data. Prompt-engineered JSON is brittle; tool-use is verified. We'll cover this in a later post.
+5. **Long context ≠ better recall.** Liu et al. 2023 (*Lost in the Middle*) showed that LLMs attend much more strongly to the beginning and end of long prompts. Put critical information at the edges.
+
+## Summary
+
+Five facts to anchor the rest of the series:
+
+- **Transformer** replaced recurrence with self-attention, enabling parallel training and long-range dependencies. Foundation paper: Vaswani et al. 2017.
+- **Three training stages** — pretrain → SFT → RLHF/DPO. A model is only "chat-ready" after all three.
+- **Inference** is token-by-token probabilistic sampling. KV cache makes long context feasible but eats VRAM.
+- **Scaling laws** explain why "bigger is better" generally holds. Emergent abilities make the investment pay off in non-obvious ways.
+- **Production hygiene**: pick Instruct variants, count tokens with the real tokenizer, always stream with proper cleanup, and prefer tool-use over prompt hacks.
+
+**Next up**: [Tokens, Context Window & Prompt Engineering Patterns](/en/blog/tokens-context-and-prompts) — turning today's low-level understanding into prompt patterns that actually work.
+
+## References
+
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762) — the original Transformer paper, structural foundation of every modern LLM
+- [Language Models are Few-Shot Learners (Brown et al., 2020)](https://arxiv.org/abs/2005.14165) — the GPT-3 paper, 175B parameters, in-context learning experiments
+- [LLaMA: Open and Efficient Foundation Language Models (Touvron et al., 2023)](https://arxiv.org/abs/2302.13971) — the first LLaMA paper, foundation of the open-weights era
+- [Hugging Face Transformers — LLM Tutorial](https://huggingface.co/docs/transformers/llm_tutorial) — official docs on `generate()`, sampling strategies, padding side, and other production essentials
+- [Vercel AI SDK — Introduction](https://ai-sdk.dev/docs/introduction) — the TypeScript-first LLM integration layer used in the streaming code sample above
