@@ -238,6 +238,10 @@ async function cachedGenerate(userQuery: string) {
 ### Implementation
 
 ```typescript
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+
 async function routedGenerate(userQuery: string) {
   // 1. Use small model to classify first
   const classification = await generateText({
@@ -251,11 +255,11 @@ Output only one word.`,
   
   const tier = classification.text.trim();
   
-  // 2. Route by tier
+  // 2. Route by tier (Vercel AI SDK requires model to be a provider instance, not a string)
   const modelMap = {
-    simple: 'gpt-4o-mini',
-    medium: 'gpt-4o',
-    hard: 'claude-opus-4',
+    simple: openai('gpt-4o-mini'),
+    medium: openai('gpt-4o'),
+    hard: anthropic('claude-opus-4-5'),
     dangerous: null,
   };
   

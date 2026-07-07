@@ -132,11 +132,16 @@ Just "tracing" isn't enough — traces need to carry the **right information**. 
 ### 1. User Context
 
 ```typescript
-langfuse.trace({
-  userId: 'u_123',
-  sessionId: 'sess_abc',
-  tags: ['production', 'v2.3'],
-  metadata: { source: 'web', userTier: 'premium' },
+// Langfuse v3+: traces are now created via startActiveSpan / startObservation.
+// Below is the legacy field schema (now passed as span attributes).
+await langfuse.startActiveSpan('chat', async (span) => {
+  span.setAttributes({
+    'langfuse.user.id': 'u_123',
+    'langfuse.session.id': 'sess_abc',
+    'langfuse.tags': ['production', 'v2.3'],
+    source: 'web',
+    userTier: 'premium',
+  });
 });
 ```
 
@@ -145,7 +150,7 @@ langfuse.trace({
 ### 2. Prompt Version
 
 ```typescript
-const prompt = langfuse.getPrompt('customer-support-v3');
+const prompt = await langfuse.prompt.get('customer-support-v3');
 // Auto-records prompt name + version + hash
 ```
 

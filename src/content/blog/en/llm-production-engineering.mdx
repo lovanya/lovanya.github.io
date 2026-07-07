@@ -91,7 +91,7 @@ import { Langfuse } from 'langfuse';
 const langfuse = new Langfuse();
 
 // Fetch prompt v3 (auto from Langfuse backend)
-const prompt = await langfuse.getPrompt('customer-support', {
+const prompt = await langfuse.prompt.get('customer-support', {
   version: 3,
   type: 'chat',
 });
@@ -203,8 +203,14 @@ async function choosePromptVersion(userId: string): Promise<string> {
 const version = await choosePromptVersion(userId);
 const prompt = await loadPrompt('customer-support', version);
 
-// Record actual version used
-langfuse.trace({ name: 'chat', userId, tags: [`prompt-version:${version}`] });
+// Record actual version used (Langfuse v3+ recommends span-based API)
+await langfuse.startActiveSpan('chat', async (span) => {
+  span.setAttributes({
+    'langfuse.user.id': userId,
+    'langfuse.tags': [`prompt-version:${version}`],
+  });
+  // business logic
+});
 ```
 
 **Canary release cadence**:

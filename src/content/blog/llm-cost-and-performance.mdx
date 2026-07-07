@@ -87,6 +87,7 @@ LLM 生成 500 tokens 通常需要 3-5s。**流式输出让用户感知延迟从
 ```typescript
 import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 
 // 服务端：流式返回
 export async function POST(req: Request) {
@@ -242,6 +243,10 @@ async function cachedGenerate(userQuery: string) {
 ### 实现
 
 ```typescript
+import { generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+
 async function routedGenerate(userQuery: string) {
   // 1. 用小模型先分类
   const classification = await generateText({
@@ -255,11 +260,11 @@ Query: ${userQuery}
   
   const tier = classification.text.trim();
   
-  // 2. 根据 tier 路由
+  // 2. 根据 tier 路由（Vercel AI SDK 要求 model 必须是 provider 实例，不是字符串）
   const modelMap = {
-    simple: 'gpt-4o-mini',
-    medium: 'gpt-4o',
-    hard: 'claude-opus-4',
+    simple: openai('gpt-4o-mini'),
+    medium: openai('gpt-4o'),
+    hard: anthropic('claude-opus-4-5'),
     dangerous: null,  // 拒绝
   };
   

@@ -132,11 +132,16 @@ sdk.start();
 ### 1. 用户上下文
 
 ```typescript
-langfuse.trace({
-  userId: 'u_123',
-  sessionId: 'sess_abc',
-  tags: ['production', 'v2.3'],
-  metadata: { source: 'web', userTier: 'premium' },
+// Langfuse v3+：trace 改用 startActiveSpan / startObservation 创建
+// 下面字段作为 span 的 attribute 传递
+await langfuse.startActiveSpan('chat', async (span) => {
+  span.setAttributes({
+    'langfuse.user.id': 'u_123',
+    'langfuse.session.id': 'sess_abc',
+    'langfuse.tags': ['production', 'v2.3'],
+    source: 'web',
+    userTier: 'premium',
+  });
 });
 ```
 
