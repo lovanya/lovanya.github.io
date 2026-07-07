@@ -1,0 +1,291 @@
+---
+title: "LLM Evaluation: Metrics, LLM-as-Judge & A/B Testing"
+description: Once observability gives you data, how do you decide which prompt is better — evaluation metrics, LLM-as-Judge, regression tests, Braintrust / Ragas practice.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'evaluation']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The previous post covered observability — you can see every call's details. But **"seeing" isn't enough, you also need to judge quality**:
+
+- Prompt A vs Prompt B — which answers user questions better?
+- After upgrading the embedding model, **did retrieval quality actually improve**?
+- After switching LLMs, **did business metrics change**?
+
+These questions have no standard answer. Traditional software unit tests **only verify output matches expectations**, but LLM output is **inherently non-deterministic** — same prompt, two runs may differ.
+
+This post covers:
+
+1. **5 categories of evaluation metrics**: from hard metrics to LLM-as-Judge
+2. **Offline evaluation sets**: how to build + how to run
+3. **Online A/B testing**: production environment comparison
+4. **Braintrust / Ragas practice**
+
+## 1. Five Categories of Evaluation Metrics
+
+Visualized:
+
+<Mermaid client:load caption="Figure 1: 5 categories of evaluation metrics" chart={`flowchart LR
+  E[LLM output] --> M1[Hard metrics<br/>exact match / BLEU]
+  E --> M2[Embedding metrics<br/>similarity]
+  E --> M3[LLM-as-Judge<br/>GPT-4 scoring]
+  E --> M4[Task metrics<br/>RAGAS / agent success rate]
+  E --> M5[Business metrics<br/>user satisfaction]`} />
+
+### 1. Hard Metrics
+
+Best for **single-correct-answer** scenarios:
+
+```typescript
+import { exactMatch, bleuScore } from 'autoevals';
+
+exactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
+bleuScore({ output: 'Hello world', expected: 'Hello' }); // 0.5
+```
+
+**Use for**: classification, named entity recognition, answer extraction (tool calls for structured output).
+
+### 2. Embedding Similarity
+
+Best for **open-ended but semantically similar answers**:
+
+```typescript
+import { embeddingSimilarity } from 'autoevals';
+
+const score = await embeddingSimilarity({
+  output: 'Paris is the capital of France',
+  expected: 'Paris is the capital of France',
+});
+// 0.92 (semantically close)
+```
+
+**Pitfall**: embedding model bias affects scores, **easy to create a self-fulfilling loop**.
+
+### 3. LLM-as-Judge
+
+**Use a stronger model to grade answers**. The workhorse for production LLM evaluation:
+
+```typescript
+import { llmRubric } from 'autoevals';
+
+const score = await llmRubric({
+  output: 'Paris is the capital of France',
+  expected: 'Paris is the capital of France',
+  rubric: 'Is the answer correct and concise?',
+  model: 'gpt-4o',  // stronger model as judge
+});
+// 0.9
+```
+
+**Strengths**: handles open-ended answers, captures semantic nuance
+**Pitfalls**:
+- **Judge bias**: LLM judges have their own preferences
+- **Position bias**: putting "good answer" first or last changes scores
+- **Self-evaluation bias**: GPT-4 judging GPT-4 scores too high
+
+**Mitigations**:
+- Use multiple judges and average
+- Swap answer / expected positions and average
+- Use a **stronger** model than the one being evaluated
+
+### 4. Task-Specific Metrics
+
+#### RAG: Ragas Metrics
+
+[Ragas](https://docs.ragas.io/en/stable/concepts/metrics/index.html) is the de facto standard for RAG evaluation:
+
+- **Faithfulness**: does the answer stick to retrieved context?
+- **Context Precision**: are retrieved chunks relevant?
+- **Context Recall**: are all relevant chunks retrieved?
+- **Answer Relevance**: does the answer address the question?
+
+```typescript
+import { evaluate } from 'ragas';
+import { openai } from '@ai-sdk/openai';
+
+const result = await evaluate({
+  dataset: {
+    questions: ['What is a Transformer?'],
+    contexts: [['A Transformer is...']],
+    answers: ['Transformer is a 2017 neural network...'],
+    ground_truths: ['Transformer is a 2017 Google neural network architecture...'],
+  },
+  metrics: [faithfulness, contextPrecision, contextRecall, answerRelevancy],
+  llm: openai('gpt-4o'),
+  embeddings: openai.embedding('text-embedding-3-small'),
+});
+
+console.log(result);  // { faithfulness: 0.9, contextPrecision: 0.85, ... }
+```
+
+#### Agent: Task Success Rate
+
+Agent evaluation needs to consider **tool calls + final result**:
+
+```typescript
+function agentEval({ input, expectedTools, actualOutput, toolCalls }) {
+  const toolsUsed = new Set(toolCalls.map(t => t.name));
+  const expectedToolsSet = new Set(expectedTools);
+  
+  return {
+    toolRecall: intersectionSize(toolsUsed, expectedToolsSet) / expectedToolsSet.size,
+    toolPrecision: intersectionSize(toolsUsed, expectedToolsSet) / toolsUsed.size,
+    taskSuccess: actualOutput.includes('order booked'),
+  };
+}
+```
+
+### 5. Business Metrics
+
+**The ultimate real metrics**:
+
+- User thumbs-up rate / count
+- Task completion rate (did the agent actually finish the user's task?)
+- User retention (D1 / D7)
+- Complaint rate
+
+**LLM evaluation ≠ business value**. All LLM metrics are **proxy metrics**; the ultimate measure is business.
+
+## 2. Offline Evaluation Sets: How to Build + How to Run
+
+### 4 Sources of Evaluation Data
+
+1. **Production data backfill**: randomly sample 100-500 real conversations from observability
+2. **Human annotation**: have domain experts write 100-200 "gold standard" answers
+3. **Adversarial samples**: based on historical errors, **specifically craft queries that are easy to get wrong**
+4. **Synthetic data**: use GPT-4 to generate cases from a schema, **human-review a subset**
+
+### Evaluation Set Size
+
+| Project Stage | Evaluation Set Size |
+|---|---|
+| Early prototype | 50-100 |
+| Pre-launch | 200-500 |
+| Continuous operation | 1000+, **refilled monthly** |
+
+### Running Evals: Braintrust in Practice
+
+[Braintrust](https://github.com/braintrustdata/braintrust-sdk-python) is one of the most mature LLM eval platforms:
+
+```typescript
+import { Eval } from 'braintrust';
+import { Factuality, LevenshteinScorer } from 'autoevals';
+
+await Eval('customer-support-v3', {
+  data: () => loadEvalDataset('support-100.json'),
+  task: async (input) => {
+    // Your application code
+    return generateReply(input);
+  },
+  scores: [Factuality, LevenshteinScorer],
+  experimentName: 'prompt-v3-test',
+})();
+```
+
+`Eval` will:
+1. Run each input through the task
+2. Score each output with each scorer
+3. Aggregate: averages, per-subset breakdowns, comparisons to baseline
+
+### Continuous Eval (CI/CD)
+
+```yaml
+# .github/workflows/eval.yml
+- name: Run LLM eval
+  run: |
+    braintrust eval eval/rag-pipeline.py
+    # Block PR merge on failure
+```
+
+After every prompt / embedding / model change, **automatically run regression**, alert if scores drop below threshold.
+
+## 3. Online A/B Testing: Production Environment Comparison
+
+Offline evaluation has limits — **real user behavior may differ from annotated data**. Production must A/B:
+
+<Mermaid client:load caption="Figure 2: A/B testing flow" chart={`flowchart LR
+  U[User query] --> R{Router}
+  R -->|50%| A[Version A<br/>old prompt]
+  R -->|50%| B[Version B<br/>new prompt]
+  A --> M[Log metrics]
+  B --> M
+  M --> S[Significance test]
+  S --> D{Significant?}
+  D -->|Yes| Full[Full rollout B]
+  D -->|No| Keep[Keep A]`} />
+
+### Implementation
+
+```typescript
+// Routing layer
+function routeUser(userId: string) {
+  const bucket = hashUserId(userId) % 100;
+  return bucket < 50 ? 'version-a' : 'version-b';
+}
+
+// Application layer
+const version = routeUser(userId);
+const result = version === 'version-a' ? await oldPrompt(input) : await newPrompt(input);
+
+// Logging
+await observability.track({
+  userId,
+  version,
+  input,
+  output: result.text,
+  userFeedback: await collectFeedback(userId),
+});
+```
+
+### A/B Testing Key Principles
+
+1. **Route by user** (not request) — same user always sees same version, **consistent experience**
+2. **Sufficient sample size** — A/B conclusions need statistical significance, **typically 1000+ users per group**
+3. **Core metric + guardrail metrics** — guardrails (latency, cost) can't get worse
+4. **New version starts small** — 5% → 20% → 50% → 100%, **gradual rollout**
+5. **Run at least 1-2 weeks** — cover weekday / weekend user behavior differences
+
+## 4. Production Evaluation Pipeline
+
+Complete flow:
+
+<Mermaid client:load caption="Figure 3: Production evaluation pipeline" chart={`flowchart LR
+  C[Change<br/>prompt / model] --> O[Offline eval<br/>Braintrust]
+  O --> S{Score improved?}
+  S -->|No| Fix[Refine prompt]
+  S -->|Yes| AB[5% A/B test]
+  AB --> P{Guardrails OK?}
+  P -->|No| Rollback[Rollback]
+  P -->|Yes| Expand[20% → 50% → 100%]
+  Expand --> M[Monitor business metrics]`} />
+
+**Key**: offline score improvement ≠ online business improvement, **watch both**.
+
+## Pitfalls for Senior Architects
+
+1. **Don't use a single LLM-as-Judge.** Judge bias causes inflated / deflated scores — **use 2-3 judges + swap positions**.
+2. **Don't ignore baseline.** Every eval **must compare against a baseline** (e.g. gpt-4o / historical version); absolute scores alone mean nothing.
+3. **Don't drown offline evals in synthetic data.** Synthetic data **self-loops** (generated by GPT-4, judged by GPT-4) — results are misleading.
+4. **Don't draw A/B conclusions on tiny samples.** < 500 / group is **mostly noise** — wait for significance.
+5. **Don't use prompts to evaluate prompts.** Same-model self-evaluation creates bias — **use a stronger model as judge**.
+
+## Summary
+
+Five takeaways:
+
+- **5 metric categories**: hard / embedding / LLM-as-Judge / task-specific / business. **Business is the ultimate metric**.
+- **LLM-as-Judge is essential**: stronger model as judge, but **guard against position + self-eval bias**.
+- **Offline + online combined**: offline for fast iteration (200-500 cases), online A/B for validation (1000+ users).
+- **Continuously grow the eval set**: refill monthly, **especially adversarial samples from historical errors**.
+- **Don't trust scores alone**: score improvement ≠ business improvement, **watch both**.
+
+**Next up**: [LLM Cost & Performance Optimization: Caching, Streaming & Model Routing](/en/blog/llm-cost-and-performance) — entering the production wrap-up.
+
+## References
+
+- [Ragas Metrics Documentation](https://docs.ragas.io/en/stable/concepts/metrics/index.html) — RAG eval de facto standard (faithfulness / context precision / recall / answer relevance)
+- [Braintrust Python SDK (GitHub)](https://github.com/braintrustdata/braintrust-sdk-python) — eval framework, dataset + scorer + continuous integration
+- [Vercel AI SDK — Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — evaluate agent tool call success rate

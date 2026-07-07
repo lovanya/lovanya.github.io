@@ -1,0 +1,291 @@
+---
+title: "LLM 应用的评估体系：Metrics、LLM-as-Judge 与 A/B 测试"
+description: 当 observability 有了数据，怎么判断哪个 prompt 更好——评估指标、LLM-as-Judge 实战、回归测试集、Braintrust / Ragas 实践
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'evaluation']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+上一篇讲了 observability——能看到每次调用的细节。但**光"看到"不够，你还要"判断好坏"**：
+
+- Prompt A 和 Prompt B 哪个回答用户问题更好？
+- 升级 embedding 模型后，**检索质量是否真的提升了**？
+- 换 LLM 后，**业务指标是否变化**？
+
+这些问题没有标准答案。传统软件的单元测试**只能验证输出符合预期**，但 LLM 输出**本质上不确定**——同一个 prompt 两次结果可能不同。
+
+这一篇覆盖：
+
+1. **5 类评估指标**：从硬指标到 LLM-as-Judge
+2. **离线评估集**：怎么构造 + 怎么跑
+3. **在线 A/B 测试**：生产环境对比
+4. **Braintrust / Ragas 实战**
+
+## 一、5 类评估指标
+
+[Mermaid] 视觉化：
+
+<Mermaid client:load caption="图 1：5 类评估指标" chart={`flowchart LR
+  E[LLM 输出] --> M1[硬指标<br/>exact match / BLEU]
+  E --> M2[embedding 指标<br/>相似度]
+  E --> M3[LLM-as-Judge<br/>GPT-4 打分]
+  E --> M4[任务指标<br/>RAGAS / Agent 成功率]
+  E --> M5[业务指标<br/>用户满意度]`} />
+
+### 1. 硬指标（Hard Metrics）
+
+适合**答案唯一**的场景：
+
+```typescript
+import { exactMatch, bleuScore } from 'autoevals';
+
+exactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
+bleuScore({ output: 'Hello world', expected: 'Hello' }); // 0.5
+```
+
+**适用**：分类、命名实体识别、答案抽取（用工具调用做结构化输出）。
+
+### 2. Embedding 相似度
+
+适合**答案开放但语义应相近**：
+
+```typescript
+import { embeddingSimilarity } from 'autoevals';
+
+const score = await embeddingSimilarity({
+  output: '巴黎是法国的首都',
+  expected: 'Paris is the capital of France',
+});
+// 0.92（语义接近）
+```
+
+**陷阱**：embedding 模型本身的偏差会影响评分结果，**容易"自我循环"**。
+
+### 3. LLM-as-Judge
+
+**用更强的模型给答案打分**。生产 LLM 评估的主力：
+
+```typescript
+import { llmRubric } from 'autoevals';
+
+const score = await llmRubric({
+  output: '巴黎是法国的首都',
+  expected: 'Paris is the capital of France',
+  rubric: '答案是否正确、简洁',
+  model: 'gpt-4o',  // 用更强的模型当裁判
+});
+// 0.9
+```
+
+**优点**：能评估开放性回答，捕捉语义细节
+**陷阱**：
+- **评委偏差**：LLM 评委有自己的偏好
+- **位置偏差**：把"好答案"放在前面/后面会改变评分
+- **自评偏差**：让 GPT-4 评 GPT-4 输出，分数偏高
+
+**缓解**：
+- 用多个评委取平均
+- 调换答案 / 期望的位置各评一次取平均
+- 用**比生产更强的模型**当评委（GPT-4 评 GPT-4o-mini）
+
+### 4. 任务特定指标（Task-Specific）
+
+#### RAG：Ragas 指标
+
+[Ragas](https://docs.ragas.io/en/stable/concepts/metrics/index.html) 是 RAG 评估的事实标准：
+
+- **Faithfulness（忠实度）**：答案是否忠于检索到的 context
+- **Context Precision**：检索的 chunks 是否相关
+- **Context Recall**：相关 chunks 是否都被检索到
+- **Answer Relevance**：答案是否回答了问题
+
+```typescript
+import { evaluate } from 'ragas';
+import { openai } from '@ai-sdk/openai';
+
+const result = await evaluate({
+  dataset: {
+    questions: ['什么是 Transformer?'],
+    contexts: [['Transformer 是一种...']],
+    answers: ['Transformer 是 2017 年提出的...'],
+    ground_truths: ['Transformer 是 Google 2017 年提出的神经网络架构...'],
+  },
+  metrics: [faithfulness, contextPrecision, contextRecall, answerRelevancy],
+  llm: openai('gpt-4o'),  // 评委 LLM
+  embeddings: openai.embedding('text-embedding-3-small'),
+});
+
+console.log(result);  // { faithfulness: 0.9, contextPrecision: 0.85, ... }
+```
+
+#### Agent：任务成功率
+
+Agent 评估需要看**工具调用 + 最终结果**：
+
+```typescript
+function agentEval({ input, expectedTools, actualOutput, toolCalls }) {
+  const toolsUsed = new Set(toolCalls.map(t => t.name));
+  const expectedToolsSet = new Set(expectedTools);
+  
+  return {
+    toolRecall: intersectionSize(toolsUsed, expectedToolsSet) / expectedToolsSet.size,
+    toolPrecision: intersectionSize(toolsUsed, expectedToolsSet) / toolsUsed.size,
+    taskSuccess: actualOutput.includes('订单已预订'),
+  };
+}
+```
+
+### 5. 业务指标
+
+**最终的真实指标**：
+
+- 用户点赞率 / 点赞数
+- 任务完成率（agent 是否真的完成了用户任务）
+- 用户留存（次日 / 7 日）
+- 投诉率
+
+**LLM 评估 ≠ 业务价值**。所有 LLM 指标都是**代理指标**，最终看业务。
+
+## 二、离线评估集：怎么构造 + 怎么跑
+
+### 构造评估集的 4 个来源
+
+1. **生产数据回捞**：从 observability 平台随机抽样 100-500 条真实对话
+2. **人工标注**：让领域专家写 100-200 条"标准答案"
+3. **对抗样本**：根据历史错误，**专门构造容易出错的 query**
+4. **合成数据**：用 GPT-4 根据 schema 生成大量合成 case，**人工 review 一部分**
+
+### 评估集大小
+
+| 项目阶段 | 评估集大小 |
+|---------|-----------|
+| 早期原型 | 50-100 条 |
+| 上线前 | 200-500 条 |
+| 持续运营 | 1000+ 条，**每月补充** |
+
+### 跑评估：Braintrust 实战
+
+[Braintrust](https://github.com/braintrustdata/braintrust-sdk-python) 是当前最成熟的 LLM 评估平台之一：
+
+```typescript
+import { Eval } from 'braintrust';
+import { Factuality, LevenshteinScorer } from 'autoevals';
+
+await Eval('customer-support-v3', {
+  data: () => loadEvalDataset('support-100.json'),
+  task: async (input) => {
+    // 你的应用代码
+    return generateReply(input);
+  },
+  scores: [Factuality, LevenshteinScorer],
+  experimentName: 'prompt-v3-test',
+})();
+```
+
+`Eval` 会：
+1. 跑每条 input 通过 task
+2. 用每个 scorer 给 output 打分
+3. 聚合结果：平均分、按子集分、对比基线
+
+### 持续评估（CI/CD）
+
+```yaml
+# .github/workflows/eval.yml
+- name: Run LLM eval
+  run: |
+    braintrust eval eval/rag-pipeline.py
+    # 失败时阻断 PR 合并
+```
+
+每次 prompt / embedding / 模型变更后，**自动跑回归**，分数跌过阈值就报警。
+
+## 三、在线 A/B 测试：生产环境对比
+
+离线评估有局限——**真实用户行为可能跟标注数据不一致**。生产里必须 A/B：
+
+<Mermaid client:load caption="图 2：A/B 测试流程" chart={`flowchart LR
+  U[用户 query] --> R{路由器}
+  R -->|50%| A[版本 A<br/>旧 prompt]
+  R -->|50%| B[版本 B<br/>新 prompt]
+  A --> M[记录指标]
+  B --> M
+  M --> S[统计显著性分析]
+  S --> D{显著?}
+  D -->|是| Full[全量发布 B]
+  D -->|否| Keep[A]`} />
+
+### 实现
+
+```typescript
+// 路由层
+function routeUser(userId: string) {
+  const bucket = hashUserId(userId) % 100;
+  return bucket < 50 ? 'version-a' : 'version-b';
+}
+
+// 应用层
+const version = routeUser(userId);
+const result = version === 'version-a' ? await oldPrompt(input) : await newPrompt(input);
+
+// 记录
+await observability.track({
+  userId,
+  version,
+  input,
+  output: result.text,
+  userFeedback: await collectFeedback(userId),
+});
+```
+
+### A/B 测试的关键原则
+
+1. **按 user 路由**（不是按 request）——同一个用户始终看到同一版本，**体验一致**
+2. **样本量足够**——A/B 结论需要统计显著性，**通常 1000+ 用户 / 每组**
+3. **核心指标 + 护栏指标**——护栏（延迟、成本）不能变差
+4. **新版本先小流量**——5% → 20% → 50% → 100%，**逐步放量**
+5. **持续至少 1-2 周**——覆盖工作日 / 周末的 user 行为差异
+
+## 四、生产评估 pipeline
+
+完整流程：
+
+<Mermaid client:load caption="图 3：生产评估 pipeline" chart={`flowchart LR
+  C[变更<br/>prompt / model] --> O[Offline eval<br/>Braintrust]
+  O --> S{分数提升?}
+  S -->|否| Fix[优化 prompt / 调整]
+  S -->|是| AB[5% A/B 测试]
+  AB --> P{护栏达标?}
+  P -->|否| Rollback[回滚]
+  P -->|是| Expand[20% → 50% → 100%]
+  Expand --> M[监控业务指标]`} />
+
+**关键**：离线分数提升 ≠ 在线业务提升，**两者都要看**。
+
+## 踩坑提醒
+
+1. **不要只用一个 LLM-as-Judge**。评委偏差会导致分数虚高 / 虚低，**用 2-3 个评委 + 调换位置**。
+2. **不要忽略 baseline**。每次评估**必须对比基线**（如 gpt-4o / 历史版本），单看绝对分数没意义。
+3. **不要在线下评估里灌太多合成数据**。合成数据会**自我循环**（用 GPT-4 生成，用 GPT-4 评估），结果失真。
+4. **不要 A/B 测试样本太少就下结论**。< 500 / 组的结果**几乎全是噪声**，等显著性再决定。
+5. **不要用 prompt 评估 prompt**。同模型评自己会产生自评偏差，**用更强模型当评委**。
+
+## 总结
+
+5 个 takeaway：
+
+- **5 类指标**：硬指标 / embedding / LLM-as-Judge / 任务特定 / 业务。**业务指标才是终极指标**。
+- **LLM-as-Judge 必备**：用更强模型当评委，但**要防位置偏差 + 自评偏差**。
+- **离线 + 在线结合**：离线快速迭代（200-500 条 case），在线 A/B 验证（1000+ 用户）。
+- **评估集持续扩充**：每月补充新 case，**特别是历史错误的对抗样本**。
+- **不要只看分数**：分数提升 ≠ 业务提升，**两者都要看**。
+
+**下一篇**：[LLM 成本与性能优化：Caching、Streaming 与模型路由](/blog/llm-cost-and-performance) — 进入生产化收官篇。
+
+## 参考资料
+
+- [Ragas Metrics Documentation](https://docs.ragas.io/en/stable/concepts/metrics/index.html) — RAG 评估事实标准（faithfulness / context precision / recall / answer relevance）
+- [Braintrust Python SDK (GitHub)](https://github.com/braintrustdata/braintrust-sdk-python) — 评估框架，dataset + scorer + 持续集成
+- [Vercel AI SDK — Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — 评估 Agent 工具调用的成功率
