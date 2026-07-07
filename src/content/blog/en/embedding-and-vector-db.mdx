@@ -1,0 +1,264 @@
+---
+title: "Embedding Models & Vector Database Selection in Practice"
+description: How to pick RAG's two core dependencies — BGE / OpenAI / Cohere / Voyage? Pinecone / Milvus / pgvector / Qdrant / Weaviate?
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'embedding']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The previous post walked through the RAG pipeline, but skipped two core dependencies: **the embedding model** and **the vector database**. Get either wrong, and the RAG ceiling locks in.
+
+Both are **hard to swap in production**:
+- Swap embedding model → must re-embed everything + rebuild index. Millions of docs = days of work.
+- Swap vector database → migrate data + retune index params + rewrite application code.
+
+So choose carefully at the start. This post walks through both, in order:
+
+1. **Embedding models** — 5 evaluation dimensions + mainstream model comparison
+2. **Vector databases** — 5 mainstream options + decision framework
+3. **Practical selection checklist** — by QPS, data volume, deployment constraints
+
+## 1. Embedding Model Selection
+
+Embedding models turn text into vectors. **Vector quality directly caps RAG recall** — pick wrong, no retrieval strategy will save you.
+
+### 5 Evaluation Dimensions
+
+| Dimension | How to measure | Why it matters |
+|---|---|---|
+| **Retrieval accuracy** | MTEB BEIR / MIRACL | Core metric: does it recall the right answer? |
+| **Multilingual quality** | C-MTEB / MMARCO | High English score doesn't mean strong Chinese |
+| **Vector dimension** | Check model docs | Higher dim = more accurate but expensive |
+| **Inference cost** | $/1M tokens | At 100 QPS × 100 tokens, cost blows up fast |
+| **Context length** | max sequence length | Long docs (>512 tokens) need splitting, loses semantics |
+
+### Mainstream Models (mid-2026)
+
+By category:
+
+**Closed-source**
+
+- **OpenAI text-embedding-3-small** — 1536 dim, $0.02/1M tokens. **Strong general-purpose baseline**, balanced English + multilingual
+- **OpenAI text-embedding-3-large** — 3072 dim, $0.13/1M tokens. **Highest accuracy**, expensive
+- **Cohere embed-v3** — 1024 dim, $0.10/1M tokens. **Built-in compression API** (output 256/512/1024 dim on demand)
+- **Voyage-3** — 1024 dim, $0.06/1M tokens. **SOTA for legal / financial domains**
+- **Google gemini-embedding-001** — 3072 dim, Matryoshka support (dynamic dim)
+
+**Open-source**
+
+- **BAAI/bge-large-en-v1.5** ([HuggingFace](https://huggingface.co/BAAI/bge-large-en-v1.5)) — 1024 dim, **MTEB English average 64.23**, top open-source English model
+- **BAAI/bge-m3** — 1024 dim, **multilingual + long-context (8192 tokens) + dense/sparse/ColBERT in one**. First choice for Chinese / cross-lingual / long-doc RAG
+- **Alibaba gte-large / gte-Qwen2** — strong open-source multilingual, near-closed-source quality
+- **intfloat/e5-large-v2** — another open-source English SOTA, widely adopted
+
+### Practical Selection Guide
+
+<Mermaid client:load caption="Figure 1: Embedding selection decision tree" chart={`flowchart TD
+  Start[Need an embedding model] --> Q1{Data language?}
+  Q1 -->|Pure English| Q2{Scale?}
+  Q1 -->|Chinese / Multilingual| BGE[BGE-m3 or OpenAI text-embedding-3-large]
+  Q2 -->|Small| OpenAI[OpenAI text-embedding-3-small]
+  Q2 -->|Large| Voyage[Voyage-3 or self-hosted BGE]
+  Q1 -->|Long docs > 512 tokens| BGE`} />
+
+**Heuristics:**
+- **Budget OK + general purpose**: `text-embedding-3-small` is hard to beat
+- **Chinese / multilingual**: `bge-m3` (open-source, self-hostable, data stays on-prem)
+- **Legal / financial / medical**: `voyage-3` (domain SOTA)
+- **Large scale + cost-sensitive**: self-host `bge-large-en-v1.5` (GPU) or `bge-m3`
+
+### A Common Trap: Switching Models Means Full Rebuild
+
+If you have 5M production docs and want to switch from `text-embedding-3-small` to `bge-m3`:
+- 5M embed API calls = hours to days
+- Vector index rebuild = hours (depends on DB)
+- Service might need degradation during the transition
+
+**Recommendation**: Before launch, run an **offline A/B eval** with ≥ 1000 real queries + ground truth on candidate embeddings. Pick one, then go all-in.
+
+## 2. Vector Database Selection
+
+The vector DB handles "how to find similar vectors fast." Five production concerns:
+
+### 5 Dimensions
+
+1. **Scale** — 100K / 1M / 10M / 100M+ — Postgres extension vs. standalone DB
+2. **Latency** — < 10ms (real-time) / < 100ms (near-real-time) / several hundred ms (batch)
+3. **Deployment model** — self-hosted / cloud-managed / embedded
+4. **Hybrid retrieval** — native support for BM25 + vector
+5. **Operations** — monitoring / backup / multi-tenant / permissions
+
+### 5 Mainstream Options
+
+#### Option 1: pgvector (Postgres Extension)
+
+[pgvector](https://github.com/pgvector/pgvector) is a Postgres extension. **Biggest advantage: data and vectors in the same database**.
+
+```sql
+-- Install
+CREATE EXTENSION vector;
+
+-- Create table
+CREATE TABLE docs (
+  id BIGSERIAL PRIMARY KEY,
+  content TEXT,
+  metadata JSONB,
+  embedding vector(1536)  -- OpenAI 1536 dim
+);
+
+-- Index (HNSW for high recall, IVFFlat for fast build)
+CREATE INDEX ON docs USING hnsw (embedding vector_cosine_ops);
+
+-- Query
+SELECT id, content, metadata
+FROM docs
+WHERE metadata->>'category' = 'api'  -- metadata filter
+ORDER BY embedding <=> $1             -- cosine distance
+LIMIT 4;
+```
+
+**Strengths**:
+- Teams already on Postgres: zero infrastructure cost
+- Native JOINs / ACID / transactions
+- 40+ language client libraries
+
+**Weaknesses**:
+- Comfortable to ~10s of millions per instance; billion-scale needs Citus / PgDog sharding
+- Advanced ANN algorithms require DIY composition (binary quantization + iterative scan)
+
+**When to pick pgvector**:
+- Data is already in Postgres
+- Total vectors < 10M
+- Need metadata JOINs with business tables
+
+#### Option 2: Milvus (Self-hosted, Billion-scale)
+
+[Milvus](https://milvus.io/docs/overview.md) takes a cloud-native path, built for large-scale vector search:
+
+- **Scale**: proven to **tens of billions**; powers 300+ enterprises including Salesforce, PayPal, NVIDIA, IBM
+- **Indexes**: HNSW / IVF / FLAT / SCANN / DiskANN + quantization + GPU acceleration (CAGRA)
+- **Hybrid retrieval**: dense + sparse + BM25 full-text + reranking, all native
+- **Deployment**: Lite (notebook) / Standalone (single Docker) / Distributed (K8s billion-scale) / Zilliz Cloud (managed)
+
+**Strengths**: scale, performance, hybrid retrieval, enterprise features
+**Weaknesses**: K8s ops overhead, small teams on Standalone hit resource limits
+
+**When to pick Milvus**:
+- Data scale ≥ 100M vectors
+- Need hybrid retrieval (dense + sparse + BM25)
+- Have K8s ops capacity
+
+#### Option 3: Pinecone (Cloud-managed)
+
+Pinecone is serverless-style, cloud-native vector DB:
+
+- **Strengths**: zero ops, on-demand scaling, integrated embedding models
+- **Weaknesses**: vendor lock-in, data egress, higher per-GB cost
+- **Distinctive**: **document schema** combines dense + sparse + full-text in one index
+
+**When to pick Pinecone**:
+- Don't want to operate a vector DB
+- Data can leave your region / already on AWS
+- Bursty traffic patterns (low QPS baseline, occasional spikes)
+
+#### Option 4: Qdrant (Rust, High Performance)
+
+- Performance near Milvus, single-binary deploy
+- Rust-based filtering engine — extremely fast metadata filtering
+- Good fit for **complex metadata filtering** + ~10M scale
+
+#### Option 5: Weaviate (GraphQL-first)
+
+- Built-in modular embedding + reranker integrations
+- GraphQL query API
+- Good fit for teams **already on a GraphQL stack**
+
+### Decision Tree
+
+<Mermaid client:load caption="Figure 2: Vector DB selection decision tree" chart={`flowchart TD
+  Start[Pick vector DB] --> Q1{Data already in Postgres?}
+  Q1 -->|Yes, < 10M| PG[pgvector]
+  Q1 -->|No| Q2{Can do K8s ops?}
+  Q2 -->|Yes, billion-scale| Milvus
+  Q2 -->|No| Q3{Don't want ops?}
+  Q3 -->|Yes| Pinecone
+  Q3 -->|No, heavy metadata filter| Qdrant
+  Q3 -->|No, on GraphQL| Weaviate`} />
+
+## 3. Production Stacks: 3 Reference Setups
+
+### Setup A: Small Team, 100K - 1M Documents
+
+```typescript
+// embedding: OpenAI text-embedding-3-small
+// vector DB: pgvector
+// A single Postgres instance
+import { embed } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Pool } from 'pg';
+
+const { embedding } = await embed({
+  model: openai.embedding('text-embedding-3-small'),
+  value: userQuery,
+});
+
+const { rows } = await pool.query(
+  `SELECT content FROM docs
+   WHERE category = $2
+   ORDER BY embedding <=> $1
+   LIMIT 4`,
+  [JSON.stringify(embedding), 'api']
+);
+```
+
+**Monthly cost** (10M tokens embed): ~$200 + Postgres host fee
+
+### Setup B: Mid-scale, 5M - 50M Documents
+
+```typescript
+// embedding: bge-m3 self-hosted (GPU)
+// vector DB: Milvus Standalone + BM25 hybrid search
+// 1 × 8-GPU server + 1 × vector DB host
+```
+
+**Monthly cost**: GPU server ~$3000 + vector DB host ~$500
+
+### Setup C: Large-scale, 100M+ Documents
+
+```typescript
+// embedding: hybrid (self-hosted bge-m3 + OpenAI large for hard queries)
+// vector DB: Milvus Distributed + Cohere Rerank
+// Multiple GPU hosts + K8s cluster
+```
+
+**Monthly cost**: GPU cluster ~$15000 + Cohere rerank (per call)
+
+## Pitfalls for Senior Architects
+
+1. **Don't mix vectors from different embedding models.** When migrating, you **must re-embed everything** — old and new vectors live in different spaces and are not comparable.
+2. **Don't pick by benchmark alone.** **Run offline eval on your own domain data + real queries** — an English SOTA can flop on Chinese / legal / code.
+3. **Don't skip metadata index.** pgvector's metadata filter without an index will table-scan at hundred-million scale.
+4. **Don't co-locate vector index with OLTP.** Production: dedicated vector hosts + replicas, so OLTP writes don't tank retrieval performance.
+5. **Don't "select once, never re-evaluate."** Re-eval embeddings / vector DB every 6 months — new models / new DBs may be better.
+
+## Summary
+
+Five takeaways:
+
+- **Embedding model caps RAG recall**: 5-dim eval (accuracy / multilingual / dim / cost / context); always run offline A/B on your own data first.
+- **BGE-m3 is the Chinese / multilingual first choice**: open-source, self-hostable, supports dense + sparse + long-context.
+- **OpenAI text-embedding-3-small is the English general-purpose baseline**: hard to go wrong on generic workloads.
+- **pgvector fits < 10M vectors + existing Postgres**: lowest cost, mature ecosystem.
+- **Milvus / Pinecone / Qdrant for > 10M vectors**: pick by K8s capacity, managed preference, metadata complexity.
+- **Hard to swap after selection**: evaluate thoroughly before launch.
+
+**Next up**: [Function Calling & Tool Use: From Protocol to Engineering](/en/blog/function-calling-and-tools) — entering the Agent core patterns.
+
+## References
+
+- [BAAI/bge-large-en-v1.5 (HuggingFace)](https://huggingface.co/BAAI/bge-large-en-v1.5) — open-source English embedding SOTA, MTEB 64.23
+- [Milvus Architecture Overview](https://milvus.io/docs/overview.md) — cloud-native vector DB, native dense + sparse + BM25 hybrid retrieval
+- [pgvector (GitHub)](https://github.com/pgvector/pgvector) — Postgres vector extension, HNSW / IVFFlat + metadata filtering
