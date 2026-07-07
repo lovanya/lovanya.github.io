@@ -95,7 +95,8 @@ export async function POST(req: Request) {
     messages,
   });
   
-  return result.toDataStreamResponse();  // SSE format
+  // AI SDK v4: use toUIMessageStreamResponse() (toDataStreamResponse is deprecated)
+  return result.toUIMessageStreamResponse();
 }
 
 // Client side: consume the stream
@@ -127,8 +128,7 @@ const result = streamText({
   model: openai('gpt-4o'),
   tools: { searchWeb, queryDB },
   prompt: userQuery,
-  // Stream every step
-  experimental_streamToolCalls: true,
+  // Tool calls and text both stream by default in AI SDK v4+
 });
 
 for await (const chunk of result.textStream) {

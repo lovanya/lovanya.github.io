@@ -97,7 +97,8 @@ export async function POST(req: Request) {
     messages,
   });
   
-  return result.toDataStreamResponse();  // SSE 格式
+  // AI SDK v4: 用 toUIMessageStreamResponse()（toDataStreamResponse 已弃用）
+  return result.toUIMessageStreamResponse();
 }
 
 // 客户端：消费流
@@ -129,8 +130,7 @@ const result = streamText({
   model: openai('gpt-4o'),
   tools: { searchWeb, queryDB },
   prompt: userQuery,
-  // 每个 step 都流式
-  experimental_streamToolCalls: true,
+  // 工具调用和文本默认都流式（无需 experimental 开关）
 });
 
 for await (const chunk of result.textStream) {

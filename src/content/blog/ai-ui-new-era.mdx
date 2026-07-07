@@ -77,36 +77,45 @@ Claude: [生成完整的 React 组件，包含 7 个柱状图]
 
 ```typescript
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 function Chat() {
-  const { messages, input, handleSubmit } = useChat({
-    api: '/api/chat',
+  // AI SDK v4+: api endpoint 通过 transport 配置
+  const { messages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
-  
+  const [input, setInput] = useState('');
+
   return (
     <>
       {messages.map((m) => (
         <Message key={m.id} message={m} />
       ))}
-      <form onSubmit={handleSubmit}>
-        <input value={input} onChange={...} />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage({ text: input });
+          setInput('');
+        }}
+      >
+        <input value={input} onChange={(e) => setInput(e.target.value)} />
       </form>
     </>
   );
 }
 
 function Message({ message }) {
-  // message.parts 包含 LLM 流式返回的多个 parts
-  // 可以是 text、tool-call、UI 组件、JSON 数据
-  return message.parts.map((part) => {
-    if (part.type === 'text') return <p>{part.text}</p>;
-    if (part.type === 'tool-weather') return <WeatherCard data={part.result} />;
-    if (part.type === 'tool-chart') return <Chart data={part.result} />;
+  // message.parts 包含 LLM 流式返回的多个 parts（v4+ 新结构）
+  // parts 包括 type='text'、type='reasoning'、type='tool-<toolName>' 等
+  return message.parts.map((part, i) => {
+    if (part.type === 'text') return <p key={i}>{part.text}</p>;
+    if (part.type === 'tool-weather') return <WeatherCard key={i} data={part.output} />;
+    if (part.type === 'tool-chart') return <Chart key={i} data={part.output} />;
   });
 }
 ```
 
-**LLM 返回的是 JSON schema，前端根据 schema 渲染对应组件**。
+**LLM 返回的是 JSON schema，前端根据 schema 渲染对应组件**。注意 `message.toolInvocations` 在 v4+ 中已被 `message.parts` 取代（每个 tool call 是一个独立的 part）。
 
 ### 案例 3：Chart-as-Answer
 
@@ -164,16 +173,26 @@ UI 显示 agent 思考过程：
   "💬 最终答案: [图表 + 文字说明]"
 ```
 
-**Vercel AI SDK 的 useChat 支持 tool call UI**：
+**Vercel AI SDK 的 useChat 支持 tool call UI**（v4+ 用 `message.parts` 替代 `toolInvocations`）：
 
 ```typescript
 function Message({ message }) {
+  // 过滤出 tool 类型的 parts
+  const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
+  const textParts = message.parts.filter((p) => p.type === 'text');
+
   return (
     <>
-      {message.toolInvocations?.map((tool) => (
-        <ToolCallCard key={tool.toolCallId} tool={tool} />
+      {toolParts.map((part) => (
+        <ToolCallCard
+          key={part.toolCallId}
+          toolName={part.type.replace('tool-', '')}
+          input={part.input}
+          output={part.output}
+          state={part.state}  // 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+        />
       ))}
-      {message.content && <p>{message.content}</p>}
+      {textParts.map((part, i) => <p key={i}>{part.text}</p>)}
     </>
   );
 }

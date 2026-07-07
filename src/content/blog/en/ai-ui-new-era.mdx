@@ -75,36 +75,45 @@ Claude: [generates complete React component with 7 bar charts]
 
 ```typescript
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 
 function Chat() {
-  const { messages, input, handleSubmit } = useChat({
-    api: '/api/chat',
+  // AI SDK v4+: api endpoint is configured via transport
+  const { messages, sendMessage } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
-  
+  const [input, setInput] = useState('');
+
   return (
     <>
       {messages.map((m) => (
         <Message key={m.id} message={m} />
       ))}
-      <form onSubmit={handleSubmit}>
-        <input value={input} onChange={...} />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          sendMessage({ text: input });
+          setInput('');
+        }}
+      >
+        <input value={input} onChange={(e) => setInput(e.target.value)} />
       </form>
     </>
   );
 }
 
 function Message({ message }) {
-  // message.parts contains multiple parts streamed back from LLM
-  // can be text, tool-call, UI components, JSON data
-  return message.parts.map((part) => {
-    if (part.type === 'text') return <p>{part.text}</p>;
-    if (part.type === 'tool-weather') return <WeatherCard data={part.result} />;
-    if (part.type === 'tool-chart') return <Chart data={part.result} />;
+  // message.parts contains multiple parts streamed back from LLM (v4+ new structure)
+  // parts include type='text', type='reasoning', type='tool-<toolName>', etc.
+  return message.parts.map((part, i) => {
+    if (part.type === 'text') return <p key={i}>{part.text}</p>;
+    if (part.type === 'tool-weather') return <WeatherCard key={i} data={part.output} />;
+    if (part.type === 'tool-chart') return <Chart key={i} data={part.output} />;
   });
 }
 ```
 
-**LLM returns JSON schema; frontend renders the corresponding component**.
+**LLM returns JSON schema; frontend renders the corresponding component**. Note: `message.toolInvocations` was replaced by `message.parts` in v4+ (each tool call is an independent part).
 
 ### Case 3: Chart-as-Answer
 
@@ -162,16 +171,26 @@ UI shows agent's thinking process:
   "💬 Final answer: [chart + text explanation]"
 ```
 
-**Vercel AI SDK's useChat supports tool call UI**:
+**Vercel AI SDK's useChat supports tool call UI** (v4+ uses `message.parts` instead of `toolInvocations`):
 
 ```typescript
 function Message({ message }) {
+  // Filter for tool-type parts
+  const toolParts = message.parts.filter((p) => p.type.startsWith('tool-'));
+  const textParts = message.parts.filter((p) => p.type === 'text');
+
   return (
     <>
-      {message.toolInvocations?.map((tool) => (
-        <ToolCallCard key={tool.toolCallId} tool={tool} />
+      {toolParts.map((part) => (
+        <ToolCallCard
+          key={part.toolCallId}
+          toolName={part.type.replace('tool-', '')}
+          input={part.input}
+          output={part.output}
+          state={part.state}  // 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+        />
       ))}
-      {message.content && <p>{message.content}</p>}
+      {textParts.map((part, i) => <p key={i}>{part.text}</p>)}
     </>
   );
 }
