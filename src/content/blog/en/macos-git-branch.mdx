@@ -1,13 +1,13 @@
 ---
-title: Git Branch Management on macOS
-description: An introduction to Git branch management concepts and common commands, including creating, switching, and merging branches.
+title: "The Complete Guide to Git Branch Management"
+description: Core concepts and common commands for Git branch management, including creating, switching, merging branches, and team collaboration strategies.
 pubDate: 2018-11-12
 tags: ['git', 'macos', 'terminal']
 ---
 
 ## Introduction
 
-Git branches are one of Git's most powerful features. This post introduces the basic concepts and common commands for Git branch management.
+Git branching is one of Git's most powerful features. This guide covers the core concepts and common commands for Git branch management, along with best practices for team collaboration.
 
 ## Viewing Branches
 
@@ -28,28 +28,28 @@ git branch -v
 # Create a new branch
 git branch feature-login
 
-# Create and switch to a new branch
-git checkout -b feature-login
-
-# Create a new branch (recommended)
+# Create and switch to a new branch (recommended)
 git switch -c feature-login
+
+# Or use the traditional way
+git checkout -b feature-login
 ```
 
 ## Switching Branches
 
 ```bash
-# Switch to a specific branch
-git checkout main
-
-# Switch branch (recommended)
+# Switch to a branch (recommended)
 git switch main
+
+# Or use the traditional way
+git checkout main
 ```
 
 ## Merging Branches
 
 ```bash
 # Switch to the target branch
-git checkout main
+git switch main
 
 # Merge the feature branch
 git merge feature-login
@@ -58,36 +58,91 @@ git merge feature-login
 ## Deleting Branches
 
 ```bash
-# Delete merged branch
+# Delete a merged branch
 git branch -d feature-login
 
-# Force delete unmerged branch
+# Force delete an unmerged branch
 git branch -D feature-login
 ```
 
 ## Resolving Conflicts
 
-When merge conflicts occur, Git marks the conflicting files. You need to resolve them manually:
+When merging conflicts occur, Git will mark the conflicted files for you to resolve manually:
 
-1. Open the conflicting file
-2. Find conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
+1. Open the conflicted file
+2. Find the conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
 3. Manually edit to keep the correct content
-4. Add to staging and commit
+4. Stage and commit
 
 ```bash
 git add .
 git commit -m "feat: resolve merge conflict"
 ```
 
-## Branch Management Strategy
+## Branch Management Strategies
 
-Recommended to use Git Flow or GitHub Flow workflow:
+### Git Flow
+
+Suitable for projects with longer release cycles:
 
 - `main` - Production branch
 - `develop` - Development branch
 - `feature/*` - Feature branches
+- `release/*` - Release branches
 - `hotfix/*` - Hotfix branches
+
+### GitHub Flow
+
+Suitable for continuous deployment:
+
+- `main` - Production branch (always deployable)
+- `feature/*` - Feature branches (merged via PR)
+
+### Trunk-Based Development
+
+Suitable for fast-moving teams:
+
+- All developers commit directly to `main`
+- Use short-lived feature branches (< 1 day)
+- Control feature release with feature flags
+
+## Useful Tips
+
+### Stashing Changes
+
+```bash
+# Stash current work
+git stash
+
+# Restore stashed work
+git stash pop
+
+# View stash list
+git stash list
+```
+
+### Viewing Branch Graph
+
+```bash
+# View concise branch graph
+git log --oneline --graph
+
+# View full branch graph
+git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+```
+
+### Batch Delete Merged Branches
+
+```bash
+# Delete local branches merged into main
+git branch --merged main | grep -v "\*\|main" | xargs -n 1 git branch -d
+```
 
 ## Summary
 
-Mastering Git branch management is fundamental for team collaboration. Practice creating, switching, and merging branches regularly.
+Mastering Git branch management is fundamental for team collaboration. Recommendations:
+
+1. Use `git switch` and `git restore` (Git 2.23+) instead of older commands
+2. Choose a branching strategy based on team size and release cadence
+3. Keep branches short-lived and merge frequently
+4. Use PR/MR for code review

@@ -1,47 +1,39 @@
 ---
-title: Install Oh My Zsh on Mac
-description: A detailed guide on how to install and configure Oh My Zsh on macOS to make your terminal more efficient and beautiful.
+title: "Oh My Zsh Installation and Configuration Guide"
+description: Step-by-step guide to install and configure Oh My Zsh on macOS for a more efficient and beautiful terminal experience.
 pubDate: 2018-12-22
 tags: ['terminal', 'macos', 'zsh']
 ---
 
 ## Introduction
 
-Oh My Zsh is an open-source framework for managing Zsh configuration. It provides a huge collection of themes and plugins to make your terminal more efficient and beautiful.
+Oh My Zsh is an open-source framework for managing Zsh configuration, providing a wide variety of themes and plugins to make your terminal more efficient and visually appealing.
 
-## Install Zsh
+## Checking Zsh
 
-First, check if Zsh is already installed:
+macOS Catalina (October 2019) and later versions use Zsh by default. Check your current version:
 
 ```bash
 zsh --version
 ```
 
-If not installed, use Homebrew:
+If you need to install or update Zsh:
 
 ```bash
 brew install zsh
 ```
 
-After installation, switch the default shell to zsh:
-
-```bash
-chsh -s $(which zsh)
-```
-
-Restart your terminal to apply the changes.
-
-## Install Oh My Zsh
+## Installing Oh My Zsh
 
 Use the official installation script:
 
 ```bash
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-After installation, you'll see a nice ASCII art pattern.
+After installation, you'll see a beautiful ASCII art pattern.
 
-## Configure Theme
+## Configuring Themes
 
 Edit the `~/.zshrc` file and find the `ZSH_THEME` configuration:
 
@@ -51,14 +43,29 @@ ZSH_THEME="robbyrussell"
 
 Recommended themes:
 - `robbyrussell` - Default theme, minimal
-- `agnoster` - Feature-rich, requires Powerline fonts
-- `spaceship` - Shows Git info and Node version
+- `agnoster` - Feature-rich, requires Powerline font
+- `spaceship` - Shows Git info and Node version (requires separate installation)
+
+### Installing spaceship Theme
+
+```bash
+git clone https://github.com/denysdovhan/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt"
+
+# Create symlink
+ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
+```
+
+Set in `~/.zshrc`:
+
+```bash
+ZSH_THEME="spaceship"
+```
 
 ## Recommended Plugins
 
-### Git Plugin
+### git Plugin
 
-Oh My Zsh comes with a git plugin that provides many git command aliases:
+Oh My Zsh includes a git plugin with many git command aliases:
 
 ```bash
 plugins=(git)
@@ -73,7 +80,7 @@ Common aliases:
 
 ### zsh-autosuggestions Plugin
 
-Auto-suggests commands you've typed before:
+Automatically suggests commands you've typed before:
 
 ```bash
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
@@ -87,7 +94,7 @@ plugins=(git zsh-autosuggestions)
 
 ### zsh-syntax-highlighting Plugin
 
-Command syntax highlighting:
+Provides command syntax highlighting:
 
 ```bash
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
@@ -95,4 +102,4 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:
 
 ## Summary
 
-Oh My Zsh is a powerful terminal enhancement tool. With proper configuration, it can significantly improve your development efficiency. Choose themes and plugins based on your needs.
+Oh My Zsh is a powerful terminal enhancement tool that can significantly improve development efficiency through proper configuration. Choose themes and plugins based on your needs.

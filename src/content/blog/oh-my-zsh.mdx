@@ -1,5 +1,5 @@
 ---
-title: 在 Mac 上安装 Oh My Zsh
+title: Oh My Zsh 安装与配置指南
 description: 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。
 pubDate: 2018-12-22
 tags: ['terminal', 'macos', 'zsh']
@@ -9,34 +9,26 @@ tags: ['terminal', 'macos', 'zsh']
 
 Oh My Zsh 是一个管理 Zsh 配置的开源框架，提供了大量的主题和插件，让你的终端变得更高效、更美观。
 
-## 安装 Zsh
+## 检查 Zsh
 
-首先确认系统是否已安装 Zsh：
+macOS Catalina（2019 年 10 月）及以上版本已默认使用 Zsh。检查当前版本：
 
 ```bash
 zsh --version
 ```
 
-如果未安装，使用 Homebrew 安装：
+如果需要安装或更新 Zsh：
 
 ```bash
 brew install zsh
 ```
-
-安装完成后，切换默认 shell 为 zsh：
-
-```bash
-chsh -s $(which zsh)
-```
-
-重启终端使配置生效。
 
 ## 安装 Oh My Zsh
 
 使用官方安装脚本：
 
 ```bash
-sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
 安装完成后，你会看到一个漂亮的 ASCII 艺术图案。
@@ -52,7 +44,22 @@ ZSH_THEME="robbyrussell"
 推荐几个常用主题：
 - `robbyrussell` - 默认主题，简洁
 - `agnoster` - 功能丰富，需要 Powerline 字体
-- `spaceship` - 显示 Git 信息和 Node 版本
+- `spaceship` - 显示 Git 信息和 Node 版本（需单独安装）
+
+### 安装 spaceship 主题
+
+```bash
+git clone https://github.com/denysdovhan/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt"
+
+# 创建符号链接
+ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
+```
+
+在 `~/.zshrc` 中设置：
+
+```bash
+ZSH_THEME="spaceship"
+```
 
 ## 推荐插件
 
@@ -87,7 +94,7 @@ plugins=(git zsh-autosuggestions)
 
 ### zsh-syntax-highlighting 插件
 
-命令语法高亮：
+提供命令语法高亮功能：
 
 ```bash
 git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting

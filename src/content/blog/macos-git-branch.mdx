@@ -1,13 +1,13 @@
 ---
-title: macOS Git 分支管理
-description: 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。
+title: Git 分支管理完全指南
+description: 介绍 Git 分支管理的核心概念和常用命令，包括创建、切换、合并分支，以及团队协作中的分支策略。
 pubDate: 2018-11-12
 tags: ['git', 'macos', 'terminal']
 ---
 
 ## 前言
 
-Git 分支是 Git 最强大的功能之一。本文介绍 Git 分支管理的基本概念和常用命令。
+Git 分支是 Git 最强大的功能之一。本文介绍 Git 分支管理的核心概念和常用命令，以及团队协作中的最佳实践。
 
 ## 查看分支
 
@@ -28,28 +28,28 @@ git branch -v
 # 创建新分支
 git branch feature-login
 
-# 创建并切换到新分支
-git checkout -b feature-login
-
-# 创建新分支（推荐写法）
+# 创建并切换到新分支（推荐）
 git switch -c feature-login
+
+# 或使用传统方式
+git checkout -b feature-login
 ```
 
 ## 切换分支
 
 ```bash
-# 切换到指定分支
-git checkout main
-
-# 切换分支（推荐写法）
+# 切换到指定分支（推荐）
 git switch main
+
+# 或使用传统方式
+git checkout main
 ```
 
 ## 合并分支
 
 ```bash
 # 切换到目标分支
-git checkout main
+git switch main
 
 # 合并 feature 分支
 git merge feature-login
@@ -70,7 +70,7 @@ git branch -D feature-login
 当合并出现冲突时，Git 会标记冲突文件，你需要手动解决：
 
 1. 打开冲突文件
-2. 找到冲突标记（`<<<<<<<`, `=======`, `>>>>>>>`）
+2. 找到冲突标记（`<<<<<<<`、`=======`、`>>>>>>>`）
 3. 手动编辑保留正确内容
 4. 添加到暂存区并提交
 
@@ -81,13 +81,68 @@ git commit -m "feat: resolve merge conflict"
 
 ## 分支管理策略
 
-推荐使用 Git Flow 或 GitHub Flow 工作流：
+### Git Flow
+
+适合发布周期较长的项目：
 
 - `main` - 生产分支
 - `develop` - 开发分支
 - `feature/*` - 功能分支
+- `release/*` - 发布分支
 - `hotfix/*` - 紧急修复分支
+
+### GitHub Flow
+
+适合持续部署的项目：
+
+- `main` - 生产分支（始终可部署）
+- `feature/*` - 功能分支（通过 PR 合并）
+
+### Trunk-Based Development
+
+适合快速迭代的团队：
+
+- 所有开发者直接向 `main` 提交
+- 使用短生命周期的功能分支（< 1 天）
+- 通过特性开关控制功能发布
+
+## 实用技巧
+
+### 暂存当前更改
+
+```bash
+# 暂存当前工作
+git stash
+
+# 恢复暂存的工作
+git stash pop
+
+# 查看暂存列表
+git stash list
+```
+
+### 查看分支图
+
+```bash
+# 查看简洁的分支图
+git log --oneline --graph
+
+# 查看完整的分支图
+git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+```
+
+### 批量删除已合并的分支
+
+```bash
+# 删除已合并到 main 的本地分支
+git branch --merged main | grep -v "\*\|main" | xargs -n 1 git branch -d
+```
 
 ## 总结
 
-熟练掌握 Git 分支管理是团队协作开发的基础。建议多练习分支的创建、切换、合并等操作。
+熟练掌握 Git 分支管理是团队协作开发的基础。建议：
+
+1. 使用 `git switch` 和 `git restore`（Git 2.23+）替代旧命令
+2. 根据团队规模和发布节奏选择合适的分支策略
+3. 保持分支短生命周期，频繁合并
+4. 使用 PR/MR 进行代码审查

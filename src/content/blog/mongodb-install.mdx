@@ -1,15 +1,20 @@
 ---
-title: MongoDB 安装教程
-description: 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。
+title: macOS 安装 MongoDB 完整指南
+description: 详细介绍如何在 macOS 上安装和配置 MongoDB 7.x/8.x，包括 Homebrew 安装、配置和基本使用。
 pubDate: 2018-11-12
 tags: ['mongodb', 'database', 'macos']
 ---
 
 ## 前言
 
-MongoDB 是一个流行的 NoSQL 数据库，以其灵活的文档模型和高性能著称。本文介绍如何在 macOS 上安装 MongoDB。
+MongoDB 是一个流行的 NoSQL 数据库，以其灵活的文档模型和高性能著称。本文介绍如何在 macOS 上安装和配置 MongoDB 7.x/8.x。
 
-## 使用 Homebrew 安装
+## 系统要求
+
+- macOS 12+ (Monterey) 或更高版本
+- Homebrew 已安装
+
+## 使用 Homebrew 安装（推荐）
 
 ```bash
 # 添加 MongoDB tap
@@ -22,42 +27,22 @@ brew install mongodb-community
 brew services start mongodb-community
 ```
 
-## 手动安装
+安装完成后，MongoDB 会自动配置：
+- 数据目录：`/usr/local/var/mongodb`
+- 配置文件：`/usr/local/etc/mongod.conf`
+- 日志文件：`/usr/local/var/log/mongodb/mongod.log`
 
-### 下载安装包
-
-访问 MongoDB 官网下载对应版本的安装包。
-
-### 配置数据目录
-
-```bash
-# 创建数据目录
-sudo mkdir -p /data/db
-
-# 设置权限
-sudo chown -R $USER /data/db
-```
-
-### 启动 MongoDB
+## 连接数据库
 
 ```bash
-# 启动 MongoDB 服务
-mongod
-```
-
-## 基本使用
-
-### 连接数据库
-
-```bash
-# 连接本地 MongoDB
-mongo
+# 使用 mongosh 连接（MongoDB 6.0+ 推荐）
+mongosh
 
 # 连接指定数据库
-mongo mydatabase
+mongosh mydatabase
 ```
 
-### 常用命令
+## 常用命令
 
 ```javascript
 // 查看所有数据库
@@ -84,30 +69,69 @@ db.users.deleteOne({ name: 'John' })
 
 ## 配置 MongoDB
 
-### 创建配置文件
+### 查看默认配置
+
+Homebrew 安装的 MongoDB 已有默认配置文件：
 
 ```bash
-# 创建配置文件
-mkdir -p ~/.mongodb
-touch ~/.mongodb/mongod.conf
+cat /usr/local/etc/mongod.conf
 ```
 
-### 配置文件内容
+### 常用配置项
 
 ```yaml
-systemLog:
-  destination: file
-  path: ~/.mongodb/mongod.log
-  logAppend: true
-
-storage:
-  dbPath: ~/.mongodb/data
-
+# 网络配置
 net:
   port: 27017
   bindIp: 127.0.0.1
+
+# 存储配置
+storage:
+  dbPath: /usr/local/var/mongodb
+  journal:
+    enabled: true
+
+# 日志配置
+systemLog:
+  destination: file
+  path: /usr/local/var/log/mongodb/mongod.log
+  logAppend: true
+```
+
+### 自定义配置
+
+如需修改配置，编辑配置文件后重启服务：
+
+```bash
+# 编辑配置
+vim /usr/local/etc/mongod.conf
+
+# 重启 MongoDB
+brew services restart mongodb-community
+```
+
+## 常用操作
+
+### 查看服务状态
+
+```bash
+brew services list | grep mongodb
+```
+
+### 停止服务
+
+```bash
+brew services stop mongodb-community
+```
+
+### 卸载 MongoDB
+
+```bash
+brew services stop mongodb-community
+brew uninstall mongodb-community
+brew untap mongodb/brew
 ```
 
 ## 总结
 
-MongoDB 是一个功能强大的 NoSQL 数据库，适合存储灵活的文档数据。通过本文的步骤，你应该能够在 macOS 上成功安装和配置 MongoDB。
+MongoDB 是一个功能强大的 NoSQL 数据库，适合存储灵活的文档数据。通过 Homebrew 安装是最简单的方式，建议使用 `mongosh` 连接数据库。

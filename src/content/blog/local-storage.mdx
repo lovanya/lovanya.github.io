@@ -49,11 +49,13 @@ localStorage.setItem('tags', JSON.stringify(tags));
 // 读取字符串
 const username = localStorage.getItem('username');
 
-// 读取对象（需要反序列化）
-const user = JSON.parse(localStorage.getItem('user'));
+// 读取对象（需要反序列化 + 空值检查）
+const userStr = localStorage.getItem('user');
+const user = userStr ? JSON.parse(userStr) : null;
 
 // 读取数组
-const tags = JSON.parse(localStorage.getItem('tags'));
+const tagsStr = localStorage.getItem('tags');
+const tags = tagsStr ? JSON.parse(tagsStr) : [];
 ```
 
 ### 删除数据
@@ -78,22 +80,28 @@ localStorage.setItem('theme', 'dark');
 localStorage.setItem('language', 'zh-CN');
 ```
 
-### 缓存数据
+### 缓存数据（带过期时间）
 
 ```javascript
-// 缓存 API 响应
-async function fetchData(url) {
+// 缓存 API 响应（带 TTL）
+async function fetchData(url, ttlMs = 5 * 60 * 1000) {
   const cacheKey = `cache_${url}`;
   const cached = localStorage.getItem(cacheKey);
   
   if (cached) {
-    return JSON.parse(cached);
+    const { data, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < ttlMs) {
+      return data;
+    }
   }
   
   const response = await fetch(url);
   const data = await response.json();
   
-  localStorage.setItem(cacheKey, JSON.stringify(data));
+  localStorage.setItem(cacheKey, JSON.stringify({
+    data,
+    timestamp: Date.now(),
+  }));
   return data;
 }
 ```
@@ -112,7 +120,8 @@ function saveFormData() {
 
 // 恢复表单数据
 function restoreFormData() {
-  const formData = JSON.parse(localStorage.getItem('formData'));
+  const formDataStr = localStorage.getItem('formData');
+  const formData = formDataStr ? JSON.parse(formDataStr) : null;
   if (formData) {
     document.getElementById('name').value = formData.name;
     document.getElementById('email').value = formData.email;
