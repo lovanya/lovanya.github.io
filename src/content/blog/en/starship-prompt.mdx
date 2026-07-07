@@ -1,0 +1,576 @@
+---
+title: "Starship Terminal Prompt: The Complete Guide to a Fast, Cross-Platform, Config-as-Code Shell"
+description: "2026 comprehensive Starship installation, configuration, and customization guide. Millisecond startup, consistent cross-platform experience."
+pubDate: 2026-07-07
+tags: ['terminal', 'macos', 'windows', 'linux', 'developer-tools', 'starship']
+---
+
+## Introduction
+
+Starship is a cross-platform terminal prompt written in Rust, featuring **millisecond startup**, **config-as-code**, and **works out of the box**. Compared to Oh My Zsh themes, Starship starts 10x+ faster and provides a consistent experience across platforms.
+
+This guide covers everything from installation to deep customization.
+
+## 1. Why Choose Starship
+
+### Core Advantages
+
+| Feature | Starship | Oh My Zsh | Powerlevel10k |
+|---------|----------|-----------|---------------|
+| Startup speed | < 10ms | 100-500ms | 50-100ms |
+| Cross-platform | All | macOS/Linux | macOS/Linux |
+| Config file | `starship.toml` | `~/.zshrc` | `~/.p10k.zsh` |
+| Built-in modules | 500+ | 300+ plugins | Built-in |
+| Learning curve | Low | Medium | Medium |
+
+### Use Cases
+
+- **Performance-focused**: Don't like themes slowing down the terminal
+- **Multi-platform consistency**: Same experience on macOS, Linux, Windows
+- **Config-as-code**: `starship.toml` can be included in dotfiles repository
+- **Out-of-the-box**: No configuration needed, auto-detects environment
+
+## 2. Platform Installation
+
+### Prerequisites
+
+- **macOS**: 10.13+
+- **Linux**: Any modern distribution
+- **Windows**: Windows 10 1809+ or Windows 11
+
+Supported shells:
+- Bash 4.4+
+- Zsh 5.0+
+- Fish 3.1+
+- PowerShell 5.1+
+- Ion 1.0+
+- Elvish 0.18+
+- Tcsh 6.20+
+- Nushell 0.78+
+- Xonsh
+- Cmd
+
+### macOS Installation
+
+#### 1. Using Homebrew (Recommended)
+
+```bash
+brew install starship
+```
+
+#### 2. Initialize in Shell Config
+
+**Zsh** (`~/.zshrc`):
+```bash
+eval "$(starship init zsh)"
+```
+
+**Bash** (`~/.bashrc`):
+```bash
+eval "$(starship init bash)"
+```
+
+**Fish** (`~/.config/fish/config.fish`):
+```fish
+starship init fish | source
+```
+
+#### 3. Verify
+
+Restart the terminal and run:
+
+```bash
+starship --version
+```
+
+**Expected output**: `starship 1.x.x`
+
+#### 4. Uninstall
+
+```bash
+brew uninstall starship
+```
+
+Remove the `eval "$(starship init zsh)"` line from your shell config.
+
+### Windows Installation
+
+#### Method 1: Scoop (Recommended)
+
+```powershell
+scoop install starship
+```
+
+#### Method 2: winget
+
+```powershell
+winget install --id Starship.Starship
+```
+
+#### Method 3: Manual Installation
+
+Download `starship-x86_64-pc-windows-msvc.zip` from [GitHub Releases](https://github.com/starship/starship/releases), extract to `C:\Program Files\starship\`.
+
+Add `C:\Program Files\starship\` to your system PATH.
+
+#### Initialize in PowerShell
+
+Create or edit `$PROFILE` (`Microsoft.PowerShell_profile.ps1`):
+
+```powershell
+Invoke-Expression (&starship init powershell)
+```
+
+#### Verify
+
+```powershell
+starship --version
+```
+
+### Linux Installation
+
+#### 1. Using Official Script
+
+```bash
+curl -sS https://starship.rs/install.sh | sh
+```
+
+**The script automatically**:
+- Detects system architecture
+- Downloads the latest version
+- Installs to `~/.local/bin/`
+- Prompts to add to PATH
+
+#### 2. Ensure `~/.local/bin` is in PATH
+
+**Bash** (`~/.bashrc`):
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**Zsh** (`~/.zshrc`):
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+**Fish**:
+```fish
+set -gx PATH $HOME/.local/bin $PATH
+```
+
+#### 3. Initialize
+
+```bash
+eval "$(starship init zsh)"  # or bash, fish
+```
+
+#### 4. Verify
+
+```bash
+starship --version
+```
+
+## 3. Font Configuration
+
+### Nerd Font (Recommended)
+
+Starship uses icons from Nerd Fonts to enhance the display.
+
+#### Install Nerd Font
+
+**macOS**:
+```bash
+brew tap homebrew/cask-fonts
+brew install --cask font-fira-code-nerd-font
+brew install --cask font-jetbrains-mono-nerd-font
+```
+
+**Windows**: Download and install from [Nerd Fonts Releases](https://github.com/ryanoasis/nerd-fonts/releases).
+
+**Linux** (Ubuntu/Debian):
+```bash
+mkdir -p ~/.local/share/fonts
+cd ~/.local/share/fonts
+curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
+unzip FiraCode.zip
+fc-cache -fv
+```
+
+#### Configure Terminal to Use Nerd Font
+
+- **iTerm2**: Preferences → Profiles → Text → Font
+- **Windows Terminal**: Settings → Profiles → Appearance → Font face
+- **GNOME Terminal**: Profile → Preferences → Custom font
+- **Alacritty** (`~/.config/alacritty/alacritty.toml`):
+  ```toml
+  [font]
+  normal = { family = "FiraCode Nerd Font", style = "Regular" }
+  ```
+
+## 4. Configuration File
+
+### Config File Location
+
+- **macOS/Linux**: `~/.config/starship.toml`
+- **Windows**: `%USERPROFILE%\.config\starship.toml`
+
+### Create Config File
+
+```bash
+mkdir -p ~/.config
+touch ~/.config/starship.toml
+```
+
+### Minimal Config
+
+```toml
+# starship.toml
+
+add_newline = false
+
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+```
+
+### Preset Configurations
+
+Starship provides multiple [official presets](https://starship.rs/presets/):
+
+```bash
+# Preview all presets
+starship preset
+
+# Apply a preset
+starship preset tokyo-night > ~/.config/starship.toml
+
+# List available presets
+starship preset --list
+```
+
+Popular presets:
+- `tokyo-night` - Tokyo night style
+- `gruvbox-rainbow` - Gruvbox rainbow colors
+- `pastel-powerline` - Soft Powerline
+- `pure-preset` - Minimalist
+
+## 5. Module Configuration
+
+### Enabled Modules (Default)
+
+Starship enables these modules by default:
+- `directory`
+- `git_branch`
+- `git_status`
+- `nodejs`
+- `python`
+- `rust`
+- `package`
+
+### Basic Configuration Example
+
+```toml
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "📂 "
+"Downloads" = "📥 "
+"Developer" = "💻 "
+
+[git_branch]
+symbol = "🌱 "
+truncation_length = 4
+truncation_symbol = "…"
+
+[git_status]
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+conflicted = "🏳️"
+
+[nodejs]
+symbol = "⬢ "
+style = "bold green"
+version_format = "v${raw}"
+
+[python]
+symbol = "🐍 "
+style = "bold yellow"
+
+[rust]
+symbol = "🦀 "
+style = "bold red"
+
+[docker_context]
+symbol = "🐳 "
+```
+
+### Custom Command Module
+
+Display the output of a custom command:
+
+```toml
+[custom.example]
+command = "echo example"
+style = "bold yellow"
+when = "true"
+format = "[$symbol$output]($style)"
+```
+
+### Conditional Display
+
+Show based on current directory or files:
+
+```toml
+[docker_context]
+only_with_files = true
+
+[package]
+disabled = false
+```
+
+### Time Module
+
+```toml
+[time]
+disabled = false
+format = "🕙[ $time ]($style)"
+time_format = "%R"
+style = "bold yellow"
+```
+
+## 6. Common Modules Explained
+
+### 1. directory
+
+```toml
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncation_symbol = "…/"
+truncation_strategy = "in_middle"
+read_only = " 🔒"
+read_only_style = "bold red"
+home_symbol = "🏠 "
+```
+
+### 2. git_branch / git_status
+
+```toml
+[git_branch]
+symbol = "🌿 "
+style = "bold purple"
+truncation_length = 4
+ignore_branches = ["master", "main"]
+
+[git_status]
+style = "bold red"
+ahead = "⇡"
+behind = "⇣"
+diverged = "⇕"
+conflicted = "🏳️"
+untracked = "?️"
+stashed = "📦"
+modified = "!"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+```
+
+### 3. character (Prompt Symbol)
+
+```toml
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[➜](bold red)"
+vicmd_symbol = "[❮](bold green)"
+```
+
+### 4. Command Duration
+
+```toml
+[cmd_duration]
+min_time = 2_000
+format = "took [$duration]($style)"
+style = "bold yellow"
+```
+
+### 5. Memory Usage
+
+```toml
+[memory_usage]
+symbol = "🐏 "
+style = "bold dimmed white"
+threshold = 75
+format = "via $symbol[$ram_pct]($style) "
+```
+
+## 7. Performance Optimization
+
+### Async Modules
+
+Starship detects module status asynchronously by default, but some modules may block. Check slow modules:
+
+```bash
+starship timings
+```
+
+**Example output**:
+```
+━━━ timings ━━━
+directory: 0.5ms
+git_branch: 0.3ms
+git_status: 12.4ms  ← slow
+nodejs: 8.2ms
+```
+
+**Optimization**:
+1. Disable unused modules
+2. Use `detect_files` to reduce auto-detection
+3. Upgrade Starship to the latest version
+
+### Reduce Module Count
+
+```toml
+[package]
+disabled = true
+
+[python]
+disabled = true
+
+[rust]
+disabled = true
+```
+
+### Use a Minimal Preset
+
+```bash
+starship preset pure-preset > ~/.config/starship.toml
+```
+
+## 8. IDE Integration
+
+### Visual Studio Code
+
+In `~/.config/Code/User/settings.json`:
+
+```json
+{
+  "terminal.integrated.fontFamily": "FiraCode Nerd Font",
+  "terminal.integrated.shell.osx": "/bin/zsh"
+}
+```
+
+### JetBrains IDE
+
+Settings → Tools → Terminal → Shell path: `/bin/zsh`
+
+### Vim/Neovim
+
+Use [vim-starhip](https://github.com/mhinz/vim-starhip) or customize the statusline.
+
+## 9. Troubleshooting
+
+### 1. Prompt shows garbled characters
+
+**Cause**: Nerd Font not installed.
+
+**Solution**: See font configuration section above.
+
+### 2. Slow startup
+
+**Diagnose**:
+```bash
+starship timings
+```
+
+**Optimize**:
+- Disable unused modules
+- Upgrade to latest Starship
+- Async modules take effect
+
+### 3. Module not showing
+
+**Check**:
+```bash
+starship explain
+
+starship print
+```
+
+### 4. Wrong colors
+
+Ensure terminal supports 256 colors or true color:
+
+```bash
+echo $COLORTERM
+# Expected: truecolor or 256color
+```
+
+**iTerm2**: Preferences → Profiles → Terminal → Report terminal type: `xterm-256color`
+
+**Windows Terminal**: Supports true color by default.
+
+## 10. Best Practices
+
+### 1. Config in dotfiles
+
+```bash
+# ~/.dotfiles/starship/starship.toml
+# In .zshrc:
+export STARSHIP_CONFIG=~/.dotfiles/starship/starship.toml
+eval "$(starship init zsh)"
+```
+
+### 2. Project-level Config
+
+Use different config for different projects:
+
+```bash
+# In project root .starship.toml
+[directory]
+truncation_length = 5
+```
+
+Starship will automatically search up from the current directory for `.starship.toml`.
+
+### 3. Theming
+
+Use [starship-theme](https://github.com/topics/starship-theme) themes:
+
+```bash
+git clone https://github.com/your-theme/starship-theme.git
+cp starship-theme/starship.toml ~/.config/starship.toml
+```
+
+### 4. With tmux
+
+In `~/.tmux.conf`:
+
+```tmux
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ',xterm-256color:Tc'
+```
+
+## Summary
+
+Core advantages of Starship:
+
+1. **Lightning-fast startup**: < 10ms, nearly imperceptible
+2. **Cross-platform consistency**: Same experience on macOS, Linux, Windows
+3. **Config-as-code**: `starship.toml` is easy to maintain and share
+4. **Modular design**: Enable on demand, deep customization possible
+
+If you pursue **ultimate performance** and **unified experience**, Starship is currently the best choice.
+
+## References
+
+- [Starship Official Documentation](https://starship.rs/) — Complete configuration reference
+- [Starship Module List](https://starship.rs/preset-list/) — All available modules
+- [Starship Presets](https://starship.rs/presets/) — Official preset themes
+- [Nerd Fonts](https://www.nerdfonts.com/) — Font downloads
+- [Starship GitHub](https://github.com/starship/starship) — Source code and releases
+- [Starship Theme Collection](https://github.com/topics/starship-theme) — Community themes

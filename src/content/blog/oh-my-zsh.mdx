@@ -1,50 +1,159 @@
 ---
 title: Oh My Zsh 终极配置指南：从入门到高效开发
-description: 2026 年最新的 Oh My Zsh 安装、主题、插件配置指南，附带性能优化和开发效率提升技巧。
+description: 2026 年最新的 Oh My Zsh 安装指南（macOS + Windows）、主题、插件配置、性能优化和开发效率提升。
 pubDate: 2018-12-22
-tags: ['terminal', 'macos', 'zsh', 'developer-tools']
+tags: ['terminal', 'macos', 'windows', 'zsh', 'developer-tools']
 ---
 
 import Mermaid from '../../components/Blog/Mermaid';
 
 ## 前言
 
-Oh My Zsh 是一个开源的 Zsh 配置管理框架，拥有 300+ 插件和 150+ 主题。但大多数教程只停留在"安装"层面，本文从**开发者效率**角度出发，讲如何配置一个真正好用的终端环境。
+Oh My Zsh 是一个开源的 Zsh 配置管理框架，拥有 300+ 插件和 150+ 主题。本文从**开发者效率**角度出发，讲如何配置一个真正好用的终端环境。
 
 <Mermaid client:load caption="图 1：Oh My Zsh 生态" chart={`flowchart LR
   OZ[Oh My Zsh] --> T[150+ 主题]
   OZ --> P[300+ 插件]
   OZ --> A[自动补全]
   OZ --> H[历史记录]
-  T --> S[spaceship<br/>agnoster<br/>powerlevel10k]
+  T --> R[robbyrussell<br/>agnoster]
   P --> G[git<br/>docker<br/>kubectl<br/>npm]`} />
 
-## 一、安装
+## 一、平台安装指南
 
-### 前置条件
+### macOS 安装
 
-macOS Catalina（2019）及以上已默认使用 Zsh。检查版本：
+#### 1. 检查 Zsh
+
+macOS Catalina（2019）及以上已默认使用 Zsh：
 
 ```bash
-zsh --version  # 推荐 5.9+
+zsh --version
 ```
 
-### 安装 Oh My Zsh
+**预期输出**：
+```
+zsh 5.9 (x86_64-apple-darwin22.0)
+```
+
+#### 2. 安装 Oh My Zsh
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-安装脚本会自动：
-- 备份现有的 `~/.zshrc` 为 `~/.zshrc.pre-oh-my-zsh`
+**安装过程说明**：
+- 自动备份 `~/.zshrc` 为 `~/.zshrc.pre-oh-my-zsh`
 - 创建新的 `~/.zshrc` 配置文件
-- 将默认 shell 切换为 zsh
+- 切换默认 shell 为 zsh
+- 安装完成后会显示 ASCII 艺术图案
 
-### 卸载
+#### 3. 验证安装
+
+```bash
+# 检查 Oh My Zsh 版本
+omz version
+
+# 查看 Oh My Zsh 安装路径
+echo $ZSH
+
+# 预期输出：/Users/你的用户名/.oh-my-zsh
+```
+
+#### 4. 卸载
 
 ```bash
 uninstall_oh_my_zsh
 ```
+
+### Windows 安装
+
+Windows 上安装 Oh My Zsh 需要先安装 WSL（Windows Subsystem for Linux），因为 Oh My Zsh 基于 Zsh，不支持原生 Windows。
+
+#### 1. 安装 WSL
+
+以管理员身份打开 PowerShell：
+
+```powershell
+wsl --install
+```
+
+**说明**：
+- 默认安装 Ubuntu 发行版
+- 安装过程中会提示设置用户名和密码
+- 安装完成后需要重启
+
+重启后，Ubuntu 会自动启动并完成初始化。
+
+#### 2. 更新系统
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+#### 3. 安装 Zsh
+
+```bash
+sudo apt install zsh -y
+```
+
+**验证**：
+```bash
+zsh --version
+```
+
+#### 4. 安装 Oh My Zsh
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+#### 5. 设置 Zsh 为默认 Shell
+
+```bash
+chsh -s $(which zsh)
+```
+
+**重新登录 WSL** 后生效，或重启终端。
+
+#### 6. 在 Windows 终端中配置
+
+编辑 WSL 配置 `~/.zshrc`：
+
+```bash
+# 启动 Oh My Zsh
+source $ZSH/oh-my-zsh.sh
+```
+
+**推荐：在 Windows 终端中使用 WSL**
+
+打开 Windows 终端 → 设置 → 添加新配置文件：
+
+- **名称**：Ubuntu
+- **命令行**：`wsl.exe -d Ubuntu`
+- **启动目录**：`~`
+
+#### 7. 卸载
+
+```bash
+uninstall_oh_my_zsh
+```
+
+#### 常见问题
+
+**Q: curl 命令找不到？**
+```bash
+sudo apt install curl -y
+```
+
+**Q: git 命令找不到？**
+```bash
+sudo apt install git -y
+```
+
+**Q: WSL 字体显示异常？**
+
+安装 Nerd Font 后，在 Windows 终端设置中选择 Nerd Font。
 
 ## 二、主题选择
 
@@ -100,19 +209,7 @@ ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" \
 ZSH_THEME="spaceship"
 ```
 
-#### 3. Starship（跨平台）
-
-用 Rust 编写，性能极佳：
-
-```bash
-brew install starship
-```
-
-在 `~/.zshrc` 末尾添加：
-
-```bash
-eval "$(starship init zsh)"
-```
+> **想要更轻量、跨平台的终端提示符？** 试试 [Starship](https://lovanya.com/blog/starship-prompt/)：用 Rust 编写，毫秒级启动，配置即代码。
 
 ## 三、核心插件
 
@@ -156,10 +253,8 @@ git clone https://github.com/zsh-users/zsh-completions \
 Oh My Zsh 内置，基于历史记录快速跳转：
 
 ```bash
-# 启用 z 插件
 plugins=(z)
 
-# 使用
 z project      # 跳转到包含 "project" 的目录
 z src          # 跳转到 src 目录
 ```
@@ -171,7 +266,6 @@ z src          # 跳转到 src 目录
 ```bash
 plugins=(extract)
 
-# 使用
 extract archive.tar.gz
 extract file.zip
 extract image.rar
@@ -408,6 +502,14 @@ brew install --cask font-fira-code-nerd-font
 # 在终端设置中选择 Nerd Font
 ```
 
+Windows 用户：
+```bash
+# 在 WSL 中下载字体配置
+sudo apt install fontconfig
+```
+
+或在 Windows 端安装 Nerd Font 后，在 Windows 终端设置中配置。
+
 ### 插件不生效
 
 ```bash
@@ -435,5 +537,5 @@ Oh My Zsh 的核心价值在于**插件生态**和**社区支持**。配置建�
 - [Powerlevel10k GitHub](https://github.com/romkatv/powerlevel10k) — 最快的 Zsh 主题
 - [zsh-autosuggestions GitHub](https://github.com/zsh-users/zsh-autosuggestions) — 命令自动建议
 - [zsh-syntax-highlighting GitHub](https://github.com/zsh-users/zsh-syntax-highlighting) — 语法高亮
-- [Starship Prompt](https://starship.rs/) — 跨平台提示符
 - [zsh-completions GitHub](https://github.com/zsh-users/zsh-completions) — 额外补全规则
+- [Microsoft WSL 文档](https://learn.microsoft.com/en-us/windows/wsl/) — Windows 上的 Linux 子系统

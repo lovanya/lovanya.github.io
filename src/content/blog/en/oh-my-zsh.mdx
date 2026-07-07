@@ -1,40 +1,145 @@
 ---
 title: "Oh My Zsh Ultimate Configuration Guide: From Beginner to Productive Development"
-description: "2026 comprehensive guide to Oh My Zsh installation, themes, plugins, performance optimization, and developer productivity tips."
+description: "2026 comprehensive Oh My Zsh installation guide (macOS + Windows), themes, plugins, performance optimization, and developer productivity tips."
 pubDate: 2018-12-22
-tags: ['terminal', 'macos', 'zsh', 'developer-tools']
+tags: ['terminal', 'macos', 'windows', 'zsh', 'developer-tools']
 ---
 
 ## Introduction
 
-Oh My Zsh is an open-source Zsh configuration management framework with 300+ plugins and 150+ themes. But most tutorials only cover "installation" — this guide focuses on building a **truly productive terminal environment** from a developer efficiency perspective.
+Oh My Zsh is an open-source Zsh configuration management framework with 300+ plugins and 150+ themes. This guide focuses on building a **truly productive terminal environment** from a developer efficiency perspective.
 
-## 1. Installation
+## 1. Platform Installation
 
-### Prerequisites
+### macOS Installation
+
+#### 1. Check Zsh
 
 macOS Catalina (October 2019) and later use Zsh by default:
 
 ```bash
-zsh --version  # 5.9+ recommended
+zsh --version
 ```
 
-### Install Oh My Zsh
+**Expected output**:
+```
+zsh 5.9 (x86_64-apple-darwin22.0)
+```
+
+#### 2. Install Oh My Zsh
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
 
-The install script automatically:
+**What the install script does**:
 - Backs up existing `~/.zshrc` to `~/.zshrc.pre-oh-my-zsh`
 - Creates a new `~/.zshrc` configuration
 - Switches default shell to zsh
+- Displays ASCII art on completion
 
-### Uninstall
+#### 3. Verify Installation
+
+```bash
+omz version
+
+echo $ZSH
+# Expected: /Users/your-username/.oh-my-zsh
+```
+
+#### 4. Uninstall
 
 ```bash
 uninstall_oh_my_zsh
 ```
+
+### Windows Installation
+
+Oh My Zsh is built on Zsh, which is not natively supported on Windows. You need WSL (Windows Subsystem for Linux).
+
+#### 1. Install WSL
+
+Open PowerShell as Administrator:
+
+```powershell
+wsl --install
+```
+
+**Notes**:
+- Installs Ubuntu by default
+- Prompts to set username and password during setup
+- Requires restart after installation
+
+After restart, Ubuntu will launch and complete initialization.
+
+#### 2. Update System
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+#### 3. Install Zsh
+
+```bash
+sudo apt install zsh -y
+```
+
+Verify:
+```bash
+zsh --version
+```
+
+#### 4. Install Oh My Zsh
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+#### 5. Set Zsh as Default Shell
+
+```bash
+chsh -s $(which zsh)
+```
+
+Restart the WSL session or terminal for changes to take effect.
+
+#### 6. Configure Windows Terminal
+
+Edit `~/.zshrc` in WSL:
+
+```bash
+source $ZSH/oh-my-zsh.sh
+```
+
+**Recommended: Add Ubuntu profile in Windows Terminal**
+
+Open Windows Terminal → Settings → Add new profile:
+
+- **Name**: Ubuntu
+- **Command line**: `wsl.exe -d Ubuntu`
+- **Starting directory**: `~`
+
+#### 7. Uninstall
+
+```bash
+uninstall_oh_my_zsh
+```
+
+#### Common Issues
+
+**Q: curl not found?**
+```bash
+sudo apt install curl -y
+```
+
+**Q: git not found?**
+```bash
+sudo apt install git -y
+```
+
+**Q: Font display issues in WSL?**
+
+Install a Nerd Font on Windows, then configure it in Windows Terminal settings.
 
 ## 2. Theme Selection
 
@@ -50,7 +155,7 @@ ZSH_THEME="robbyrussell"  # Default, minimal
 
 #### Powerlevel10k (Recommended)
 
-The fastest Zsh theme, 10x faster than Powerlevel9k:
+The fastest Zsh theme, 10x faster startup than Powerlevel9k:
 
 ```bash
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
@@ -69,7 +174,7 @@ Run the configuration wizard:
 p10k configure
 ```
 
-**Options**: Rainbow / Lean / Classic / Pure styles, Unicode / ASCII characters, Git status, Node version, time display, etc.
+**Options**: Rainbow / Lean / Classic / Pure styles, Unicode / ASCII characters, Git status, Node version, time display.
 
 #### Spaceship
 
@@ -87,19 +192,7 @@ ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" \
 ZSH_THEME="spaceship"
 ```
 
-#### Starship (Cross-platform)
-
-Written in Rust, excellent performance:
-
-```bash
-brew install starship
-```
-
-Add to `~/.zshrc`:
-
-```bash
-eval "$(starship init zsh)"
-```
+> **Want a lightweight, cross-platform prompt?** Try [Starship](https://lovanya.com/en/blog/starship-prompt/): Written in Rust, millisecond startup, configuration as code.
 
 ## 3. Essential Plugins
 
@@ -115,12 +208,12 @@ git clone https://github.com/zsh-users/zsh-autosuggestions \
 ```
 
 **Tips**:
-- `→` key to accept suggestion
+- `→` to accept full suggestion
 - `Ctrl + →` to accept partial suggestion
 
 #### zsh-syntax-highlighting
 
-Command syntax highlighting (green for correct, red for errors):
+Command syntax highlighting (green for valid, red for invalid):
 
 ```bash
 git clone https://github.com/zsh-users/zsh-syntax-highlighting \
@@ -226,7 +319,7 @@ fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
 
 source $ZSH/oh-my-zsh.sh
 
-bindkey -e  # Emacs key bindings
+bindkey -e
 
 HISTSIZE=10000
 SAVEHIST=10000
@@ -263,11 +356,9 @@ fi
 ### Aliases
 
 ```bash
-# Project navigation
 alias dev="cd ~/Developer"
 alias proj="cd ~/Developer/projects"
 
-# Common commands
 alias ll="ls -la"
 alias gs="git status"
 alias gp="git push"
@@ -276,12 +367,10 @@ alias gc="git commit -m"
 alias gco="git checkout"
 alias gb="git branch"
 
-# Docker
 alias dc="docker compose"
 alias dps="docker ps"
 alias dimg="docker images"
 
-# Node.js
 alias ni="npm install"
 alias nid="npm install --save-dev"
 alias nt="npm test"
@@ -292,12 +381,10 @@ alias nrd="npm run dev"
 ### Functions
 
 ```bash
-# Create directory and enter it
 mkcd() {
   mkdir -p "$1" && cd "$1"
 }
 
-# Quick Git repo setup
 gitnew() {
   mkdir -p "$1" && cd "$1"
   git init
@@ -306,7 +393,6 @@ gitnew() {
   git commit -m "Initial commit"
 }
 
-# Check port usage
 port() {
   lsof -i :$1
 }
@@ -317,10 +403,8 @@ port() {
 ### Slow Startup
 
 ```bash
-# Measure startup time
 time zsh -i -c exit
 
-# Diagnose slow plugins
 zprof
 ```
 
@@ -332,27 +416,30 @@ zprof
 
 ### Theme Display Issues
 
+macOS:
 ```bash
-# Install Nerd Font (required for Powerlevel10k)
 brew install --cask font-fira-code-nerd-font
-
-# Select Nerd Font in terminal settings
 ```
+
+Windows (WSL):
+```bash
+sudo apt install fontconfig
+```
+
+Install a Nerd Font on Windows, then select it in Windows Terminal settings.
 
 ### Plugins Not Working
 
 ```bash
-# Regenerate completion cache
 rm -f ~/.zcompdump*
 compinit
 
-# Reload configuration
 source ~/.zshrc
 ```
 
 ## Summary
 
-Core principles for Oh My Zsh configuration:
+Core principles for Oh My Zsh:
 
 1. **Theme: Powerlevel10k** — Best performance, most flexible
 2. **5 Essential Plugins**: autosuggestions, syntax-highlighting, completions, z, extract
@@ -366,5 +453,5 @@ Core principles for Oh My Zsh configuration:
 - [Powerlevel10k GitHub](https://github.com/romkatv/powerlevel10k) — Fastest Zsh theme
 - [zsh-autosuggestions GitHub](https://github.com/zsh-users/zsh-autosuggestions) — Command auto-suggestion
 - [zsh-syntax-highlighting GitHub](https://github.com/zsh-users/zsh-syntax-highlighting) — Syntax highlighting
-- [Starship Prompt](https://starship.rs/) — Cross-platform prompt
 - [zsh-completions GitHub](https://github.com/zsh-users/zsh-completions) — Additional completion rules
+- [Microsoft WSL Documentation](https://learn.microsoft.com/en-us/windows/wsl/) — Linux on Windows
