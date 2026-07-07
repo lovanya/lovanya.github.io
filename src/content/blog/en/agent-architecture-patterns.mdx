@@ -1,0 +1,300 @@
+---
+title: "Agent Architecture: ReAct, Plan-and-Execute & Multi-Agent"
+description: From single-tool calls to a full agent reasoning loop — three mainstream architectures and their production trade-offs.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'agent']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The previous post covered Function Calling — letting the LLM call a tool. But in production, **90% of complex tasks can't be solved in one tool call**:
+
+- "Book me a flight, budget under ¥2000, afternoon departure" → search flights → compare → pick best → fill payment → issue ticket, **5+ steps**
+- "Analyze last quarter's sales and create a PPT for the boss" → query DB → aggregate → generate charts → write outline → layout, **multi-step + multi-tool**
+
+These tasks need an **Agent** — an LLM system that can **autonomously decide which tools to call, in what order, for how many iterations**.
+
+This post covers three mainstream agent architectures:
+
+1. **ReAct** — the simplest thought / action / observation loop
+2. **Plan-and-Execute** — plan first, then execute; great for long-chained tasks
+3. **Multi-Agent** — decompose into sub-tasks, multiple agents collaborate
+
+## 1. ReAct: The Thought / Action / Observation Loop
+
+[ReAct](https://arxiv.org/abs/2210.03629) (Yao et al. 2022, ICLR 2023) core idea: let the LLM **interleave reasoning and actions**:
+
+```
+Thought 1: I need to search for flight prices
+Action 1:  search_flight({from: "PEK", to: "SHA", date: "2026-07-15"})
+Observation 1: Lowest price ¥1200 (China Eastern MU5101)
+
+Thought 2: Within budget, let me check the flight time
+Action 2:  get_flight_details({flight: "MU5101"})
+Observation 2: Departs 14:30, arrives 17:00
+
+Thought 3: Good time slot, ready to book
+Action 3:  book_flight({flight: "MU5101", passenger: "..."})
+Observation 3: Order confirmed: MU5101, ¥1200
+
+Thought 4: Task complete
+Final Answer: Successfully booked 7/15 PEK→SHA MU5101, ¥1200
+```
+
+<Mermaid client:load caption="Figure 1: ReAct loop" chart={`flowchart LR
+  Q[Query] --> T1[Thought<br/>what next?]
+  T1 --> A[Action<br/>call tool]
+  A --> O[Observation<br/>tool result]
+  O --> D{Done?}
+  D -->|No| T1
+  D -->|Yes| F[Final Answer]`} />
+
+### Code Implementation
+
+Vercel AI SDK + custom ReAct:
+
+```typescript
+import { generateText, tool, isStepCount } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+const result = await generateText({
+  model: openai('gpt-4o'),
+  system: `You are a travel booking agent. For each turn:
+1. State your Thought (what to do next)
+2. Take an Action (call a tool)
+3. Receive Observation (tool result)
+4. Repeat until done
+
+End with a clear final answer when the task is complete.`,
+  tools: {
+    searchFlight: tool({ /* ... */ }),
+    getFlightDetails: tool({ /* ... */ }),
+    bookFlight: tool({ /* ... */ }),
+  },
+  stopWhen: isStepCount(10),  // max 10 steps
+  prompt: userQuery,
+});
+```
+
+ReAct is **simple and powerful**, but **inefficient for long-chained tasks** — the LLM re-reads all history every step and can be derailed by early errors.
+
+## 2. Plan-and-Execute: Plan First, Then Execute
+
+For tasks with 5+ steps and dependencies, **plan-then-execute** is more stable than ReAct:
+
+<Mermaid client:load caption="Figure 2: Plan-and-Execute architecture" chart={`flowchart TB
+  Q[Query] --> P[Planner<br/>LLM plans once]
+  P --> Plan[Plan<br/>step list]
+  Plan --> E1[Executor Step 1]
+  E1 --> R1[Result 1]
+  R1 --> E2[Executor Step 2]
+  E2 --> R2[Result 2]
+  R2 --> E3[Executor Step 3]
+  E3 --> R3[Result 3]
+  R3 --> Rev{Replan?<br/>failure/deviation check]
+  Rev -->|Yes| P
+  Rev -->|No| A[Final Answer]`} />
+
+### Implementation Example
+
+```typescript
+import { generateObject, generateText, tool } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// 1. Planner generates the plan upfront
+const plan = await generateObject({
+  model: openai('gpt-4o'),
+  schema: z.object({
+    steps: z.array(z.object({
+      id: z.number(),
+      action: z.string(),
+      toolName: z.string(),
+      dependsOn: z.array(z.number()).optional(),
+    })),
+  }),
+  prompt: `Decompose the user task into executable steps.
+
+User task: ${userQuery}`,
+});
+
+// 2. Execute plan step-by-step (with dependency checks)
+const results = new Map();
+for (const step of plan.object.steps) {
+  if (step.dependsOn) {
+    for (const dep of step.dependsOn) {
+      await results.get(dep);  // actually awaits a promise
+    }
+  }
+  
+  const stepResult = await executeStep(step, results);
+  results.set(step.id, stepResult);
+}
+
+// 3. Replan fallback (when any step fails)
+// 4. Final aggregation
+const summary = await generateText({
+  model: openai('gpt-4o'),
+  prompt: `Based on these results answer the user: ${JSON.stringify(results)}`,
+});
+```
+
+**When to use**:
+- Long-chained (5+ step) tasks
+- Steps have data dependencies ("query X, then use X's result for Y")
+- Users want to see the plan (transparency)
+
+**Drawback**: a single plan can be inaccurate, so you need a replan fallback.
+
+## 3. Multi-Agent: Decompose + Collaborate
+
+When a task **has multiple independent sub-domains**, splitting into multiple agents beats one super-agent:
+
+```
+                    ┌── Researcher Agent ──┐
+                    │   flights + hotels     │
+User Query ── Router ─┼── Budget Agent ──────┼── Aggregator ── Final
+                    │   total cost control    │
+                    └── Planner Agent ─────┘
+                        sequencing
+```
+
+### Classic Implementation: Supervisor Pattern
+
+```typescript
+// Each agent is an independent system prompt + tool set
+const agents = {
+  researcher: new Agent({
+    name: 'Researcher',
+    systemPrompt: 'You are the researcher. Find flights and hotels...',
+    tools: [searchFlightTool, searchHotelTool],
+  }),
+  budget: new Agent({
+    name: 'BudgetController',
+    systemPrompt: 'You are the budget controller. Keep total spend < ¥2000...',
+    tools: [sumCostsTool, checkBudgetTool],
+  }),
+  planner: new Agent({
+    name: 'Planner',
+    systemPrompt: 'You are the planner. Decompose the task into steps...',
+    tools: [],  // pure reasoning agent
+  }),
+};
+
+// Supervisor decides the next agent to invoke
+async function supervisor(userQuery: string) {
+  const state = { messages: [], currentAgent: 'planner' };
+  
+  while (!state.done) {
+    const agent = agents[state.currentAgent];
+    const result = await agent.run(state);
+    state.messages.push(...result.messages);
+    
+    const next = await generateText({
+      model: openai('gpt-4o-mini'),
+      system: `Decide which agent to invoke next: researcher / budget / planner / done`,
+      prompt: JSON.stringify(state),
+    });
+    
+    state.currentAgent = parseNextAgent(next.text);
+    if (state.currentAgent === 'done') state.done = true;
+  }
+  
+  return state.messages;
+}
+```
+
+### 3 Main Multi-Agent Patterns
+
+1. **Supervisor (centralized)**: best for **heterogeneous tasks**
+2. **Swarm**: agents hand off to each other directly ([LangGraph Swarm](https://docs.langchain.com/oss/python/langgraph/overview)), best for **dynamic handoffs**
+3. **Hierarchical**: agents nest agents (a supervisor managing 3 sub-agents, each managing 3 workers), best for **large-scale tasks**
+
+### Multi-Agent Pitfalls
+
+- **Token blowup**: multiple agents accumulate context, may exceed model limits
+- **Coordination deadlocks**: A waits for B, B waits for A
+- **Blurred responsibility**: vague boundaries cause duplicate work
+
+**Heuristic**: start with ReAct / Plan-and-Execute. **Only** introduce Multi-Agent when you actually need it.
+
+## 4. LangGraph: State-Machine Agent Orchestration
+
+[LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) is LangChain's lower-level orchestration framework, abstracting agents as **state graphs**:
+
+```python
+from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+class State(TypedDict):
+    messages: list
+    next_step: str
+
+def planner(state: State):
+    # Decide the next step
+    return {"next_step": "researcher"}
+
+def researcher(state: State):
+    # Query flights
+    return {"messages": state["messages"] + [...]}
+
+def should_continue(state: State) -> str:
+    if state["next_step"] == "done":
+        return END
+    return state["next_step"]
+
+graph = (
+    StateGraph(State)
+    .add_node("planner", planner)
+    .add_node("researcher", researcher)
+    .add_edge(START, "planner")
+    .add_conditional_edges("planner", should_continue)
+    .compile()
+)
+```
+
+LangGraph's core value:
+- **State persistence**: agents can pause / resume (for human-in-the-loop)
+- **Debuggability**: every state transition is traceable
+- **Production-ready**: built-in checkpointing, error recovery, parallel execution
+
+## 5. Selection Decision Tree
+
+<Mermaid client:load caption="Figure 3: Agent architecture selection" chart={`flowchart TD
+  Start[Pick agent architecture] --> Q1{How complex is the task?}
+  Q1 -->|1-3 steps| ReAct[ReAct single agent]
+  Q1 -->|5+ steps, has dependencies| Plan[Plan-and-Execute]
+  Q1 -->|Multiple independent subtasks| Multi[Multi-Agent]
+  Q2{Need human-in-the-loop?}
+  Q2 -->|Yes| LangGraph[LangGraph<br/>state can pause]
+  Q2 -->|No| Q3{Need debuggability / observability?}
+  Q3 -->|Yes| LangGraph
+  Q3 -->|No| Default[Pick from above]`} />
+
+## Pitfalls for Senior Architects
+
+1. **Don't start with Multi-Agent.** 80% of tasks are served well by a single agent + good ReAct. Start simple.
+2. **Always set `stopWhen`.** Without a step limit, agents **loop infinitely and burn tokens**.
+3. **Each agent's system prompt must define clear responsibility boundaries.** "You do A, not B, else error" beats generic "You are a helpful assistant" 10x.
+4. **Multi-Agent needs a shared state layer.** Without unified state store, agents can't coordinate (classic anti-pattern).
+5. **Tool failure rate > 0 means you need retry + fallback.** Real APIs aren't 100% reliable; agents without degradation are time bombs.
+
+## Summary
+
+Five takeaways:
+
+- **ReAct**: simplest thought / action / observation loop. Best for 1-5 step tasks. **Default for 80% of scenarios.**
+- **Plan-and-Execute**: plan first, then execute. Best for 5+ step tasks with dependencies. **Needs replan fallback.**
+- **Multi-Agent**: decompose + coordinate. Best for heterogeneous / large-scale tasks. **Architecturally complex — use sparingly.**
+- **LangGraph**: state-machine orchestration. **Production-grade agent essential.** Supports persistence, human-in-the-loop, debuggability.
+- **Always set stopWhen + retry + fallback.** Agents are LLMs + tool calls. **Any unreliable link causes the agent to fail.**
+
+**Next up**: [Memory System Design for LLM Applications](/en/blog/llm-memory-systems) — entering the engineering trio.
+
+## References
+
+- [ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., 2022)](https://arxiv.org/abs/2210.03629) — the original ReAct paper, ICLR 2023
+- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview) — state-machine agent orchestration, nodes / edges / cycles / persistence
+- [Vercel AI SDK — Tools & Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — `stopWhen` / `isStepCount` multi-step control

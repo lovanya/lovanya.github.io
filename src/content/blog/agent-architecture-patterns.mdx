@@ -1,0 +1,304 @@
+---
+title: "Agent 架构：ReAct、Plan-and-Execute 与多 Agent 协作"
+description: 从单步工具调用到完整 agent 思考循环——ReAct / Plan-and-Execute / Multi-Agent 三大主流架构与生产权衡
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'agent']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+上一篇讲了 Function Calling —— LLM 可以调用工具。但生产里 90% 的复杂任务**不能一次 tool call 解决**：
+
+- "帮我订机票，预算 2000 以内，下午出发" → 需要查机票 → 比较 → 选最优 → 填支付 → 出票，**5+ 步**
+- "分析上季度销售数据并给老板做汇报 PPT" → 查 DB → 聚合 → 生成图表 → 写大纲 → 排版，**多步 + 多种工具**
+
+这些任务需要 **Agent** —— 一个能**自主决定调用哪些工具、按什么顺序、循环多少步**的 LLM 系统。
+
+这一篇覆盖三大主流 agent 架构：
+
+1. **ReAct**：最简单的 thought / action / observation 循环
+2. **Plan-and-Execute**：先规划再执行，适合长链条任务
+3. **Multi-Agent**：拆分子任务，多个 agent 协作
+
+## 一、ReAct：thought / action / observation 循环
+
+[ReAct](https://arxiv.org/abs/2210.03629)（Yao et al. 2022，ICLR 2023）的核心思想是让 LLM **交替生成推理和动作**：
+
+```
+Thought 1: 我需要先查机票价格
+Action 1:  search_flight({from: "PEK", to: "SHA", date: "2026-07-15"})
+Observation 1: 最低价 ¥1200（东航 MU5101）
+
+Thought 2: 价格在预算内，再看看具体航班时段
+Action 2:  get_flight_details({flight: "MU5101"})
+Observation 2: 14:30 出发，17:00 到达
+
+Thought 3: 时段合适，可以出票
+Action 3:  book_flight({flight: "MU5101", passenger: "..."})
+Observation 3: 订单确认：MU5101，¥1200
+
+Thought 4: 任务完成
+Final Answer: 已成功预订 7/15 北京-上海 MU5101，¥1200
+```
+
+<Mermaid client:load caption="图 1：ReAct 循环" chart={`flowchart LR
+  Q[Query] --> T1[Thought<br/>我需要做什么]
+  T1 --> A[Action<br/>调用工具]
+  A --> O[Observation<br/>工具结果]
+  O --> D{完成了吗?}
+  D -->|否| T1
+  D -->|是| F[Final Answer]`} />
+
+### 代码实现
+
+Vercel AI SDK + 自定义 ReAct：
+
+```typescript
+import { generateText, tool, isStepCount } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+const result = await generateText({
+  model: openai('gpt-4o'),
+  system: `You are a travel booking agent. For each turn:
+1. State your Thought (what to do next)
+2. Take an Action (call a tool)
+3. Receive Observation (tool result)
+4. Repeat until done
+
+End with a clear final answer when the task is complete.`,
+  tools: {
+    searchFlight: tool({ /* ... */ }),
+    getFlightDetails: tool({ /* ... */ }),
+    bookFlight: tool({ /* ... */ }),
+  },
+  stopWhen: isStepCount(10),  // 最多 10 步
+  prompt: userQuery,
+});
+```
+
+ReAct **简单、强大**，但**对长链条任务效率低**——LLM 每步都要重读所有历史，可能被早期错误带偏。
+
+## 二、Plan-and-Execute：先规划再执行
+
+对于"5+ 步、有依赖关系的任务"，**先规划再执行**比 ReAct 更稳：
+
+<Mermaid client:load caption="图 2：Plan-and-Execute 架构" chart={`flowchart TB
+  Q[Query] --> P[Planner<br/>LLM 一次性规划]
+  P --> Plan[Plan<br/>步骤列表]
+  Plan --> E1[Executor Step 1]
+  E1 --> R1[Result 1]
+  R1 --> E2[Executor Step 2]
+  E2 --> R2[Result 2]
+  R2 --> E3[Executor Step 3]
+  E3 --> R3[Result 3]
+  R3 --> Rev{Replan?<br/>检测失败/偏离}
+  Rev -->|是| P
+  Rev -->|否| A[Final Answer]`} />
+
+### 实现示例
+
+```typescript
+import { generateObject, generateText, tool } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
+
+// 1. Planner 一次性生成计划
+const plan = await generateObject({
+  model: openai('gpt-4o'),
+  schema: z.object({
+    steps: z.array(z.object({
+      id: z.number(),
+      action: z.string(),
+      toolName: z.string(),
+      dependsOn: z.array(z.number()).optional(),
+    })),
+  }),
+  prompt: `将用户任务拆解为可执行的步骤计划。
+
+用户任务：${userQuery}`,
+});
+
+// 2. 按计划逐步执行（带依赖检查）
+const results = new Map();
+for (const step of plan.object.steps) {
+  // 等待依赖完成
+  if (step.dependsOn) {
+    for (const dep of step.dependsOn) {
+      await results.get(dep);  // 实际是 await 一个 promise
+    }
+  }
+  
+  // 执行当前步骤
+  const stepResult = await executeStep(step, results);
+  results.set(step.id, stepResult);
+}
+
+// 3. Replan 兜底（任何步骤失败时重新规划）
+// 4. 最终汇总
+const summary = await generateText({
+  model: openai('gpt-4o'),
+  prompt: `基于以下执行结果回答用户：${JSON.stringify(results)}`,
+});
+```
+
+**适用场景**：
+- 长链条（5+ 步）任务
+- 步骤间有数据依赖（"先查 X 再用 X 的结果做 Y"）
+- 用户希望看到"计划"（透明度）
+
+**缺点**：单次 plan 可能不准确，需要 replan 机制兜底。
+
+## 三、Multi-Agent：拆分子任务 + 协作
+
+当任务**有多个独立子领域**时，拆成多个 agent 比一个超级 agent 更优：
+
+```
+                    ┌── Researcher Agent ──┐
+                    │   查机票 + 酒店       │
+User Query ── Router ─┼── Budget Agent ──────┼── Aggregator ── Final
+                    │   控制总预算           │
+                    └── Planner Agent ─────┘
+                        编排执行顺序
+```
+
+### 经典实现：Supervisor 模式
+
+```typescript
+// 每个 agent 是一个独立的 system prompt + tools 集合
+const agents = {
+  researcher: new Agent({
+    name: 'Researcher',
+    systemPrompt: '你是研究员，负责查机票和酒店...',
+    tools: [searchFlightTool, searchHotelTool],
+  }),
+  budget: new Agent({
+    name: 'BudgetController',
+    systemPrompt: '你是预算控制器，确保总开销 < ¥2000...',
+    tools: [sumCostsTool, checkBudgetTool],
+  }),
+  planner: new Agent({
+    name: 'Planner',
+    systemPrompt: '你是规划师，把任务拆成步骤...',
+    tools: [],  // 纯推理 agent
+  }),
+};
+
+// Supervisor 决定下一步调用哪个 agent
+async function supervisor(userQuery: string) {
+  const state = { messages: [], currentAgent: 'planner' };
+  
+  while (!state.done) {
+    const agent = agents[state.currentAgent];
+    const result = await agent.run(state);
+    state.messages.push(...result.messages);
+    
+    // Supervisor LLM 决定下一步
+    const next = await generateText({
+      model: openai('gpt-4o-mini'),
+      system: `根据当前状态决定下一步调用哪个 agent：researcher / budget / planner / done`,
+      prompt: JSON.stringify(state),
+    });
+    
+    state.currentAgent = parseNextAgent(next.text);
+    if (state.currentAgent === 'done') state.done = true;
+  }
+  
+  return state.messages;
+}
+```
+
+### Multi-Agent 的 3 种主流模式
+
+1. **Supervisor（主管）**：中心化协调，适合**异构任务**
+2. **Swarm（群）**：agent 之间直接对话（[LangGraph Swarm](https://docs.langchain.com/oss/python/langgraph/overview)），适合**动态交接**
+3. **Hierarchical（分层）**：agent 嵌套 agent（如一个 supervisor 管 3 个 sub-agent，每个 sub-agent 又管 3 个 worker），适合**大规模任务**
+
+### Multi-Agent 的陷阱
+
+- **Token 爆炸**：多个 agent 累积 context 可能超过模型限制
+- **协调死锁**：A 等 B 的输出，B 等 A 的输出
+- **职责不清**：边界模糊导致重复工作
+
+**经验法则**：先 ReAct / Plan-and-Execute，**真正需要时**才上 Multi-Agent。
+
+## 四、LangGraph：状态机式的 agent 编排
+
+[LangGraph](https://docs.langchain.com/oss/python/langgraph/overview) 是 LangChain 的底层编排框架，把 agent 抽象成**有向图（state graph）**：
+
+```python
+from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+class State(TypedDict):
+    messages: list
+    next_step: str
+
+def planner(state: State):
+    # 决定下一步
+    return {"next_step": "researcher"}
+
+def researcher(state: State):
+    # 查机票
+    return {"messages": state["messages"] + [...]}
+
+def should_continue(state: State) -> str:
+    if state["next_step"] == "done":
+        return END
+    return state["next_step"]
+
+graph = (
+    StateGraph(State)
+    .add_node("planner", planner)
+    .add_node("researcher", researcher)
+    .add_edge(START, "planner")
+    .add_conditional_edges("planner", should_continue)
+    .compile()
+)
+```
+
+LangGraph 的核心价值：
+- **状态持久化**：agent 可以暂停 / 恢复（用于 human-in-the-loop）
+- **可调试**：每一步的状态变化都可 trace
+- **生产可用**：内置 checkpointing、错误恢复、并行执行
+
+## 五、选型决策树
+
+<Mermaid client:load caption="图 3：Agent 架构选型决策" chart={`flowchart TD
+  Start[选 Agent 架构] --> Q1{任务多复杂?}
+  Q1 -->|1-3 步| ReAct[ReAct 单 agent]
+  Q1 -->|5+ 步, 有依赖| Plan[Plan-and-Execute]
+  Q1 -->|多个独立子任务| Multi[Multi-Agent]
+  Q2{需要 human 介入?}
+  Q2 -->|是| LangGraph[LangGraph<br/>状态可暂停]
+  Q2 -->|否| Q3{需要可调试 / 可观测?}
+  Q3 -->|是| LangGraph
+  Q3 -->|否| Default[按上面选]`} />
+
+## 踩坑提醒
+
+1. **不要从 Multi-Agent 起步**。80% 的任务单 agent + 好的 ReAct 就够。先简单后复杂。
+2. **永远设 `stopWhen`**。没有 step 限制的 agent 会**无限循环烧光 token**。
+3. **每个 agent 的 system prompt 要明确职责边界**。"你做 A，不要做 B，否则会出错" 这种边界说明比泛泛"你是一个有用的助手"好 10 倍。
+4. **Multi-Agent 需要共享状态层**。没有统一的 state store，agent 之间无法有效协作（经典 anti-pattern）。
+5. **tool 失败率高的 agent 必须有 retry + fallback**。真实 API 不可能 100% 可靠，没有降级方案的 agent 是定时炸弹。
+
+## 总结
+
+5 个 takeaway：
+
+- **ReAct**：最简单的 thought / action / observation 循环，适合 1-5 步任务。**80% 场景的默认选择**。
+- **Plan-and-Execute**：先规划再执行，适合 5+ 步、有依赖的任务。**需要 replan 兜底**。
+- **Multi-Agent**：拆分子任务 + 协调，适合异构 / 大规模任务。**架构复杂，慎用**。
+- **LangGraph**：状态机式编排，**生产级 agent 必备**，支持持久化、human-in-the-loop、可调试。
+- **永远设 stopWhen + retry + fallback**。Agent 是 LLM + 工具调用，**任何一环不可靠都会让 agent 失败**。
+
+**下一篇**：[LLM 应用的 Memory 系统设计](/blog/llm-memory-systems) — 进入工程化三件套。
+
+## 参考资料
+
+- [ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., 2022)](https://arxiv.org/abs/2210.03629) — 原始 ReAct 论文，ICLR 2023
+- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview) — 状态机式 agent 编排框架，节点 / 边 / 循环 / 持久化
+- [Vercel AI SDK — Tools & Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — `stopWhen` / `isStepCount` 多步控制
