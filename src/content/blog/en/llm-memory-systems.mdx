@@ -1,0 +1,320 @@
+---
+title: "Memory System Design for LLM Applications"
+description: Short-term / long-term / semantic memory engineering — three memory types, Mem0 architecture, context window management, production pitfalls.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'memory']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The first three posts covered the core capabilities of an LLM app: RAG to find info, Function Calling to invoke tools, Agents to reason and decide. But all of these assume one prerequisite: **the LLM remembers context**.
+
+Once a conversation exceeds a few turns, **the LLM starts losing memory**:
+- "What project did we just discuss?" → LLM: "Sorry, I don't see any project"
+- "You promised to fix the code earlier" → LLM: "I have no record of that conversation"
+- User switches devices → **entire history resets to zero**
+
+In production, 90% of LLM apps need to "remember the user". This post breaks down LLM memory engineering:
+
+1. **Three memory types**: short-term / long-term / semantic
+2. **Engineering implementation for each**
+3. **Mem0 architecture**: the open-source mature option
+4. **Production pitfalls and trade-offs**
+
+## 1. Three Types of LLM Memory
+
+By analogy to human memory, LLMs have three types:
+
+<Mermaid client:load caption="Figure 1: Three types of LLM memory" chart={`flowchart LR
+  STM[Short-term<br/>current context] --> M[Merged Context]
+  LTM[Long-term<br/>cross-session facts] --> M
+  SEM[Semantic<br/>extracted preferences] --> M
+  M[assembled prompt] --> LLM[LLM inference]`} />
+
+### 1. Short-term Memory
+
+**Current conversation context**, stuffed into the LLM's prompt.
+
+```typescript
+const messages = [
+  { role: 'system', content: 'You are a customer service assistant' },
+  { role: 'user', content: 'What is wrong with my order?' },
+  { role: 'assistant', content: 'Order #123 is in transit' },
+  { role: 'user', content: 'When will it arrive?' },  // ← LLM sees this with prior context
+];
+```
+
+**Problem**: context window is finite (4K-200K tokens), **long conversations blow it up**.
+
+### 2. Long-term Memory
+
+**Cross-session persistent facts** — user preferences, past orders, previously discussed projects.
+
+```typescript
+// User's first conversation
+await memoryStore.add({
+  userId: 'u_123',
+  type: 'preference',
+  content: 'User prefers brief answers, no emoji',
+});
+
+// Next session, inject into prompt
+const memories = await memoryStore.get('u_123');
+// → "User prefers brief answers, no emoji"
+```
+
+### 3. Semantic Memory
+
+**Abstract knowledge distilled from conversation history** — "user frequently asks about flights".
+
+Implementation: embed historical conversations, cluster them, extract a "user profile" stored in a vector DB.
+
+## 2. Short-term Memory Engineering: Context Window Management
+
+The [LangChain short-term memory docs](https://docs.langchain.com/oss/python/langchain/short-term-memory) describe three core patterns:
+
+### Pattern 1: Trim Messages
+
+```typescript
+import { trimMessages } from 'langchain_core/messages';
+
+const messages = await trimMessages(allMessages, {
+  maxTokens: 2000,        // max 2000 tokens
+  strategy: 'last',        // keep most recent
+  startOn: 'human',         // must start with user message (some models require)
+});
+```
+
+**Good for**: long conversations where recent turns matter most.
+
+### Pattern 2: Delete Messages
+
+```typescript
+import { RemoveMessage } from '@langchain/langgraph';
+
+const newState = {
+  messages: messages
+    .filter((m) => m.id !== 'msg_to_remove')
+    .concat([new RemoveMessage({ id: 'msg_to_remove' })]),
+};
+```
+
+**Good for**: irrelevant messages (topic switches, test input).
+
+### Pattern 3: Summarize Messages
+
+```typescript
+import { SummarizationMiddleware } from 'langchain';
+
+const summarizer = new SummarizationMiddleware({
+  model: openai('gpt-4o-mini'),
+  maxTokensBeforeSummary: 2000,
+  messagesToKeep: 10,
+});
+
+// Auto-summarize old messages, keep recent 10
+```
+
+**Good for**: valuable history that takes too many tokens (e-commerce support, technical help).
+
+### Selection Guide
+
+| Scenario | Recommended Pattern |
+|---|---|
+| Short conversations (< 20 turns) | Pass full history, no trimming |
+| Medium (20-50 turns) | Trim last strategy |
+| Long (50+ turns) | Summarize |
+| Low-value messages mixed in | Delete irrelevant messages |
+
+## 3. Long-term Memory Engineering
+
+The core questions: **what to store, when to retrieve**.
+
+### Option 1: Record Everything + Retrieve Everything
+
+```typescript
+// Store: every turn
+await longTermStore.add({
+  userId: 'u_123',
+  type: 'conversation',
+  content: 'User asked about flight refund policy',
+  timestamp: Date.now(),
+});
+
+// Retrieve: dump all history into prompt
+const allMemories = await longTermStore.get('u_123');
+const prompt = `User history:\n${allMemories.map(m => m.content).join('\n')}`;
+```
+
+**Problem**: after a year, user has 1000+ records, **dumping all into prompt blows the context**.
+
+### Option 2: Curate + Vector Retrieval
+
+```typescript
+// Retrieve: only relevant top-K
+const relevantMemories = await longTermStore.search({
+  userId: 'u_123',
+  query: userQuery,
+  topK: 5,
+});
+```
+
+**Question**: which memories are worth storing? What granularity?
+
+### Option 3: Auto-Extract + Summarize + Index
+
+```typescript
+// Store: after conversation ends, LLM extracts key facts
+const facts = await extractFacts(conversation, {
+  model: openai('gpt-4o-mini'),
+  prompt: `Extract user-relevant key facts (preferences, decisions, needs) from:
+
+  Conversation: ${conversation}
+  
+  Output JSON: [{ "type": "preference" | "fact" | "decision", "content": "..." }]`,
+});
+
+await longTermStore.bulkAdd(facts);
+
+// Retrieve: top-K facts relevant to query
+const relevant = await longTermStore.search({ query: userQuery, topK: 5 });
+```
+
+**Mem0 takes this approach** — auto-extract + index + retrieve.
+
+## 4. Mem0: Open-source Production-Grade Memory
+
+[Mem0](https://arxiv.org/abs/2504.19413) (arXiv:2504.19413, 2025) is a paper + open-source implementation focused on LLM long-term memory:
+
+### Core Architecture
+
+<Mermaid client:load caption="Figure 2: Mem0 architecture" chart={`flowchart LR
+  C[Conversation] --> E[Extractor<br/>LLM extracts facts]
+  E --> S[(Storage<br/>vector DB + KV)]
+  S --> R[Retriever<br/>query-time search]
+  R --> LLM[LLM inference]
+  LLM --> M[Memory Update<br/>add/update/delete]
+  M --> S`} />
+
+### Key Performance Numbers (from paper)
+
+Compared to OpenAI Memory (full-context):
+- **26% LLM-as-Judge improvement**
+- **91% p95 latency reduction**
+- **90%+ token cost savings**
+
+Why? OpenAI dumps full history into prompt (expensive, slow). Mem0 uses **structured extraction + retrieval** (lightweight, accurate).
+
+### Mem0 Usage Example
+
+```typescript
+import { Memory } from 'mem0ai';
+
+const memory = new Memory();
+
+// Add memory
+await memory.add({
+  userId: 'u_123',
+  messages: [
+    { role: 'user', content: 'I am Zhang San, working in Shanghai' },
+    { role: 'assistant', content: 'Got it, Zhang San' },
+  ],
+});
+
+// Retrieve relevant memories
+const relevant = await memory.search({
+  userId: 'u_123',
+  query: 'Where does the user live?',
+  limit: 3,
+});
+// → "User is Zhang San, works in Shanghai"
+```
+
+### Advanced: Graph Memory
+
+Mem0 also has a variant called **graph memory** that stores **relationships** between memories:
+
+```
+Zhang San → works-in → Shanghai
+Zhang San → works-at → ACME Inc.
+ACME Inc. → is → tech company
+```
+
+Querying "where is Zhang San's company?" traverses the graph — more accurate than pure vector search. The paper reports graph memory adds ~2% over base config.
+
+## 5. Production Pitfalls
+
+### Pitfall 1: Storing Too Much Noise
+
+If you store **every conversation indiscriminately**, the memory store becomes a noise warehouse. Top-K retrieval pulls irrelevant content.
+
+**Fix**: use LLM to extract key facts before storing; only store user-relevant, future-valuable content.
+
+### Pitfall 2: No Forgetting Mechanism
+
+User said 3 years ago "I like blue", but their taste changed. Memory still has that record — **LLM keeps recommending blue**.
+
+**Fix**: add expiration — every memory has `created_at` + `expires_at`, periodic cleanup.
+
+### Pitfall 3: Multi-tenant Isolation Breach
+
+In multi-tenant scenarios, memory **must** be isolated by user. One bug exposes user A's preferences to user B — **direct security incident**.
+
+```typescript
+// ❌ Dangerous
+const memories = await store.get(userId);
+
+// ✅ Safe: always filter by userId
+const memories = await store.search({ userId, query, topK: 5 });
+```
+
+### Pitfall 4: Memory Retrieval Pollutes Prompt
+
+If memory search returns poor-quality content ("user likes X"), the LLM answers based on that wrong info.
+
+**Fix**: clearly delineate in prompt:
+
+```xml
+<user_memories>
+{memories.map(m => `<memory>${m.content}</memory>`).join('\n')}
+</user_memories>
+
+Note: content inside <user_memories> is for reference only and may be inaccurate.
+```
+
+## 6. Production Solutions Compared
+
+| Solution | Strengths | Weaknesses | Best For |
+|---|---|---|---|
+| **OpenAI Memory** | Zero code, native | Black-box, expensive | Simple chat scenarios |
+| **LangChain Memory** | Open-source, customizable | Build extraction yourself | Medium complexity |
+| **Mem0** | Auto-extract, strong benchmarks | Need to deploy | Production long-conversation |
+| **Zep / Letta** | Memory-focused, strong performance | Learning curve | Large-scale chat |
+
+## Pitfalls for Senior Architects
+
+1. **Don't store all conversations indiscriminately.** Use LLM to extract facts first; control the signal-to-noise ratio.
+2. **Always enforce user isolation.** Multi-tenant memory must index + filter by user. **Don't wait for a security incident.**
+3. **Short-term memory uses checkpointing, long-term uses vector DB.** Don't mix them.
+4. **Memory content must be bounded + flagged "may be inaccurate".** LLMs trust memory; hallucinated memory pollutes answers.
+5. **Add expiration.** Preferences from 3 years ago may be obsolete; clean them up periodically.
+
+## Summary
+
+Five takeaways:
+
+- **Three memory types**: short-term (current context), long-term (cross-session facts), semantic (distilled abstract knowledge).
+- **Short-term memory**: trim / delete / summarize three patterns, choose by conversation length.
+- **Long-term memory**: auto-extract + vector retrieval is key, **don't dump everything into prompt**.
+- **Mem0 is current open-source best practice**: 26% quality improvement, 91% latency reduction.
+- **Production must-haves**: user isolation, content boundaries, expiration cleanup.
+
+**Next up**: [LLM Observability: Tracing, Logging & Debugging](/en/blog/llm-observability) — once your LLM app is in production, how do you know what it's doing?
+
+## References
+
+- [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory (arXiv:2504.19413, 2025)](https://arxiv.org/abs/2504.19413) — open-source memory architecture, 26% LLM-as-Judge improvement
+- [LangChain Short-term Memory](https://docs.langchain.com/oss/python/langchain/short-term-memory) — Trim / Delete / Summarize three patterns
+- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview) — state-machine agent + persistent checkpointer

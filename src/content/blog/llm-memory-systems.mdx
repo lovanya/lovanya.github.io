@@ -1,0 +1,320 @@
+---
+title: "LLM 应用的 Memory 系统设计"
+description: 短期 / 长期 / 语义记忆怎么搭——三种记忆的工程实现、Mem0 架构、上下文窗口管理与生产坑
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'memory']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+前 3 篇我们搭了 LLM 应用的核心能力：RAG 找资料、Function Calling 调工具、Agent 自己思考决策。但所有这些都有一个前提：**LLM 记得上下文**。
+
+一旦用户对话超过几轮，**LLM 就开始"失忆"**：
+- "我们刚才说的那个项目" → LLM："抱歉，我没看到任何项目"
+- "你之前答应帮我改一下代码" → LLM："我没有这个对话记录"
+- 用户换了设备，**整个历史归零**
+
+生产里 90% 的 LLM 应用需要"记住用户"。这一篇拆解 LLM Memory 的工程实现：
+
+1. **三种记忆的区分**：短期 / 长期 / 语义
+2. **每种记忆的工程实现**
+3. **Mem0 架构**：开源的成熟方案
+4. **生产陷阱与权衡**
+
+## 一、三种 LLM 记忆
+
+按人类记忆类比，LLM 也有 3 种：
+
+<Mermaid client:load caption="图 1：LLM 三种记忆" chart={`flowchart LR
+  STM[短期记忆<br/>当前对话上下文] --> M[Merged Context]
+  LTM[长期记忆<br/>跨会话事实] --> M
+  SEM[语义记忆<br/>从历史提炼的偏好] --> M
+  M[拼入 prompt] --> LLM[LLM 推理]`} />
+
+### 1. 短期记忆（Short-term Memory）
+
+**当前对话上下文**，塞进 LLM 的 prompt。
+
+```typescript
+const messages = [
+  { role: 'system', content: '你是客服助手' },
+  { role: 'user', content: '我订单出了什么问题？' },
+  { role: 'assistant', content: '订单 #123 在运输中' },
+  { role: 'user', content: '什么时候到？' },  // ← LLM 看到这一句时，前文都在 context
+];
+```
+
+**问题**：context window 有限（4K-200K tokens），**长对话会爆**。
+
+### 2. 长期记忆（Long-term Memory）
+
+**跨会话持久化的事实**——用户偏好、历史订单、之前问过的项目。
+
+```typescript
+// 用户首次对话
+await memoryStore.add({
+  userId: 'u_123',
+  type: 'preference',
+  content: '用户偏好简短回答，不要 emoji',
+});
+
+// 下次新会话，prompt 里拼入
+const memories = await memoryStore.get('u_123');
+// → "用户偏好简短回答，不要 emoji"
+```
+
+### 3. 语义记忆（Semantic Memory）
+
+从大量历史对话中**提炼出的抽象知识**——"用户经常问机票相关问题"。
+
+实现方式：把历史对话做 embedding 聚类，提炼出"用户主题画像"，存到向量数据库。
+
+## 二、短期记忆的工程实现：上下文窗口管理
+
+LangChain 的 [short-term memory 文档](https://docs.langchain.com/oss/python/langchain/short-term-memory) 给出 3 个核心模式：
+
+### 模式 1：Trim Messages（裁剪）
+
+```typescript
+import { trimMessages } from 'langchain_core/messages';
+
+const messages = await trimMessages(allMessages, {
+  maxTokens: 2000,        // 最多 2000 tokens
+  strategy: 'last',        // 保留最近的
+  startOn: 'human',         // 必须以 user 消息开始（部分模型要求）
+});
+```
+
+**适合**：长对话里最近 N 轮最重要，旧的可以裁。
+
+### 模式 2：Delete Messages（删除）
+
+```typescript
+import { RemoveMessage } from '@langchain/langgraph';
+
+const newState = {
+  messages: messages
+    .filter((m) => m.id !== 'msg_to_remove')  // 永久删除某条
+    .concat([new RemoveMessage({ id: 'msg_to_remove' })]),
+};
+```
+
+**适合**：明显不相关的消息（用户切换话题、测试输入）。
+
+### 模式 3：Summarize Messages（摘要）
+
+```typescript
+import { SummarizationMiddleware } from 'langchain';
+
+const summarizer = new SummarizationMiddleware({
+  model: openai('gpt-4o-mini'),
+  maxTokensBeforeSummary: 2000,   // 超过 2000 token 触发
+  messagesToKeep: 10,             // 保留最近 10 条
+});
+
+// 自动把旧消息压成摘要塞进 context
+```
+
+**适合**：历史对话**有价值**但太占 token（电商客服、技术支持）。
+
+### 实战选型
+
+| 场景 | 推荐模式 |
+|------|---------|
+| 短对话（< 20 轮） | 直接全量塞，**无需裁剪** |
+| 中等对话（20-50 轮） | Trim last 策略 |
+| 长对话（50+ 轮） | Summarize 摘要 |
+| 对话价值密度低 | Delete 不相关消息 |
+
+## 三、长期记忆的工程实现
+
+长期记忆的核心问题：**什么时候存什么、什么时候取什么**。
+
+### 方案 1：全量记录 + 全量检索
+
+```typescript
+// 存：每轮对话都存
+await longTermStore.add({
+  userId: 'u_123',
+  type: 'conversation',
+  content: '用户问了机票退改签政策',
+  timestamp: Date.now(),
+});
+
+// 取：每次新会话，把全部历史塞进 prompt
+const allMemories = await longTermStore.get('u_123');
+const prompt = `以下是用户历史对话：\n${allMemories.map(m => m.content).join('\n')}`;
+```
+
+**问题**：1 年下来用户有 1000+ 条记录，**全量塞 prompt 撑爆 context**。
+
+### 方案 2：精选 + 向量检索
+
+```typescript
+// 取：只取与当前 query 相关的 top-K
+const relevantMemories = await longTermStore.search({
+  userId: 'u_123',
+  query: userQuery,
+  topK: 5,
+});
+```
+
+**问题**：哪些 memory 值得存？粒度怎么选？
+
+### 方案 3：自动提取 + 摘要 + 索引
+
+```typescript
+// 存：对话结束后，LLM 提取关键事实
+const facts = await extractFacts(conversation, {
+  model: openai('gpt-4o-mini'),
+  prompt: `从以下对话中提取用户相关的关键事实（偏好、决定、需求）：
+  
+  对话：${conversation}
+  
+  输出 JSON: [{ "type": "preference" | "fact" | "decision", "content": "..." }]`,
+});
+
+await longTermStore.bulkAdd(facts);
+
+// 取：根据 query 检索 top-K 事实
+const relevant = await longTermStore.search({ query: userQuery, topK: 5 });
+```
+
+**Mem0 就是这个思路**——自动提取 + 索引 + 检索。
+
+## 四、Mem0：开源生产级 memory 架构
+
+[Mem0](https://arxiv.org/abs/2504.19413)（arXiv:2504.19413，2025）是一篇专门讲 LLM 长期记忆的论文 + 开源实现：
+
+### 核心架构
+
+<Mermaid client:load caption="图 2：Mem0 架构" chart={`flowchart LR
+  C[对话] --> E[Extractor<br/>LLM 提取事实]
+  E --> S[(Storage<br/>向量库 + KV)]
+  S --> R[Retriever<br/>query 时检索]
+  R --> LLM[LLM 推理]
+  LLM --> M[Memory Update<br/>新增/更新/删除]
+  M --> S`} />
+
+### 关键性能数据（来自论文）
+
+相比 OpenAI memory（基于全量对话）：
+- **26% LLM-as-Judge 提升**
+- **91% p95 延迟降低**
+- **90%+ token 成本节省**
+
+为什么？OpenAI 的方法是把全量对话塞 prompt（贵且慢），Mem0 用**结构化提取 + 检索**（轻量且准）。
+
+### Mem0 用法示例
+
+```typescript
+import { Memory } from 'mem0ai';
+
+const memory = new Memory();
+
+// 添加记忆
+await memory.add({
+  userId: 'u_123',
+  messages: [
+    { role: 'user', content: '我叫张三，在上海工作' },
+    { role: 'assistant', content: '好的，张三' },
+  ],
+});
+
+// 检索相关记忆
+const relevant = await memory.search({
+  userId: 'u_123',
+  query: '用户住在哪里？',
+  limit: 3,
+});
+// → "用户叫张三，在上海工作"
+```
+
+### 进阶：图记忆（Graph Memory）
+
+Mem0 还有个变体叫 **graph memory**，把记忆之间的**关系**也存下来：
+
+```
+张三 → 在 → 上海
+张三 → 工作于 → ACME 公司
+ACME 公司 → 是 → 科技公司
+```
+
+查询"张三的公司在哪"时，**沿着图遍历**比纯向量检索更准。论文里图记忆比基础版本再涨 ~2%。
+
+## 五、生产陷阱
+
+### 陷阱 1：存太多没用的"噪音"
+
+如果**无差别地存所有对话**，memory 库会膨胀成噪音仓库。每次检索 top-K 都可能召回无关内容。
+
+**修法**：用 LLM 提取关键事实后再存，只存"用户相关的、有未来价值的"内容。
+
+### 陷阱 2：遗忘机制缺失
+
+用户 3 年前说"我喜欢蓝色"，今天审美变了。但 memory 里还有这条，**LLM 会继续按蓝色推荐**。
+
+**修法**：加"过期"机制——每条 memory 带 `created_at` + `expires_at`，定期清理。
+
+### 陷阱 3：跨用户隔离漏掉
+
+多租户场景下，memory 必须**按 user 隔离**。一个 bug 让用户 A 看到用户 B 的偏好，**直接是安全事故**。
+
+```typescript
+// ❌ 危险
+const memories = await store.get(userId);
+
+// ✅ 安全：每次 query 带 userId
+const memories = await store.search({ userId, query, topK: 5 });
+```
+
+### 陷阱 4：Memory 检索污染 prompt
+
+如果 memory 检索返回的内容**质量差**（"用户喜欢 X"），LLM 会照着错信息回答。
+
+**修法**：在 prompt 里**明确划界**：
+
+```xml
+<user_memories>
+{memories.map(m => `<memory>${m.content}</memory>`).join('\n')}
+</user_memories>
+
+注意：<user_memories> 内的内容**仅作参考**，不一定准确。
+```
+
+## 六、生产方案对比
+
+| 方案 | 优势 | 劣势 | 适用 |
+|------|------|------|------|
+| **OpenAI Memory** | 零代码，原生 | 黑盒、成本高 | 简单 chat 场景 |
+| **LangChain Memory** | 开源、可定制 | 要自己设计提取逻辑 | 中等复杂 |
+| **Mem0** | 自动提取、benchmark 强 | 要部署 | 生产级长对话 |
+| **Zep / Letta** | 专注 memory、性能强 | 学习曲线 | 大规模 chat |
+
+## 踩坑提醒
+
+1. **不要把所有对话无差别存**。先用 LLM 提取事实再存，控制 memory 库的"信噪比"。
+2. **必须有 user 隔离**。多租户场景 memory 必须按 user 索引 + 过滤，**别等出安全事故再补**。
+3. **短期记忆用 checkpointing，长期记忆用向量库**。不要混。
+4. **Memory 内容要划界 + 标注"可能不准"**。LLM 会照单全收，幻觉记忆会污染回答。
+5. **加过期机制**。3 年前的偏好可能早就过时，定期清理。
+
+## 总结
+
+5 个 takeaway：
+
+- **三种记忆**：短期（当前对话）、长期（跨会话事实）、语义（提炼的抽象知识）。
+- **短期记忆**：trim / delete / summarize 三种模式，按对话长度选。
+- **长期记忆**：自动提取 + 向量检索是关键，**不要全量塞 prompt**。
+- **Mem0 是当前开源最佳实践**：26% 质量提升、91% 延迟降低。
+- **生产必备**：user 隔离、内容划界、过期清理。
+
+**下一篇**：[LLM 可观测性：Tracing、Logging 与调试](/blog/llm-observability) — 当 LLM 应用上线后，怎么知道它在做什么。
+
+## 参考资料
+
+- [Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory (arXiv:2504.19413, 2025)](https://arxiv.org/abs/2504.19413) — 开源 memory 架构，LLM-as-Judge 26% 提升
+- [LangChain Short-term Memory](https://docs.langchain.com/oss/python/langchain/short-term-memory) — Trim / Delete / Summarize 三种模式
+- [LangGraph Overview](https://docs.langchain.com/oss/python/langgraph/overview) — 状态机式 agent + 持久化 checkpointer
