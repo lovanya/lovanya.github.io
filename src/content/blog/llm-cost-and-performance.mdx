@@ -1,0 +1,408 @@
+---
+title: "LLM 成本与性能优化：Caching、Streaming 与模型路由"
+description: Token 账单失控怎么治——prompt cache、semantic cache、流式优化、模型路由、自动降级 5 大优化手段
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'optimization']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+LLM 应用上线 3 个月后，**90% 的团队都会撞上一堵墙**——账单。某中型 SaaS 团队的实例：
+
+- **月初**：月 5M token / 月，账单 $200
+- **3 个月后**：100M token / 月，账单 $4000
+- **6 个月后**：1B token / 月，账单 $40000
+
+增长来自 3 个方向：**用户量 × 调用频次 × 单次 token 数**。任何一个失控，成本都会爆炸。
+
+但比成本更可怕的是**延迟**——LLM 调用从 500ms 到 5s 不等，用户体验断崖式下降。
+
+这一篇覆盖 5 大优化手段，**按 ROI 排序**：
+
+1. **Prompt Cache**（90% token 节省，最容易）
+2. **Streaming**（首字延迟降到 200ms）
+3. **Semantic Cache**（重复 query 走缓存）
+4. **模型路由**（按 query 难度分层）
+5. **降级与限流**（失控时的兜底）
+
+## 一、Prompt Cache：90% token 节省
+
+[Mermaid] 视觉化：
+
+<Mermaid client:load caption="图 1：Prompt Cache 命中原理" chart={`flowchart LR
+  R[请求] --> PC{前缀匹配?}
+  PC -->|是, 1024+ tokens| Cache[命中缓存<br/>便宜 90%]
+  PC -->|否| Miss[未命中<br/>全价]
+  Cache --> LLM[LLM]
+  Miss --> LLM
+  LLM --> Out[Response]
+  Out --> Cache2[存入缓存]`} />
+
+### OpenAI / Anthropic 原生 Prompt Cache
+
+**OpenAI** 自动缓存任何**>= 1024 tokens** 的 prompt 前缀，命中部分便宜 50%（写入多 50%，读取便宜 50%）。**Anthropic** 类似的 5 分钟 TTL cache 缓存**4 个 breakpoints**。
+
+```typescript
+// OpenAI / Anthropic 自动处理，无需代码
+// 只需要把"稳定不变的部分"放在 prompt 前面
+const result = await generateText({
+  model: openai('gpt-4o'),
+  system: [
+    '你是 ACME 公司的客服助手。',                  // ← 稳定，命中缓存
+    '当前日期：2026-07-07。',                       // ← 稳定，命中缓存
+    '公司政策：30 天无理由退款。',                  // ← 稳定，命中缓存
+    // ...（总计 2000 tokens 稳定内容）
+    '\n\n以下是用户对话历史：\n' + history,          // ← 动态，未命中
+  ].join('\n'),
+  prompt: userQuery,                                // ← 动态，未命中
+});
+```
+
+**实战经验**：
+
+| 缓存命中率 | token 节省 |
+|-----------|----------|
+| 30% | 30% × (2000/2500) ≈ **24% 总节省** |
+| 60% | 60% × (2000/2500) ≈ **48% 总节省** |
+| 90% | 90% × (2000/2500) ≈ **72% 总节省** |
+
+**关键**：稳定内容（system prompt + few-shot examples + 长期上下文）放最前面，**至少凑够 1024 tokens** 让 cache 生效。
+
+## 二、Streaming：首字延迟 < 200ms
+
+LLM 生成 500 tokens 通常需要 3-5s。**流式输出让用户感知延迟从 5s 降到 0.2s**：
+
+[Mermaid] 视觉化：
+
+<Mermaid client:load caption="图 2：流式 vs 非流式" chart={`flowchart LR
+  Q[Query] --> N[非流式]
+  Q --> S[流式]
+  N --> T1[5s 后看到完整答案]
+  S --> T2[0.2s 看到第一个字<br/>后续逐字追加]`} />
+
+### Vercel AI SDK 流式实现
+
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+// 服务端：流式返回
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+  });
+  
+  return result.toDataStreamResponse();  // SSE 格式
+}
+
+// 客户端：消费流
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({ messages }),
+});
+
+const reader = response.body!.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const chunk = decoder.decode(value);
+  // 追加到 UI
+  appendToUI(chunk);
+}
+```
+
+**首字延迟**（TTFT）通常 **200-500ms**，**用户感知几乎是"瞬时"**。
+
+### 流式 + Tool Calling
+
+Agent 调用工具时也可以流式：
+
+```typescript
+const result = streamText({
+  model: openai('gpt-4o'),
+  tools: { searchWeb, queryDB },
+  prompt: userQuery,
+  // 每个 step 都流式
+  experimental_streamToolCalls: true,
+});
+
+for await (const chunk of result.textStream) {
+  // 文本部分
+  process.stdout.write(chunk);
+}
+// 工具调用在 result.toolCalls 中
+```
+
+## 三、Semantic Cache：重复 query 走缓存
+
+**prompt cache 只能缓存**完全相同的前缀**。但用户问的问题常常是语义重复：
+
+```
+Q1: "Transformer 的核心创新是什么？"
+Q2: "Transformer 有什么重大创新？"
+```
+
+两个 query **字面不同但语义相同**，理想情况应该返回同一个答案。**Semantic Cache** 用 embedding 找相似 query：
+
+### GPTCache 实战
+
+[GPTCache](https://github.com/zilliztech/gptcache) 是开源 semantic cache：
+
+```python
+from gptcache import Cache
+from gptcache.adapter.api import init_similar_cache
+
+# 配置：embedding + 相似度阈值 + 向量库
+init_similar_cache(
+    cache_obj=Cache(),
+    embedding_func=onnx_embedding(),  # 用 ONNX 跑 embedding，省钱
+    data_manager=milvus_data_manager(),  # 向量库存 query embeddings
+    similarity_threshold=0.85,  # 相似度阈值
+)
+
+# 用法：和 OpenAI client 一样
+response = openai.ChatCompletion.create(...)
+# GPTCache 自动拦截：相似 query 命中缓存
+```
+
+### Vercel AI SDK + 自建 semantic cache
+
+```typescript
+import { embed, generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Pool } from 'pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function cachedGenerate(userQuery: string) {
+  // 1. embed query
+  const { embedding } = await embed({
+    model: openai.embedding('text-embedding-3-small'),
+    value: userQuery,
+  });
+  
+  // 2. 查缓存
+  const { rows } = await pool.query(
+    `SELECT response FROM cache
+     WHERE embedding <=> $1 < 0.05  -- 相似度阈值
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [JSON.stringify(embedding)]
+  );
+  
+  if (rows.length > 0) {
+    return { response: rows[0].response, cached: true };
+  }
+  
+  // 3. 未命中，调用 LLM
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt: userQuery,
+  });
+  
+  // 4. 存缓存
+  await pool.query(
+    `INSERT INTO cache (embedding, response, created_at)
+     VALUES ($1, $2, NOW())`,
+    [JSON.stringify(embedding), text]
+  );
+  
+  return { response: text, cached: false };
+}
+```
+
+**实战经验**：
+
+| QPS | 缓存命中率 | 节省 |
+|-----|-----------|------|
+| 100 | 30% | $0.5/千次 |
+| 1000 | 50% | $5/千次 |
+| 10000 | 70% | $50/千次 |
+
+**注意**：semantic cache 适合**FAQ 类、客服类**场景；**不适合创意 / 个性化生成**。
+
+## 四、模型路由：按 query 难度分层
+
+**不是所有 query 都需要 GPT-4**。80% 的简单 query 用 GPT-4o-mini 就够了：
+
+<Mermaid client:load caption="图 3：模型路由架构" chart={`flowchart LR
+  Q[Query] --> R{路由器<br/>难度分类}
+  R -->|简单| S[gpt-4o-mini<br/>$0.15/M]
+  R -->|中等| M[claude-sonnet<br/>$3/M]
+  R -->|复杂| L[claude-opus<br/>$15/M]
+  R -->|危险| H[拒绝 / 人工]`} />
+
+### 实现
+
+```typescript
+async function routedGenerate(userQuery: string) {
+  // 1. 用小模型先分类
+  const classification = await generateText({
+    model: openai('gpt-4o-mini'),
+    prompt: `判断 query 复杂度：simple / medium / hard / dangerous
+
+Query: ${userQuery}
+
+只输出一个词。`,
+  });
+  
+  const tier = classification.text.trim();
+  
+  // 2. 根据 tier 路由
+  const modelMap = {
+    simple: 'gpt-4o-mini',
+    medium: 'gpt-4o',
+    hard: 'claude-opus-4',
+    dangerous: null,  // 拒绝
+  };
+  
+  if (modelMap[tier] === null) {
+    return { response: '抱歉，这个问题我无法回答' };
+  }
+  
+  const { text } = await generateText({
+    model: modelMap[tier],
+    prompt: userQuery,
+  });
+  
+  return { response: text };
+}
+```
+
+**实战经验**：
+- **分类 LLM 自身开销**：~5% 总体成本
+- **Tier 错配风险**：分错类导致质量问题，**需要评估集验证分类器准确率**
+- **降级兜底**：tier 不可用时自动降级到下一个 tier
+
+### Cascade 模式
+
+更进一步：先小模型，**信心不够再升级**：
+
+```typescript
+let answer = await gpt4oMini(query);
+let confidence = await evaluateConfidence(answer);
+
+if (confidence < 0.7) {
+  answer = await gpt4o(query);  // 升级
+}
+```
+
+**最坏情况**才用最强模型，**平均成本可控**。
+
+## 五、降级与限流：失控时的兜底
+
+5 个兜底机制：
+
+### 1. 限流（Rate Limit）
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(100, '1 m'),  // 每分钟 100 次
+});
+
+// 应用层
+const { success } = await ratelimit.limit(userId);
+if (!success) return new Response('Too many requests', { status: 429 });
+```
+
+### 2. Token 限流
+
+按 token 消耗限流比按请求数更合理：
+
+```typescript
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.tokenBucket(100000, '1 h', 10000),  // 1 小时 100K tokens
+});
+
+const { success, remaining } = await ratelimit.limit(userId, 5000);  // 本次 5K tokens
+```
+
+### 3. 超时降级
+
+```typescript
+const result = await Promise.race([
+  generateText({ model: openai('gpt-4o'), prompt }),
+  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+]).catch(() => 
+  generateText({ model: openai('gpt-4o-mini'), prompt })  // 降级到小模型
+);
+```
+
+### 4. Fallback 链
+
+```typescript
+async function robustGenerate(prompt: string) {
+  const models = ['gpt-4o', 'claude-sonnet', 'gpt-4o-mini'];
+  
+  for (const modelId of models) {
+    try {
+      return await generateText({ model: modelId, prompt });
+    } catch (e) {
+      // 失败继续尝试下一个
+      continue;
+    }
+  }
+  
+  throw new Error('All models failed');
+}
+```
+
+### 5. 熔断（Circuit Breaker）
+
+```typescript
+const breaker = new CircuitBreaker({
+  failureThreshold: 5,           // 5 次失败后熔断
+  resetTimeout: 30000,           // 30s 后尝试半开
+});
+
+const result = await breaker.fire(() => callProvider(prompt));
+```
+
+熔断期间**所有请求快速失败**（不再阻塞），保护下游。
+
+## 六、生产优化 checklist
+
+5 件事必做：
+
+1. ✅ **Prompt Cache 优化**：稳定内容放最前面，至少 1024 tokens
+2. ✅ **全链路流式**：TTFT < 500ms
+3. ✅ **Semantic Cache**：FAQ 类场景命中率 50%+
+4. ✅ **模型路由**：80% 简单 query 用 mini 模型
+5. ✅ **Fallback + 熔断**：超时降级 + 多供应商兜底
+
+## 踩坑提醒
+
+1. **不要忽视 prompt cache 命中率**。命中率 < 30% 说明 prompt 结构有问题（**稳定内容分散**），重新设计 prompt 顺序。
+2. **不要让 streaming 把整个上下文塞进第一 chunk**。首字延迟可能飙到 1s+，用户体验比非流式还差。
+3. **不要在 semantic cache 里存 PII 数据**。缓存命中可能让其他用户看到敏感信息，**必须 user 隔离 + 脱敏**。
+4. **不要无脑用最强模型**。80% 的 query 用 mini 模型就够，路由能省 50-70%。
+5. **不要只依赖单一供应商**。OpenAI / Anthropic 都可能宕机，**至少 2 家供应商 + fallback 链**。
+
+## 总结
+
+5 个 takeaway：
+
+- **Prompt Cache 90% token 节省**：稳定内容放最前面凑够 1024 tokens。
+- **Streaming 是必做**：TTFT 从 5s 降到 200ms，用户体验质变。
+- **Semantic Cache 50-80% 命中**：FAQ / 客服场景收益最大。
+- **模型路由省 50-70%**：80% query 用 mini 模型，复杂 query 才升级。
+- **Fallback + 限流 + 熔断**：失控时的兜底，**生产必备**。
+
+**下一篇**：[LLM 应用的 Guardrails：Prompt Injection 与输出安全](/blog/llm-guardrails) — 安全是 LLM 应用第一防线。
+
+## 参考资料
+
+- [GPTCache (Zilliz, GitHub)](https://github.com/zilliztech/gptcache) — 开源 semantic cache，10x 成本 / 100x 速度
+- [Vercel AI SDK — Streaming Text Generation](https://ai-sdk.dev/docs/ai-sdk-core/generating-text) — streamText 流式实现，SSE 协议

@@ -1,0 +1,404 @@
+---
+title: "LLM Cost & Performance Optimization: Caching, Streaming & Model Routing"
+description: How to fix runaway token bills — prompt cache, semantic cache, streaming optimization, model routing, automatic fallback (5 optimization levers).
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'optimization']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+3 months after an LLM app launches, **90% of teams hit a wall** — the bill. A mid-size SaaS team's story:
+
+- **Month 1**: 5M tokens / month, $200 bill
+- **Month 3**: 100M tokens / month, $4000 bill
+- **Month 6**: 1B tokens / month, $40000 bill
+
+Growth comes from 3 directions: **user count × call frequency × tokens per call**. Any one going wrong blows the budget.
+
+But worse than cost is **latency** — LLM calls vary from 500ms to 5s, killing user experience.
+
+This post covers 5 optimization levers, **ordered by ROI**:
+
+1. **Prompt Cache** (90% token savings, easiest)
+2. **Streaming** (TTFT drops to 200ms)
+3. **Semantic Cache** (repeat queries served from cache)
+4. **Model Routing** (tier by query difficulty)
+5. **Fallback & Rate Limit** (safety nets for runaway scenarios)
+
+## 1. Prompt Cache: 90% Token Savings
+
+Visualized:
+
+<Mermaid client:load caption="Figure 1: Prompt cache hit mechanics" chart={`flowchart LR
+  R[Request] --> PC{Prefix match?}
+  PC -->|Yes, 1024+ tokens| Cache[Hit cache<br/>90% cheaper]
+  PC -->|No| Miss[Miss<br/>full price]
+  Cache --> LLM[LLM]
+  Miss --> LLM
+  LLM --> Out[Response]
+  Out --> Cache2[Store in cache]`} />
+
+### OpenAI / Anthropic Native Prompt Cache
+
+**OpenAI** auto-caches any prompt prefix **>= 1024 tokens**, charging 50% less for cached reads. **Anthropic** has a similar 5-min TTL cache with **4 breakpoints**.
+
+```typescript
+// OpenAI / Anthropic handle this automatically — no extra code.
+// Just put the stable part FIRST in the prompt.
+const result = await generateText({
+  model: openai('gpt-4o'),
+  system: [
+    'You are ACME Co.\'s customer support assistant.',          // ← stable, hits cache
+    'Today is 2026-07-07.',                                     // ← stable, hits cache
+    'Policy: 30-day no-questions-asked refund.',                // ← stable, hits cache
+    // ... (total 2000 tokens of stable content)
+    '\n\nConversation history:\n' + history,                     // ← dynamic, miss
+  ].join('\n'),
+  prompt: userQuery,                                            // ← dynamic, miss
+});
+```
+
+**Production numbers**:
+
+| Cache Hit Rate | Token Savings |
+|---|---|
+| 30% | 30% × (2000/2500) ≈ **24% total savings** |
+| 60% | 60% × (2000/2500) ≈ **48% total savings** |
+| 90% | 90% × (2000/2500) ≈ **72% total savings** |
+
+**Key**: stable content (system prompt + few-shot examples + long-term context) goes first, **pad to at least 1024 tokens** so cache activates.
+
+## 2. Streaming: TTFT < 200ms
+
+LLM generating 500 tokens typically takes 3-5s. **Streaming makes perceived latency drop from 5s to 0.2s**:
+
+<Mermaid client:load caption="Figure 2: Streaming vs non-streaming" chart={`flowchart LR
+  Q[Query] --> N[Non-streaming]
+  Q --> S[Streaming]
+  N --> T1[5s → see full answer]
+  S --> T2[0.2s → see first char<br/>rest streams in]`} />
+
+### Vercel AI SDK Streaming Implementation
+
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+// Server side: stream the response
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+  
+  const result = streamText({
+    model: openai('gpt-4o'),
+    messages,
+  });
+  
+  return result.toDataStreamResponse();  // SSE format
+}
+
+// Client side: consume the stream
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  body: JSON.stringify({ messages }),
+});
+
+const reader = response.body!.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  const chunk = decoder.decode(value);
+  // Append to UI
+  appendToUI(chunk);
+}
+```
+
+**Time to First Token** (TTFT) is typically **200-500ms**, **user-perceived as "instant"**.
+
+### Streaming + Tool Calling
+
+Agents can stream while invoking tools:
+
+```typescript
+const result = streamText({
+  model: openai('gpt-4o'),
+  tools: { searchWeb, queryDB },
+  prompt: userQuery,
+  // Stream every step
+  experimental_streamToolCalls: true,
+});
+
+for await (const chunk of result.textStream) {
+  // Text chunks
+  process.stdout.write(chunk);
+}
+// Tool calls available in result.toolCalls
+```
+
+## 3. Semantic Cache: Repeat Queries Served from Cache
+
+**Prompt cache only matches identical prefixes.** But users often ask semantically duplicate questions:
+
+```
+Q1: "What is the core innovation of Transformer?"
+Q2: "What's the major innovation of Transformer?"
+```
+
+Different words, same meaning. Ideally one answer. **Semantic cache** uses embeddings to find similar queries:
+
+### GPTCache in Practice
+
+[GPTCache](https://github.com/zilliztech/gptcache) is the open-source semantic cache:
+
+```python
+from gptcache import Cache
+from gptcache.adapter.api import init_similar_cache
+
+init_similar_cache(
+    cache_obj=Cache(),
+    embedding_func=onnx_embedding(),
+    data_manager=milvus_data_manager(),
+    similarity_threshold=0.85,
+)
+
+response = openai.ChatCompletion.create(...)
+# GPTCache auto-intercepts: similar queries hit cache
+```
+
+### Vercel AI SDK + Custom Semantic Cache
+
+```typescript
+import { embed, generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Pool } from 'pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+async function cachedGenerate(userQuery: string) {
+  // 1. embed the query
+  const { embedding } = await embed({
+    model: openai.embedding('text-embedding-3-small'),
+    value: userQuery,
+  });
+  
+  // 2. look up cache
+  const { rows } = await pool.query(
+    `SELECT response FROM cache
+     WHERE embedding <=> $1 < 0.05  -- similarity threshold
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [JSON.stringify(embedding)]
+  );
+  
+  if (rows.length > 0) {
+    return { response: rows[0].response, cached: true };
+  }
+  
+  // 3. miss → call LLM
+  const { text } = await generateText({
+    model: openai('gpt-4o'),
+    prompt: userQuery,
+  });
+  
+  // 4. store in cache
+  await pool.query(
+    `INSERT INTO cache (embedding, response, created_at)
+     VALUES ($1, $2, NOW())`,
+    [JSON.stringify(embedding), text]
+  );
+  
+  return { response: text, cached: false };
+}
+```
+
+**Production numbers**:
+
+| QPS | Cache Hit Rate | Savings |
+|---|---|---|
+| 100 | 30% | $0.5 / 1000 reqs |
+| 1000 | 50% | $5 / 1000 reqs |
+| 10000 | 70% | $50 / 1000 reqs |
+
+**Note**: semantic cache is great for **FAQ / customer service** scenarios; **not suitable for creative / personalized generation**.
+
+## 4. Model Routing: Tier by Query Difficulty
+
+**Not every query needs GPT-4.** 80% of simple queries work fine on GPT-4o-mini:
+
+<Mermaid client:load caption="Figure 3: Model routing architecture" chart={`flowchart LR
+  Q[Query] --> R{Router<br/>difficulty classifier}
+  R -->|Simple| S[gpt-4o-mini<br/>$0.15/M]
+  R -->|Medium| M[claude-sonnet<br/>$3/M]
+  R -->|Hard| L[claude-opus<br/>$15/M]
+  R -->|Dangerous| H[Refuse / human]`} />
+
+### Implementation
+
+```typescript
+async function routedGenerate(userQuery: string) {
+  // 1. Use small model to classify first
+  const classification = await generateText({
+    model: openai('gpt-4o-mini'),
+    prompt: `Classify query complexity: simple / medium / hard / dangerous
+
+Query: ${userQuery}
+
+Output only one word.`,
+  });
+  
+  const tier = classification.text.trim();
+  
+  // 2. Route by tier
+  const modelMap = {
+    simple: 'gpt-4o-mini',
+    medium: 'gpt-4o',
+    hard: 'claude-opus-4',
+    dangerous: null,
+  };
+  
+  if (modelMap[tier] === null) {
+    return { response: 'Sorry, I cannot answer this question' };
+  }
+  
+  const { text } = await generateText({
+    model: modelMap[tier],
+    prompt: userQuery,
+  });
+  
+  return { response: text };
+}
+```
+
+**Production experience**:
+- **Classifier overhead**: ~5% of total cost
+- **Tier mismatch risk**: misclassification causes quality issues, **validate classifier with eval set**
+- **Fallback**: if tier unavailable, auto-downgrade to next tier
+
+### Cascade Mode
+
+Even better: small model first, **escalate when confidence low**:
+
+```typescript
+let answer = await gpt4oMini(query);
+let confidence = await evaluateConfidence(answer);
+
+if (confidence < 0.7) {
+  answer = await gpt4o(query);  // escalate
+}
+```
+
+**Worst case** uses the strongest model, **average cost controllable**.
+
+## 5. Fallback & Rate Limit: Safety Nets for Runaway
+
+5 safety mechanisms:
+
+### 1. Rate Limit (Request Count)
+
+```typescript
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(100, '1 m'),  // 100 reqs per minute
+});
+
+// Application level
+const { success } = await ratelimit.limit(userId);
+if (!success) return new Response('Too many requests', { status: 429 });
+```
+
+### 2. Token Rate Limit
+
+Token-based limits are more aligned with actual cost than request-count:
+
+```typescript
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.tokenBucket(100000, '1 h', 10000),  // 100K tokens per hour
+});
+
+const { success, remaining } = await ratelimit.limit(userId, 5000);  // this request uses 5K tokens
+```
+
+### 3. Timeout Downgrade
+
+```typescript
+const result = await Promise.race([
+  generateText({ model: openai('gpt-4o'), prompt }),
+  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+]).catch(() => 
+  generateText({ model: openai('gpt-4o-mini'), prompt })  // downgrade to mini
+);
+```
+
+### 4. Fallback Chain
+
+```typescript
+async function robustGenerate(prompt: string) {
+  const models = ['gpt-4o', 'claude-sonnet', 'gpt-4o-mini'];
+  
+  for (const modelId of models) {
+    try {
+      return await generateText({ model: modelId, prompt });
+    } catch (e) {
+      // On failure, try next
+      continue;
+    }
+  }
+  
+  throw new Error('All models failed');
+}
+```
+
+### 5. Circuit Breaker
+
+```typescript
+const breaker = new CircuitBreaker({
+  failureThreshold: 5,           // open after 5 failures
+  resetTimeout: 30000,           // try half-open after 30s
+});
+
+const result = await breaker.fire(() => callProvider(prompt));
+```
+
+While open, **all requests fail fast** (no blocking), protecting downstream.
+
+## 6. Production Optimization Checklist
+
+5 things you must do:
+
+1. ✅ **Prompt cache optimization**: stable content first, pad to 1024 tokens
+2. ✅ **Full-stack streaming**: TTFT < 500ms
+3. ✅ **Semantic cache**: 50%+ hit rate for FAQ scenarios
+4. ✅ **Model routing**: 80% simple queries use mini models
+5. ✅ **Fallback + circuit breaker**: timeout downgrade + multi-vendor safety net
+
+## Pitfalls for Senior Architects
+
+1. **Don't ignore prompt cache hit rate.** Hit rate < 30% means prompt structure is wrong (**stable content scattered**); redesign prompt order.
+2. **Don't stream the entire context in the first chunk.** TTFT may spike to 1s+, worse UX than non-streaming.
+3. **Don't store PII data in semantic cache.** Cache hits may expose sensitive info to other users — **must user-isolate + sanitize**.
+4. **Don't blindly use the strongest model.** 80% of queries work on mini models; routing saves 50-70%.
+5. **Don't depend on a single provider.** OpenAI / Anthropic both have outages — **at least 2 vendors + fallback chain**.
+
+## Summary
+
+Five takeaways:
+
+- **Prompt cache 90% token savings**: stable content first, pad to 1024 tokens.
+- **Streaming is mandatory**: TTFT drops from 5s to 200ms, massive UX improvement.
+- **Semantic cache 50-80% hit rate**: FAQ / customer service scenarios benefit most.
+- **Model routing saves 50-70%**: 80% of queries on mini models, complex ones escalate.
+- **Fallback + rate limit + circuit breaker**: safety nets for runaway — **production essentials**.
+
+**Next up**: [LLM Guardrails: Prompt Injection & Output Safety](/en/blog/llm-guardrails) — security is the first line of defense for any LLM app.
+
+## References
+
+- [GPTCache (Zilliz, GitHub)](https://github.com/zilliztech/gptcache) — open-source semantic cache, 10x cost / 100x speed
+- [Vercel AI SDK — Streaming Text Generation](https://ai-sdk.dev/docs/ai-sdk-core/generating-text) — streamText streaming implementation, SSE protocol
