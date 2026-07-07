@@ -1,15 +1,17 @@
 ---
-title: "The Complete Guide to Git Branch Management"
-description: Core concepts and common commands for Git branch management, including creating, switching, merging branches, and team collaboration strategies.
+title: "The Complete Guide to Git Branching: From Basics to Team Collaboration"
+description: "2026 comprehensive guide to Git branching, covering core commands, branching strategies, conflict resolution, and team collaboration best practices."
 pubDate: 2018-11-12
-tags: ['git', 'macos', 'terminal']
+tags: ['git', 'macos', 'terminal', 'developer-tools']
 ---
 
 ## Introduction
 
-Git branching is one of Git's most powerful features. This guide covers the core concepts and common commands for Git branch management, along with best practices for team collaboration.
+Git branching is one of Git's most powerful features and the core of team collaboration. But most tutorials only cover commands — this guide focuses on **practical branching**: when to create branches, which strategy to use, and how to resolve conflicts.
 
-## Viewing Branches
+## 1. Basic Commands
+
+### Viewing Branches
 
 ```bash
 # View local branches
@@ -18,131 +20,399 @@ git branch
 # View all branches (including remote)
 git branch -a
 
-# View branches with last commit info
+# View branches with last commit
 git branch -v
+
+# View branches merged into current branch
+git branch --merged
+
+# View branches not merged into current branch
+git branch --no-merged
 ```
 
-## Creating Branches
+### Creating Branches
 
 ```bash
-# Create a new branch
+# Create new branch
 git branch feature-login
 
-# Create and switch to a new branch (recommended)
+# Create and switch (recommended)
 git switch -c feature-login
 
-# Or use the traditional way
-git checkout -b feature-login
+# Create based on specific branch
+git switch -c feature-login origin/main
+
+# Create orphan branch (no history)
+git switch --orphan gh-pages
+git rm -rf .
 ```
 
-## Switching Branches
+### Switching Branches
 
 ```bash
-# Switch to a branch (recommended)
+# Switch branch (recommended)
 git switch main
 
-# Or use the traditional way
-git checkout main
+# Switch and restore working directory
+git switch -c feature-login
+
+# Switch to previous branch
+git switch -
 ```
 
-## Merging Branches
+### Merging Branches
 
 ```bash
-# Switch to the target branch
+# Switch to target branch
 git switch main
 
-# Merge the feature branch
+# Merge feature branch
 git merge feature-login
+
+# Merge and preserve branch history
+git merge --no-ff feature-login
+
+# Cherry-pick specific commit
+git cherry-pick abc123
 ```
 
-## Deleting Branches
+### Deleting Branches
 
 ```bash
-# Delete a merged branch
+# Delete merged branch
 git branch -d feature-login
 
-# Force delete an unmerged branch
+# Force delete unmerged branch
 git branch -D feature-login
+
+# Delete remote branch
+git push origin --delete feature-login
+
+# Cleanup deleted remote branch references
+git fetch --prune
 ```
 
-## Resolving Conflicts
+## 2. Advanced Operations
 
-When merging conflicts occur, Git will mark the conflicted files for you to resolve manually:
+### Rebase
 
-1. Open the conflicted file
-2. Find the conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`)
-3. Manually edit to keep the correct content
-4. Stage and commit
+Move current branch commits to the top of target branch:
 
 ```bash
-git add .
-git commit -m "feat: resolve merge conflict"
+# Interactive rebase (clean up commit history)
+git rebase -i HEAD~5
+
+# Rebase onto main
+git rebase main
+
+# Push after rebase (requires force push)
+git push --force-with-lease
 ```
 
-## Branch Management Strategies
+**Rebase vs Merge**:
 
-### Git Flow
+| Scenario | Choice | Reason |
+|----------|--------|--------|
+| Personal feature branch | Rebase | Keep linear history |
+| Public branch | Merge | Avoid rewriting history |
+| Clean up commits | Rebase -i | Combine/modify commits |
+| Preserve context | Merge | Keep branch merge records |
 
-Suitable for projects with longer release cycles:
-
-- `main` - Production branch
-- `develop` - Development branch
-- `feature/*` - Feature branches
-- `release/*` - Release branches
-- `hotfix/*` - Hotfix branches
-
-### GitHub Flow
-
-Suitable for continuous deployment:
-
-- `main` - Production branch (always deployable)
-- `feature/*` - Feature branches (merged via PR)
-
-### Trunk-Based Development
-
-Suitable for fast-moving teams:
-
-- All developers commit directly to `main`
-- Use short-lived feature branches (< 1 day)
-- Control feature release with feature flags
-
-## Useful Tips
-
-### Stashing Changes
+### Stashing Work
 
 ```bash
-# Stash current work
+# Stash current changes
 git stash
 
-# Restore stashed work
+# Stash with description
+git stash push -m "Working on login feature"
+
+# Restore most recent stash
 git stash pop
+
+# Restore but keep stash
+git stash apply
 
 # View stash list
 git stash list
+
+# Restore specific stash
+git stash apply stash@{2}
+
+# Delete stash
+git stash drop stash@{0}
 ```
 
-### Viewing Branch Graph
+### Interactive Rebase
+
+Clean up commit history:
 
 ```bash
-# View concise branch graph
-git log --oneline --graph
-
-# View full branch graph
-git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+git rebase -i HEAD~5
 ```
 
-### Batch Delete Merged Branches
+Editor shows:
+
+```
+pick abc1234 feat: add login button
+pick def5678 fix: login button style
+pick ghi9012 feat: add form validation
+pick jkl3456 fix: form validation bug
+pick mno7890 feat: add logout button
+```
+
+Common operations:
+
+```
+pick   = Keep commit
+reword = Modify commit message
+edit   = Modify commit content
+squash = Combine with previous commit
+fixup  = Combine but discard commit message
+drop   = Delete commit
+```
+
+Example: Combine fix commits:
+
+```
+pick abc1234 feat: add login button
+fixup def5678 fix: login button style
+pick ghi9012 feat: add form validation
+fixup jkl3456 fix: form validation bug
+pick mno7890 feat: add logout button
+```
+
+### Cherry-Pick
+
+Select specific commits from other branches:
 
 ```bash
-# Delete local branches merged into main
+# Single commit
+git cherry-pick abc1234
+
+# Multiple commits
+git cherry-pick abc1234 def5678
+
+# Select without auto-commit
+git cherry-pick --no-commit abc1234
+```
+
+## 3. Conflict Resolution
+
+### Conflict Types
+
+1. **Content conflict**: Same line modified by both sides
+2. **Delete conflict**: One side deletes, other modifies
+3. **Rename conflict**: Both sides rename the same file
+
+### Resolution Steps
+
+```bash
+# 1. View conflicted files
+git status
+
+# 2. Open and manually edit
+# Conflict markers:
+# <<<<<<< HEAD
+# Current branch content
+# =======
+# Merging branch content
+# >>>>>>> feature-login
+
+# 3. Stage resolved file
+git add <file>
+
+# 4. Continue merge
+git merge --continue
+
+# Or abort merge
+git merge --abort
+```
+
+### Using Tools
+
+```bash
+# VS Code
+git mergetool --tool=vscode
+
+# JetBrains
+git mergetool --tool=intellij
+```
+
+### Preventing Conflicts
+
+1. **Frequently sync main**: Pull latest code daily
+2. **Small commits**: Reduce conflict scope
+3. **Code ownership**: Different people own different modules
+4. **Use feature flags**: Avoid long-lived branches
+
+## 4. Branching Strategies
+
+### Git Flow
+
+**Branch Overview**:
+
+| Branch | Purpose | Lifecycle |
+|--------|---------|-----------|
+| `main` | Production code | Permanent |
+| `develop` | Development integration | Permanent |
+| `feature/*` | New features | Short-lived |
+| `release/*` | Version releases | Short-lived |
+| `hotfix/*` | Emergency fixes | Short-lived |
+
+**Use Cases**:
+- Longer release cycles (weeks/months)
+- Multiple version maintenance
+- Large team collaboration
+
+### GitHub Flow
+
+**Workflow**:
+
+1. Create feature branch from `main`
+2. Develop and push
+3. Create Pull Request
+4. Code review
+5. Merge to `main`
+6. Automatic deployment
+
+**Use Cases**:
+- Continuous deployment
+- Small to medium teams
+- Fast iteration
+
+### Trunk-Based Development
+
+**Workflow**:
+
+1. All developers commit directly to `main`
+2. Use short-lived branches (< 1 day)
+3. Control feature release with feature flags
+4. Rely on automated testing for quality
+
+**Use Cases**:
+- Highly mature engineering teams
+- Complete CI/CD pipeline
+- Strong automated testing
+
+### Selection Guide
+
+| Team Size | Release Frequency | Recommended Strategy |
+|-----------|-------------------|---------------------|
+| 1-5 people | Daily | GitHub Flow |
+| 5-20 people | Weekly | GitHub Flow |
+| 20+ people | Monthly | Git Flow |
+| 100+ people | Continuous | Trunk-Based |
+
+## 5. Useful Commands
+
+### Viewing History
+
+```bash
+# View branch graph
+git log --oneline --graph --all
+
+# View specific file history
+git log -p <file>
+
+# View who modified a line
+git blame <file>
+
+# View differences between branches
+git diff main..feature-login
+```
+
+### Undoing Changes
+
+```bash
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Undo last commit (discard changes)
+git reset --hard HEAD~1
+
+# Undo pushed commit (create new commit)
+git revert abc1234
+
+# Recover deleted branch
+git reflog
+git switch -d abc1234
+```
+
+### Cleanup Operations
+
+```bash
+# Delete merged local branches
 git branch --merged main | grep -v "\*\|main" | xargs -n 1 git branch -d
+
+# Cleanup deleted remote branches
+git fetch --prune
+
+# Find large files
+git rev-list --objects --all | \
+  git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+  sed -n 's/^blob //p' | sort -rnk2 | head -10
 ```
+
+### Aliases
+
+```bash
+git config --global alias.st "status"
+git config --global alias.co "checkout"
+git config --global alias.br "branch"
+git config --global alias.cm "commit -m"
+git config --global alias.lg "log --oneline --graph --all"
+git config --global alias.unstage "reset HEAD --"
+```
+
+## 6. Best Practices
+
+### Branch Naming Convention
+
+```
+feature/user-login
+feature/payment-gateway
+bugfix/login-error
+hotfix/security-patch
+release/v1.2.0
+```
+
+### Commit Convention
+
+```
+feat: New feature
+fix: Bug fix
+docs: Documentation update
+style: Code formatting
+refactor: Refactoring
+test: Tests
+chore: Build/tools
+```
+
+### PR Best Practices
+
+1. **Small changes**: Each PR does one thing
+2. **Clear description**: Explain what and why
+3. **Link issues**: Reference related issues
+4. **Pass CI**: Ensure CI passes
+5. **Quick response**: Address review comments promptly
 
 ## Summary
 
-Mastering Git branch management is fundamental for team collaboration. Recommendations:
+Core principles of Git branching:
 
-1. Use `git switch` and `git restore` (Git 2.23+) instead of older commands
-2. Choose a branching strategy based on team size and release cadence
-3. Keep branches short-lived and merge frequently
-4. Use PR/MR for code review
+1. **Keep branches short-lived**: Long-lived branches create conflicts
+2. **Frequently sync main**: Pull latest code daily
+3. **Small commits**: Reduce conflict scope
+4. **Use PR/MR**: Perform code reviews
+5. **Choose the right strategy**: Based on team size and release cadence
+
+## References
+
+- [Git Official Documentation - Branching](https://git-scm.com/book/en/v2/Git-Branching-Branching-in-a-Nutshell) — Git branching basics
+- [Atlassian Git Tutorials](https://www.atlassian.com/git/tutorials/using-branches) — Branching strategies explained
+- [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) — GitHub's official workflow
+- [Git Flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) — Git Flow strategy
+- [Trunk-Based Development](https://trunkbaseddevelopment.com/) — Mainline development model
+- [Conventional Commits](https://www.conventionalcommits.org/) — Commit convention
+- [Oh My Zsh Git Plugin](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git) — Git alias list

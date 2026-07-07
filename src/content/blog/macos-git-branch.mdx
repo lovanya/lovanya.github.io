@@ -1,51 +1,79 @@
 ---
-title: Git 分支管理完全指南
-description: 介绍 Git 分支管理的核心概念和常用命令，包括创建、切换、合并分支，以及团队协作中的分支策略。
+title: Git 分支管理完全指南：从入门到团队协作
+description: 2026 年最新的 Git 分支管理指南，涵盖核心命令、分支策略、冲突解决和团队协作最佳实践。
 pubDate: 2018-11-12
-tags: ['git', 'macos', 'terminal']
+tags: ['git', 'macos', 'terminal', 'developer-tools']
 ---
+
+import Mermaid from '../../components/Blog/Mermaid';
 
 ## 前言
 
-Git 分支是 Git 最强大的功能之一。本文介绍 Git 分支管理的核心概念和常用命令，以及团队协作中的最佳实践。
+Git 分支是 Git 最强大的功能，也是团队协作的核心。但大多数教程只停留在命令层面，本文从**实战角度**讲分支管理：什么时候创建分支、用什么策略、怎么处理冲突。
 
-## 查看分支
+<Mermaid client:load caption="图 1：Git 分支工作流" chart={`flowchart LR
+  M[main] --> D[develop]
+  D --> F1[feature/login]
+  D --> F2[feature/payment]
+  F1 --> M
+  F2 --> M
+  M --> R[release/v1.0]
+  R --> M
+  M --> H[hotfix/bug-123]
+  H --> M`} />
+
+## 一、基础命令
+
+### 查看分支
 
 ```bash
 # 查看本地分支
 git branch
 
-# 查看所有分支（包括远程分支）
+# 查看所有分支（包括远程）
 git branch -a
 
-# 查看分支及最后提交信息
+# 查看分支及最后提交
 git branch -v
+
+# 查看已合并到当前分支的分支
+git branch --merged
+
+# 查看未合并到当前分支的分支
+git branch --no-merged
 ```
 
-## 创建分支
+### 创建分支
 
 ```bash
 # 创建新分支
 git branch feature-login
 
-# 创建并切换到新分支（推荐）
+# 创建并切换（推荐）
 git switch -c feature-login
 
-# 或使用传统方式
-git checkout -b feature-login
+# 基于特定分支创建
+git switch -c feature-login origin/main
+
+# 创建空分支（无历史记录）
+git switch --orphan gh-pages
+git rm -rf .
 ```
 
-## 切换分支
+### 切换分支
 
 ```bash
-# 切换到指定分支（推荐）
+# 切换分支（推荐）
 git switch main
 
-# 或使用传统方式
-git checkout main
+# 切换并恢复工作区
+git switch -c feature-login
+
+# 切回上一个分支
+git switch -
 ```
 
-## 合并分支
+### 合并分支
 
 ```bash
 # 切换到目标分支
@@ -53,9 +81,15 @@ git switch main
 
 # 合并 feature 分支
 git merge feature-login
+
+# 合并并保留分支历史
+git merge --no-ff feature-login
+
+# 只合并特定提交
+git cherry-pick abc123
 ```
 
-## 删除分支
+### 删除分支
 
 ```bash
 # 删除已合并的分支
@@ -63,86 +97,350 @@ git branch -d feature-login
 
 # 强制删除未合并的分支
 git branch -D feature-login
+
+# 删除远程分支
+git push origin --delete feature-login
+
+# 清理已删除的远程分支引用
+git fetch --prune
 ```
 
-## 解决冲突
+## 二、高级操作
 
-当合并出现冲突时，Git 会标记冲突文件，你需要手动解决：
+### 变基（Rebase）
 
-1. 打开冲突文件
-2. 找到冲突标记（`<<<<<<<`、`=======`、`>>>>>>>`）
-3. 手动编辑保留正确内容
-4. 添加到暂存区并提交
+将当前分支的提交移动到目标分支顶部：
 
 ```bash
-git add .
-git commit -m "feat: resolve merge conflict"
+# 交互式变基（整理提交历史）
+git rebase -i HEAD~5
+
+# 变基到 main
+git rebase main
+
+# 变基后推送到远程（需要 force push）
+git push --force-with-lease
 ```
 
-## 分支管理策略
+**变基 vs 合并**：
 
-### Git Flow
+| 场景 | 选择 | 原因 |
+|------|------|------|
+| 个人功能分支 | Rebase | 保持线性历史 |
+| 公共分支 | Merge | 避免重写历史 |
+| 整理提交 | Rebase -i | 合并/修改提交 |
+| 保留上下文 | Merge | 保留分支合并记录 |
 
-适合发布周期较长的项目：
-
-- `main` - 生产分支
-- `develop` - 开发分支
-- `feature/*` - 功能分支
-- `release/*` - 发布分支
-- `hotfix/*` - 紧急修复分支
-
-### GitHub Flow
-
-适合持续部署的项目：
-
-- `main` - 生产分支（始终可部署）
-- `feature/*` - 功能分支（通过 PR 合并）
-
-### Trunk-Based Development
-
-适合快速迭代的团队：
-
-- 所有开发者直接向 `main` 提交
-- 使用短生命周期的功能分支（< 1 天）
-- 通过特性开关控制功能发布
-
-## 实用技巧
-
-### 暂存当前更改
+### 暂存工作
 
 ```bash
-# 暂存当前工作
+# 暂存当前更改
 git stash
 
-# 恢复暂存的工作
+# 暂存并添加描述
+git stash push -m "正在开发登录功能"
+
+# 恢复最近一次暂存
 git stash pop
+
+# 恢复但保留暂存
+git stash apply
 
 # 查看暂存列表
 git stash list
+
+# 恢复特定暂存
+git stash apply stash@{2}
+
+# 删除暂存
+git stash drop stash@{0}
 ```
 
-### 查看分支图
+### 交互式变基
+
+整理提交历史：
 
 ```bash
-# 查看简洁的分支图
-git log --oneline --graph
-
-# 查看完整的分支图
-git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+git rebase -i HEAD~5
 ```
 
-### 批量删除已合并的分支
+编辑器会显示：
+
+```
+pick abc1234 feat: add login button
+pick def5678 fix: login button style
+pick ghi9012 feat: add form validation
+pick jkl3456 fix: form validation bug
+pick mno7890 feat: add logout button
+```
+
+常用操作：
+
+```
+pick   = 保留提交
+reword = 修改提交消息
+edit   = 修改提交内容
+squash = 合并到上一个提交
+fixup  = 合并但丢弃提交消息
+drop   = 删除提交
+```
+
+示例：合并修复提交
+
+```
+pick abc1234 feat: add login button
+fixup def5678 fix: login button style
+pick ghi9012 feat: add form validation
+fixup jkl3456 fix: form validation bug
+pick mno7890 feat: add logout button
+```
+
+### Cherr-Pick
+
+从其他分支选择特定提交：
 
 ```bash
-# 删除已合并到 main 的本地分支
+# 选择单个提交
+git cherry-pick abc1234
+
+# 选择多个提交
+git cherry-pick abc1234 def5678
+
+# 选择但不自动提交
+git cherry-pick --no-commit abc1234
+```
+
+## 三、冲突解决
+
+### 冲突类型
+
+1. **内容冲突**：同一行被修改
+2. **删除冲突**：一方删除，一方修改
+3. **重命名冲突**：双方重命名同一文件
+
+### 解决步骤
+
+```bash
+# 1. 查看冲突文件
+git status
+
+# 2. 打开冲突文件，手动编辑
+# 冲突标记：
+# <<<<<<< HEAD
+# 当前分支的内容
+# =======
+# 合并分支的内容
+# >>>>>>> feature-login
+
+# 3. 添加解决后的文件
+git add <file>
+
+# 4. 继续合并
+git merge --continue
+
+# 或放弃合并
+git merge --abort
+```
+
+### 使用工具解决
+
+```bash
+# 使用 VS Code
+git mergetool --tool=vscode
+
+# 使用 JetBrains
+git mergetool --tool=intellij
+```
+
+### 预防冲突
+
+1. **频繁同步 main**：每天从 main 拉取最新代码
+2. **小步提交**：减少冲突范围
+3. **代码所有权**：不同人负责不同模块
+4. **使用特性开关**：避免长期分支
+
+## 四、分支策略
+
+### Git Flow
+
+<Mermaid client:load caption="图 2：Git Flow 分支模型" chart={`flowchart TD
+  M[main] -->|发布| R[release]
+  M -->|修复| H[hotfix]
+  D[develop] -->|功能| F[feature]
+  F -->|完成| D
+  R -->|发布| M
+  H -->|修复| M
+  D -->|版本| R`} />
+
+**分支说明**：
+
+| 分支 | 用途 | 生命周期 |
+|------|------|---------|
+| `main` | 生产代码 | 永久 |
+| `develop` | 开发集成 | 永久 |
+| `feature/*` | 新功能 | 短期 |
+| `release/*` | 版本发布 | 短期 |
+| `hotfix/*` | 紧急修复 | 短期 |
+
+**适用场景**：
+- 发布周期较长（周/月）
+- 需要维护多个版本
+- 大型团队协作
+
+### GitHub Flow
+
+<Mermaid client:load caption="图 3：GitHub Flow" chart={`flowchart LR
+  M[main] -->|创建| F[feature branch]
+  F -->|提交 PR| P[Pull Request]
+  P -->|审查| M
+  P -->|合并| M`} />
+
+**工作流程**：
+
+1. 从 `main` 创建功能分支
+2. 开发并推送
+3. 创建 Pull Request
+4. 代码审查
+5. 合并到 `main`
+6. 自动部署
+
+**适用场景**：
+- 持续部署
+- 小到中型团队
+- 快速迭代
+
+### Trunk-Based Development
+
+**工作流程**：
+
+1. 所有开发者直接向 `main` 提交
+2. 使用短生命周期分支（< 1 天）
+3. 通过特性开关控制功能发布
+4. 依赖自动化测试保证质量
+
+**适用场景**：
+- 高度成熟的工程团队
+- 完善的 CI/CD 流程
+- 强大的自动化测试
+
+### 选择建议
+
+| 团队规模 | 发布频率 | 推荐策略 |
+|---------|---------|---------|
+| 1-5 人 | 每天 | GitHub Flow |
+| 5-20 人 | 每周 | GitHub Flow |
+| 20+ 人 | 每月 | Git Flow |
+| 100+ 人 | 持续 | Trunk-Based |
+
+## 五、实用命令
+
+### 查看历史
+
+```bash
+# 查看分支图
+git log --oneline --graph --all
+
+# 查看特定文件的历史
+git log -p <file>
+
+# 查看谁修改了某行
+git blame <file>
+
+# 查看两个分支的差异
+git diff main..feature-login
+```
+
+### 撤销操作
+
+```bash
+# 撤销最后一次提交（保留更改）
+git reset --soft HEAD~1
+
+# 撤销最后一次提交（丢弃更改）
+git reset --hard HEAD~1
+
+# 撤销已推送的提交（创建新提交）
+git revert abc1234
+
+# 恢复被删除的分支
+git reflog
+git switch -d abc1234
+```
+
+### 清理操作
+
+```bash
+# 删除已合并的本地分支
 git branch --merged main | grep -v "\*\|main" | xargs -n 1 git branch -d
+
+# 清理不再追踪的远程分支
+git fetch --prune
+
+# 查找大文件
+git rev-list --objects --all | \
+  git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+  sed -n 's/^blob //p' | sort -rnk2 | head -10
 ```
+
+### 别名配置
+
+```bash
+git config --global alias.st "status"
+git config --global alias.co "checkout"
+git config --global alias.br "branch"
+git config --global alias.cm "commit -m"
+git config --global alias.lg "log --oneline --graph --all"
+git config --global alias.unstage "reset HEAD --"
+```
+
+## 六、最佳实践
+
+### 分支命名规范
+
+```
+feature/user-login
+feature/payment-gateway
+bugfix/login-error
+hotfix/security-patch
+release/v1.2.0
+```
+
+### 提交规范
+
+```
+feat: 新功能
+fix: 修复 bug
+docs: 文档更新
+style: 代码格式
+refactor: 重构
+test: 测试
+chore: 构建/工具
+```
+
+### PR 最佳实践
+
+1. **小步提交**：每个 PR 只做一件事
+2. **清晰描述**：说明做了什么、为什么做
+3. **关联 Issue**：引用相关 issue
+4. **自测通过**：确保 CI 通过
+5. **及时响应**：尽快处理 review 意见
 
 ## 总结
 
-熟练掌握 Git 分支管理是团队协作开发的基础。建议：
+Git 分支管理的核心原则：
 
-1. 使用 `git switch` 和 `git restore`（Git 2.23+）替代旧命令
-2. 根据团队规模和发布节奏选择合适的分支策略
-3. 保持分支短生命周期，频繁合并
-4. 使用 PR/MR 进行代码审查
+1. **保持分支短生命周期**：长期分支容易产生冲突
+2. **频繁同步 main**：每天从 main 拉取最新代码
+3. **小步提交**：减少冲突范围
+4. **使用 PR/MR**：进行代码审查
+5. **选择合适的策略**：根据团队规模和发布频率
+
+## 参考资料
+
+- [Git 官方文档 - 分支管理](https://git-scm.com/book/en/v2/Git-Branching-Branching-in-a-Nutshell) — Git 分支基础
+- [Atlassian Git 分支教程](https://www.atlassian.com/git/tutorials/using-branches) — 分支策略详解
+- [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow) — GitHub 官方工作流
+- [Git Flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) — Git Flow 策略
+- [Trunk-Based Development](https://trunkbaseddevelopment.com/) — 主干开发模式
+- [Conventional Commits](https://www.conventionalcommits.org/) — 提交规范
+- [Oh My Zsh Git 插件](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git) — Git 别名列表
