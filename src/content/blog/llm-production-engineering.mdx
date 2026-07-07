@@ -1,0 +1,364 @@
+---
+title: "从 Demo 到 Production：LLM 应用的工程化与团队协作"
+description: LLM 团队的 7 大工程化实践——prompt 版本化、CI/CD、灰度发布、prompt 管理平台、多模型切换、团队工作流、Monorepo vs 多仓
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'production']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+前 12 篇讲了 LLM 应用的所有核心能力——RAG、Agent、Memory、Observability、Evaluation、Optimization、Guardrails。但**所有这些都假设你在写代码**——一个开发者改 prompt，改完跑一遍 dev 环境，提交 PR，部署上线。
+
+**真实生产团队的痛点远不止这些**：
+
+- 10 个 prompt 文件散落各处，谁改了哪个版本？
+- 产品同学要改 prompt 文案，每次都要找工程师？
+- A/B 测试 prompt v2 vs v3，谁来跑、谁来看结果？
+- LLM 供应商突然涨价或宕机，如何快速切换？
+- 评审 prompt 改动时，怎么避免"我本地能跑，你那边挂了"？
+
+这一篇讲**团队级工程化**，把单兵作战升级到团队协作：
+
+1. **Prompt 版本化**
+2. **CI/CD 流水线**
+3. **灰度发布**
+4. **团队工作流**
+5. **Monorepo vs 多仓**
+
+## 一、Prompt 版本化
+
+代码有 Git，prompt **也必须有 Git**。但 prompt 通常**散落各处**——hardcode 在代码里、写在 Notion / Lark 文档、藏在数据库。一改就乱。
+
+### 反模式 1：Prompt 硬编码
+
+```typescript
+// ❌ Bad: prompt 写在代码里
+const systemPrompt = `你是客服助手...`;  // 改文案要找工程师
+```
+
+### 反模式 2：Prompt 放在数据库
+
+```typescript
+// ❌ Worse: prompt 在数据库，改动无版本控制
+const prompt = await db.prompts.get('customer-support');
+```
+
+### 正解：Prompt 在 Git，跟代码同仓库
+
+```
+src/
+  prompts/
+    customer-support/
+      v1.txt         # 早期版本
+      v2.txt         # 当前主用版本
+      v3-experiment.txt  # A/B 测试中
+    search-query/
+      v1.txt
+```
+
+**改 prompt 文案 = 改文件 = 走 PR 流程 = 可 review + 可回滚**。Vercel AI SDK 通过模板字符串读取：
+
+```typescript
+import { readFile } from 'fs/promises';
+
+const promptTemplate = await readFile('./src/prompts/customer-support/v2.txt', 'utf-8');
+
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: promptTemplate.replace('{companyName}', 'ACME'),
+  prompt: userQuery,
+});
+```
+
+### 进阶：Prompt 平台
+
+当 prompt 数量 > 50 时，**专门 prompt 管理平台**会更高效：
+
+| 平台 | 优势 | 适用 |
+|------|------|------|
+| **Langfuse Prompt Management** | 集成 observability、A/B 测试 | 中等团队 |
+| **Helicone** | 简单、开源 | 早期项目 |
+| **PromptLayer** | 完整 prompt ops | 大型团队 |
+| **自建 Git + 平台** | 完全可控 | 有 platform team |
+
+**Langfuse 用法示例**：
+
+```typescript
+import { Langfuse } from 'langfuse';
+
+const langfuse = new Langfuse();
+
+// 拉取 prompt v3（自动从 Langfuse 后台）
+const prompt = await langfuse.getPrompt('customer-support', {
+  version: 3,
+  type: 'chat',
+});
+
+// prompt 变成 LangChain / Vercel AI SDK 兼容格式
+const messages = prompt.compile({
+  companyName: 'ACME',
+});
+```
+
+产品同学在 Langfuse 后台直接改 prompt，**不需要碰代码**，**自动版本化**。
+
+## 二、CI/CD 流水线
+
+Prompt 改完，怎么知道没把质量改崩？**必须跑回归评估**：
+
+[Mermaid] 视觉化：
+
+<Mermaid client:load caption="图 1：LLM CI/CD 流水线" chart={`flowchart LR
+  P[PR: 改 prompt] --> L[lint prompt<br/>检查格式/长度]
+  L --> T[Unit test<br/>mock LLM 调用]
+  T --> E[Eval pipeline<br/>跑 200 条 case]
+  E --> S{Score ≥ baseline?}
+  S -->|否| Reject[拒绝合并]
+  S -->|是| Merge[合并到 main]
+  Merge --> D[自动部署到 staging]
+  D --> Smoke[Smoke test<br/>真实 query 跑 5 条]
+  Smoke --> Prod[手动 promote 到 prod]`} />
+
+### 关键环节
+
+**Lint**：自动检查 prompt 格式（token 长度、占位符一致性、敏感词）：
+
+```typescript
+// scripts/lint-prompts.ts
+import { readFileSync } from 'fs';
+import { glob } from 'glob';
+
+const files = glob.sync('src/prompts/**/*.txt');
+
+for (const file of files) {
+  const content = readFileSync(file, 'utf-8');
+  
+  // 检查 1: 占位符必须配对
+  const opens = (content.match(/{/g) || []).length;
+  const closes = (content.match(/}/g) || []).length;
+  if (opens !== closes) {
+    console.error(`❌ ${file}: unbalanced placeholders (${opens} open, ${closes} close)`);
+    process.exit(1);
+  }
+  
+  // 检查 2: token 长度
+  const tokens = content.length / 4;  // 粗估
+  if (tokens > 4000) {
+    console.warn(`⚠️ ${file}: ~${tokens} tokens (consider trimming)`);
+  }
+}
+```
+
+**Eval pipeline**：200-500 条 case 自动跑：
+
+```yaml
+# .github/workflows/eval.yml
+name: LLM Eval
+on:
+  pull_request:
+    paths:
+      - 'src/prompts/**'
+      - 'src/**/*.{ts,tsx,py}'
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install
+        run: npm ci
+      
+      - name: Run eval
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx braintrust eval eval/rag-pipeline.ts
+        
+      - name: Check score threshold
+        run: |
+          SCORE=$(jq '.scores.factuality.mean' eval-results.json)
+          if (( $(echo "$SCORE < 0.85" | bc -l) )); then
+            echo "❌ Score $SCORE below 0.85 threshold"
+            exit 1
+          fi
+```
+
+**关键**：**Eval 跑不过 = PR 不能合并**。这强制所有 prompt 改动都经过质量门。
+
+## 三、灰度发布
+
+即使 eval 全过，**真实用户行为可能不一样**。需要灰度：
+
+```typescript
+// 路由层
+async function choosePromptVersion(userId: string): Promise<string> {
+  const bucket = hashUserId(userId) % 100;
+  
+  if (bucket < 5) return 'v3-experiment';        // 5% 新版
+  if (bucket < 100) return 'v2';                // 95% 旧版
+  return 'v2';
+}
+
+// 加载 prompt
+const version = await choosePromptVersion(userId);
+const prompt = await loadPrompt('customer-support', version);
+
+// 记录实际使用版本
+langfuse.trace({ name: 'chat', userId, tags: [`prompt-version:${version}`] });
+```
+
+**灰度发布节奏**：
+
+| 阶段 | 流量 | 时长 |
+|------|------|------|
+| 1% | 小流量验证 | 1-2 小时 |
+| 5% | 收集初步反馈 | 半天 |
+| 25% | 扩大样本 | 1 天 |
+| 50% | 主要流量 | 1-2 天 |
+| 100% | 全量 | 长期 |
+
+**配套监控**：灰度期间**实时对比**指标：
+
+- **护栏指标**（不能变差）：延迟 / 错误率 / 成本
+- **业务指标**（希望变好）：任务完成率 / 用户满意度 / 投诉率
+
+## 四、多模型切换
+
+**供应商绑定是 LLM 应用的最大商业风险**。2023 年 OpenAI 涨价、2024 年 Anthropic 限速、2025 年任何供应商都可能出问题。
+
+### 抽象层
+
+```typescript
+// src/lib/llm.ts
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
+
+export function getModel(name: string) {
+  const models = {
+    'gpt-4o': openai('gpt-4o'),
+    'claude-sonnet': anthropic('claude-sonnet-4-5'),
+    'gemini-pro': google('gemini-2.5-pro'),
+    'auto': selectByCost(),  // 成本最优
+  };
+  return models[name] || models['gpt-4o'];
+}
+
+// 应用层
+const model = getModel(process.env.LLM_MODEL || 'gpt-4o');
+const { text } = await generateText({ model, prompt });
+```
+
+**生产切换流程**：
+
+1. **Eval 验证**：新模型在 200 条 case 上 ≥ 旧模型
+2. **小流量灰度**：5% 流量切到新模型
+3. **监控对比**：业务指标持平 / 更好
+4. **全量切换**：100% 切到新模型
+
+## 五、团队工作流
+
+LLM 项目里**典型角色**：
+
+- **PM / 产品**：提需求 + 改 prompt 文案
+- **算法 / Prompt Engineer**：设计 prompt 结构 + A/B 实验
+- **后端工程师**：写 RAG / Agent 代码 + API 集成
+- **数据 / ML Ops**：评估集 + observability + 成本监控
+- **安全 / 合规**：guardrails + PII 处理
+
+### 高效协作的 3 个工具
+
+1. **Prompt 平台（Langfuse / PromptLayer）**：PM 改文案，工程师不动代码
+2. **Eval pipeline（Braintrust / Ragas）**：所有人改 prompt 自动跑回归
+3. **Observability 平台（Langfuse / LangSmith）**：问题可追溯到具体 trace
+
+**工作流示例**：
+
+```
+PM 想改客服 prompt 文案
+  ↓
+在 Langfuse 后台改 v3 文案，发布到 "experiment" 环境
+  ↓
+Langfuse 自动跑 200 条 case eval
+  ↓
+分数 ≥ baseline → 自动 5% 灰度
+  ↓
+观察 24 小时业务指标
+  ↓
+OK → 全量；不 OK → 回滚到 v2
+```
+
+PM / 算法 / 工程 **完全解耦**，效率比传统 PR 流程高 10x。
+
+## 六、Monorepo vs 多仓
+
+LLM 项目**代码 + prompt + eval + 数据集**通常有 4 类资产：
+
+```
+src/                 # 代码
+prompts/             # prompt 模板
+eval/                # 评估集 + 评估脚本
+data/                # 知识库 + 训练数据
+```
+
+**Monorepo**（推荐）：
+
+```
+acme-llm/
+  apps/
+    chat-api/       # 客服 API
+    rag-api/        # RAG API
+  packages/
+    prompts/        # 共享 prompt
+    eval/           # 共享 eval
+    llm-utils/      # 共享 LLM 工具
+  data/             # 共享数据集
+```
+
+**优势**：
+- prompt 改动一处生效，多 app 同步更新
+- eval 共享，跨 app 复用评估集
+- 数据共享，避免重复上传
+
+**多仓**：
+
+```
+acme-chat-api/      # 客服 API + 它的 prompts + eval
+acme-rag-api/       # RAG API + 它的 prompts + eval
+acme-shared-prompts/  # 共享 prompt（独立仓库，npm 发布）
+```
+
+**适用**：
+- 团队 > 30 人
+- 每个 app 独立团队、独立节奏
+- 需要严格的版本管理
+
+**经验法则**：< 10 人用 monorepo，> 30 人考虑拆分。
+
+## 踩坑提醒
+
+1. **不要把 prompt 散落各处**。所有 prompt 必须有**唯一来源**（Git 文件 / 平台），禁止硬编码。
+2. **不要让产品同学直接改生产 prompt**。所有改动**走灰度 + eval 验证**，避免"我以为只是改个字"。
+3. **不要忽略评估集随时间的漂移**。每月抽样补充新 case，**否则 prompt 优化空间会变小**。
+4. **不要单供应商绑定**。至少 2 家供应商 + 路由层，**避免供应商故障拖垮全公司**。
+5. **不要把 eval 当成"上线前一次性检查"**。eval 应该是**持续运行**的，**质量回归**自动报警。
+
+## 总结
+
+5 个 takeaway：
+
+- **Prompt 必须版本化**：Git 管理或专用平台，**禁止硬编码 / 数据库**。
+- **CI/CD 流水线必须跑 eval**：评估集分数 < baseline = PR 不能合并。
+- **灰度发布是必须的**：5% → 25% → 50% → 100%，**护栏 + 业务指标同时监控**。
+- **多模型路由**：抽象层 + 至少 2 家供应商，**快速切换能力**。
+- **团队工作流**：PM 在平台改 prompt，**工程师不改代码**，**质量门自动跑**。
+
+**下一篇**：[AI 时代的新 UI：当下与近未来的界面应该长什么样](/blog/ai-ui-new-era) — 整个系列收官 + AI UI 展望。
+
+## 参考资料
+
+- [Langfuse Prompt Management](https://langfuse.com/docs/prompts) — prompt 版本化 + A/B 测试
+- [Vercel AI SDK — Prompts](https://ai-sdk.dev/docs/ai-sdk-core/prompts) — 3 种 prompt 类型（text / instructions / messages）
+- [Braintrust Python SDK (GitHub)](https://github.com/braintrustdata/braintrust-sdk-python) — eval 平台 + CI 集成

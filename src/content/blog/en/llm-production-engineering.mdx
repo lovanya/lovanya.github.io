@@ -1,0 +1,362 @@
+---
+title: "From Demo to Production: Engineering LLM Apps at Scale"
+description: 7 engineering practices for LLM teams — prompt versioning, CI/CD, canary releases, prompt management platforms, multi-model failover, team workflow, monorepo vs multi-repo.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'production']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The previous 12 posts covered all the core capabilities of an LLM app — RAG, Agent, Memory, Observability, Evaluation, Optimization, Guardrails. But all of these **assume you're writing code** — one developer changes a prompt, runs through dev, submits a PR, deploys.
+
+**Real production teams face much more pain than that**:
+
+- 10 prompt files scattered everywhere — who changed which version?
+- PM wants to tweak prompt copy — does every change need an engineer?
+- A/B testing prompt v2 vs v3 — who runs it, who reads the results?
+- LLM vendor suddenly raises prices or has an outage — how do you switch fast?
+- When reviewing prompt changes, how do you avoid "works on my machine, breaks on yours"?
+
+This post covers **team-scale engineering**, upgrading from solo work to team collaboration:
+
+1. **Prompt versioning**
+2. **CI/CD pipelines**
+3. **Canary releases**
+4. **Team workflow**
+5. **Monorepo vs multi-repo**
+
+## 1. Prompt Versioning
+
+Code has Git. **Prompts must have Git too**. But prompts are usually **scattered** — hardcoded in code, written in Notion / Lark docs, hidden in databases. One change and everything breaks.
+
+### Anti-Pattern 1: Prompt Hardcoded in Code
+
+```typescript
+// ❌ Bad: prompt written in code
+const systemPrompt = `You are a customer service assistant...`;  // changing copy requires engineer
+```
+
+### Anti-Pattern 2: Prompt in Database
+
+```typescript
+// ❌ Worse: prompt in database, no version control
+const prompt = await db.prompts.get('customer-support');
+```
+
+### Best Practice: Prompt in Git, Same Repo as Code
+
+```
+src/
+  prompts/
+    customer-support/
+      v1.txt         # early version
+      v2.txt         # current production
+      v3-experiment.txt  # A/B testing
+    search-query/
+      v1.txt
+```
+
+**Edit prompt copy = edit file = go through PR = reviewable + rollback-able**. Vercel AI SDK reads via template strings:
+
+```typescript
+import { readFile } from 'fs/promises';
+
+const promptTemplate = await readFile('./src/prompts/customer-support/v2.txt', 'utf-8');
+
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: promptTemplate.replace('{companyName}', 'ACME'),
+  prompt: userQuery,
+});
+```
+
+### Advanced: Prompt Platform
+
+When prompt count > 50, a **dedicated prompt management platform** becomes more efficient:
+
+| Platform | Strengths | Best For |
+|---|---|---|
+| **Langfuse Prompt Management** | Integrated observability, A/B testing | Mid-size teams |
+| **Helicone** | Simple, open-source | Early projects |
+| **PromptLayer** | Full prompt ops | Large teams |
+| **Self-built Git + platform** | Full control | With a platform team |
+
+**Langfuse example**:
+
+```typescript
+import { Langfuse } from 'langfuse';
+
+const langfuse = new Langfuse();
+
+// Fetch prompt v3 (auto from Langfuse backend)
+const prompt = await langfuse.getPrompt('customer-support', {
+  version: 3,
+  type: 'chat',
+});
+
+// prompt becomes LangChain / Vercel AI SDK compatible format
+const messages = prompt.compile({
+  companyName: 'ACME',
+});
+```
+
+PM edits prompts in the Langfuse backend directly, **without touching code**, **automatic versioning**.
+
+## 2. CI/CD Pipelines
+
+After prompt changes, how do you know quality didn't regress? **Must run regression eval**:
+
+<Mermaid client:load caption="Figure 1: LLM CI/CD pipeline" chart={`flowchart LR
+  P[PR: change prompt] --> L[lint prompt<br/>check format/length]
+  L --> T[Unit test<br/>mock LLM calls]
+  T --> E[Eval pipeline<br/>run 200 cases]
+  E --> S{Score ≥ baseline?}
+  S -->|No| Reject[Reject merge]
+  S -->|Yes| Merge[Merge to main]
+  Merge --> D[Auto-deploy to staging]
+  D --> Smoke[Smoke test<br/>5 real queries]
+  Smoke --> Prod[Manual promote to prod]`} />
+
+### Key Stages
+
+**Lint**: auto-check prompt format (token length, placeholder consistency, sensitive words):
+
+```typescript
+// scripts/lint-prompts.ts
+import { readFileSync } from 'fs';
+import { glob } from 'glob';
+
+const files = glob.sync('src/prompts/**/*.txt');
+
+for (const file of files) {
+  const content = readFileSync(file, 'utf-8');
+  
+  // Check 1: placeholders must be balanced
+  const opens = (content.match(/{/g) || []).length;
+  const closes = (content.match(/}/g) || []).length;
+  if (opens !== closes) {
+    console.error(`❌ ${file}: unbalanced placeholders (${opens} open, ${closes} close)`);
+    process.exit(1);
+  }
+  
+  // Check 2: token length
+  const tokens = content.length / 4;  // rough estimate
+  if (tokens > 4000) {
+    console.warn(`⚠️ ${file}: ~${tokens} tokens (consider trimming)`);
+  }
+}
+```
+
+**Eval pipeline**: auto-run 200-500 cases:
+
+```yaml
+# .github/workflows/eval.yml
+name: LLM Eval
+on:
+  pull_request:
+    paths:
+      - 'src/prompts/**'
+      - 'src/**/*.{ts,tsx,py}'
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install
+        run: npm ci
+      
+      - name: Run eval
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx braintrust eval eval/rag-pipeline.ts
+        
+      - name: Check score threshold
+        run: |
+          SCORE=$(jq '.scores.factuality.mean' eval-results.json)
+          if (( $(echo "$SCORE < 0.85" | bc -l) )); then
+            echo "❌ Score $SCORE below 0.85 threshold"
+            exit 1
+          fi
+```
+
+**Key**: **eval failure = PR cannot merge**. This forces all prompt changes through a quality gate.
+
+## 3. Canary Releases
+
+Even if eval passes, **real user behavior may differ**. Canary is required:
+
+```typescript
+// Routing layer
+async function choosePromptVersion(userId: string): Promise<string> {
+  const bucket = hashUserId(userId) % 100;
+  
+  if (bucket < 5) return 'v3-experiment';        // 5% new version
+  if (bucket < 100) return 'v2';                // 95% old version
+  return 'v2';
+}
+
+// Load prompt
+const version = await choosePromptVersion(userId);
+const prompt = await loadPrompt('customer-support', version);
+
+// Record actual version used
+langfuse.trace({ name: 'chat', userId, tags: [`prompt-version:${version}`] });
+```
+
+**Canary release cadence**:
+
+| Stage | Traffic | Duration |
+|---|---|---|
+| 1% | small-traffic validation | 1-2 hours |
+| 5% | initial feedback | half day |
+| 25% | expand sample | 1 day |
+| 50% | main traffic | 1-2 days |
+| 100% | full | ongoing |
+
+**Companion monitoring**: during canary, **real-time compare** metrics:
+
+- **Guardrail metrics** (can't worsen): latency / error rate / cost
+- **Business metrics** (want to improve): task completion / user satisfaction / complaint rate
+
+## 4. Multi-Model Failover
+
+**Vendor lock-in is the biggest commercial risk for LLM apps**. OpenAI raised prices in 2023, Anthropic rate-limited in 2024, any vendor can have issues in 2025.
+
+### Abstraction Layer
+
+```typescript
+// src/lib/llm.ts
+import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
+
+export function getModel(name: string) {
+  const models = {
+    'gpt-4o': openai('gpt-4o'),
+    'claude-sonnet': anthropic('claude-sonnet-4-5'),
+    'gemini-pro': google('gemini-2.5-pro'),
+    'auto': selectByCost(),  // cheapest
+  };
+  return models[name] || models['gpt-4o'];
+}
+
+// Application layer
+const model = getModel(process.env.LLM_MODEL || 'gpt-4o');
+const { text } = await generateText({ model, prompt });
+```
+
+**Production switching flow**:
+
+1. **Eval validation**: new model ≥ old model on 200 cases
+2. **Small canary**: 5% traffic to new model
+3. **Monitor comparison**: business metrics flat / better
+4. **Full switch**: 100% to new model
+
+## 5. Team Workflow
+
+**Typical roles in an LLM project**:
+
+- **PM / Product**: requirements + prompt copy tweaks
+- **Algorithm / Prompt Engineer**: prompt structure + A/B experiments
+- **Backend Engineer**: RAG / Agent code + API integration
+- **Data / ML Ops**: eval set + observability + cost monitoring
+- **Security / Compliance**: guardrails + PII handling
+
+### 3 Tools for Efficient Collaboration
+
+1. **Prompt platform (Langfuse / PromptLayer)**: PM changes copy, engineers don't touch code
+2. **Eval pipeline (Braintrust / Ragas)**: any prompt change auto-runs regression
+3. **Observability platform (Langfuse / LangSmith)**: problems traceable to specific traces
+
+**Workflow example**:
+
+```
+PM wants to change customer support prompt copy
+  ↓
+Edit v3 copy in Langfuse backend, publish to "experiment" environment
+  ↓
+Langfuse auto-runs 200-case eval
+  ↓
+Score ≥ baseline → auto 5% canary
+  ↓
+Observe business metrics for 24 hours
+  ↓
+OK → full rollout; not OK → rollback to v2
+```
+
+PM / Algorithm / Engineering **fully decoupled**, 10x more efficient than traditional PR workflow.
+
+## 6. Monorepo vs Multi-Repo
+
+An LLM project usually has 4 asset types:
+
+```
+src/                 # code
+prompts/             # prompt templates
+eval/                # eval set + eval scripts
+data/                # knowledge base + training data
+```
+
+### Monorepo (Recommended)
+
+```
+acme-llm/
+  apps/
+    chat-api/       # customer service API
+    rag-api/        # RAG API
+  packages/
+    prompts/        # shared prompts
+    eval/           # shared eval
+    llm-utils/      # shared LLM tools
+  data/             # shared datasets
+```
+
+**Strengths**:
+- Prompt change in one place, multiple apps sync
+- Eval shared, cross-app reuse
+- Data shared, no duplicate uploads
+
+### Multi-Repo
+
+```
+acme-chat-api/      # customer service API + its prompts + eval
+acme-rag-api/       # RAG API + its prompts + eval
+acme-shared-prompts/  # shared prompt (separate repo, npm publish)
+```
+
+**Best for**:
+- Team > 30 people
+- Each app independent team / cadence
+- Strict version management needed
+
+**Heuristic**: < 10 people → monorepo; > 30 people → consider splitting.
+
+## Pitfalls for Senior Architects
+
+1. **Don't scatter prompts everywhere.** All prompts must have a **single source of truth** (Git file / platform), no hardcoding.
+2. **Don't let PMs directly edit production prompts.** All changes go through **canary + eval validation**, avoid "I thought I just changed a word".
+3. **Don't ignore eval set drift over time.** Refill new cases monthly — **otherwise prompt optimization space shrinks**.
+4. **Don't lock into a single vendor.** At least 2 vendors + routing layer, **avoid vendor outages taking down the company**.
+5. **Don't treat eval as a "one-time pre-launch check".** Eval should **run continuously**, **quality regression** auto-alerts.
+
+## Summary
+
+Five takeaways:
+
+- **Prompts must be versioned**: Git or dedicated platform, **no hardcoding / database**.
+- **CI/CD must run eval**: eval score < baseline = PR cannot merge.
+- **Canary is mandatory**: 5% → 25% → 50% → 100%, **guardrails + business metrics monitored simultaneously**.
+- **Multi-model routing**: abstraction layer + at least 2 vendors, **fast switching capability**.
+- **Team workflow**: PM changes prompt in platform, **engineers don't touch code**, **quality gate runs automatically**.
+
+**Next up**: [AI-Native UI: What Interfaces Should Look Like in the New Era](/en/blog/ai-ui-new-era) — wrapping up the series + AI UI outlook.
+
+## References
+
+- [Langfuse Prompt Management](https://langfuse.com/docs/prompts) — prompt versioning + A/B testing
+- [Vercel AI SDK — Prompts](https://ai-sdk.dev/docs/ai-sdk-core/prompts) — 3 prompt types (text / instructions / messages)
+- [Braintrust Python SDK (GitHub)](https://github.com/braintrustdata/braintrust-sdk-python) — eval platform + CI integration
