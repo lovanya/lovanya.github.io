@@ -92,7 +92,7 @@ Liu 等人 2023 年的论文 [arXiv:2307.03172](https://arxiv.org/abs/2307.03172
 
 1. **重要信息放首尾**：system prompt 在最前，具体指令在最后。
 2. **拆分长 context**：与其塞 200K 让模型乱找，不如先做 RAG / summarization 把 context 缩到 8-16K。
-3. **监控 prompt cache 命中**：OpenAI、Anthropic 都对**重复前缀**做 prompt cache（缓存命中便宜 90%）。把稳定的 system 部分放最前面。
+3. **监控 prompt cache 命中**：OpenAI、Anthropic 都对**重复前缀**做 prompt cache（**Anthropic 命中便宜 90%，OpenAI 便宜 50%**——折扣率不同，别按 90% 算成本）。把稳定的 system 部分放最前面。
 4. **明确引用位置**：在 RAG 返回的多个 chunk 上加 `"[Doc 1]"`、`"[Doc 2]"` 标签，让模型知道"哪段是答案"。
 
 ## 三、5 个必会的 Prompt 模式

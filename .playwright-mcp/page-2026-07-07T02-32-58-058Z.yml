@@ -1,0 +1,422 @@
+- generic [active] [ref=f223e1]:
+  - banner [ref=f223e2]:
+    - navigation [ref=f223e4]:
+      - link "返回首页" [ref=f223e5]:
+        - /url: /
+        - img [ref=f223e6]
+      - list [ref=f223e12]:
+        - listitem [ref=f223e13]:
+          - link "首页" [ref=f223e14]:
+            - /url: /
+        - listitem [ref=f223e15]:
+          - link "博客" [ref=f223e16]:
+            - /url: /blog
+        - listitem [ref=f223e17]:
+          - link "关于我" [ref=f223e18]:
+            - /url: /about
+      - generic [ref=f223e20]:
+        - link "Switch to English" [ref=f223e21]:
+          - /url: /en/blog/rag-from-naive-to-production
+          - text: EN
+        - button "Toggle theme" [ref=f223e22]:
+          - img [ref=f223e23]
+  - main [ref=f223e25]:
+    - article [ref=f223e27]:
+      - link "返回列表" [ref=f223e28]:
+        - /url: /blog
+        - img [ref=f223e29]
+        - generic [ref=f223e31]: 返回列表
+      - generic [ref=f223e33]:
+        - heading "RAG 检索增强生成：从基础 RAG 到生产级架构" [level=1] [ref=f223e34]
+        - time [ref=f223e36]: 发布于 2026年7月7日
+      - generic [ref=f223e37]:
+        - heading "前言" [level=2] [ref=f223e38]
+        - paragraph [ref=f223e39]:
+          - text: 如果你做过 LLM 应用，几乎肯定踩过这个坑：模型一本正经地编造事实，引用不存在的文档，给出过时的 API 答案。
+          - strong [ref=f223e40]: 这些不是模型不够强，而是模型”没看过”你的数据。
+        - paragraph [ref=f223e41]: RAG（Retrieval-Augmented Generation，检索增强生成）是工业界最主流的解决方案。它的核心思想很简单：
+        - blockquote [ref=f223e42]:
+          - paragraph [ref=f223e43]:
+            - strong [ref=f223e44]: 不要让 LLM 凭记忆回答，先去查资料，再基于资料回答。
+        - paragraph [ref=f223e45]: 但”基础 RAG” 和”生产级 RAG”之间隔着十万八千里。这一篇会按这条路线展开：
+        - list [ref=f223e46]:
+          - listitem [ref=f223e47]:
+            - strong [ref=f223e48]: 基础 RAG
+            - text: ：4 步 pipeline，理解最小可用闭环
+          - listitem [ref=f223e49]:
+            - strong [ref=f223e50]: 5 个让 RAG 失效的常见坑
+          - listitem [ref=f223e51]:
+            - strong [ref=f223e52]: Advanced RAG 5 大技法
+            - text: ：query rewriting / hybrid search / reranking / chunking / metadata
+          - listitem [ref=f223e53]:
+            - strong [ref=f223e54]: 生产架构
+            - text: ：从 Demo 到能扛 100 QPS 的工程化改造
+        - heading "一、基础 RAG：4 步 pipeline" [level=2] [ref=f223e55]
+        - paragraph [ref=f223e56]:
+          - text: 2020 年 Facebook AI 的论文
+          - link "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" [ref=f223e57]:
+            - /url: https://arxiv.org/abs/2005.11401
+          - text: （Lewis et al.）正式命名了 RAG。LangChain 的
+          - link "RAG tutorial" [ref=f223e58]:
+            - /url: https://docs.langchain.com/oss/python/langchain/rag
+          - text: 把这套范式落地成了 4 步标准 pipeline：
+        - figure "图 1：基础 RAG 的 4 步 pipeline" [ref=f223e60]:
+          - generic [ref=f223e62]: 图 1：基础 RAG 的 4 步 pipeline
+        - paragraph [ref=f223e63]: 每一步的作用：
+        - list [ref=f223e64]:
+          - listitem [ref=f223e65]:
+            - strong [ref=f223e66]: Load
+            - text: ：抓取文档（PDF / 网页 / 数据库 / Notion）成
+            - code [ref=f223e67]: Document
+            - text: 对象
+          - listitem [ref=f223e68]:
+            - strong [ref=f223e69]: Split
+            - text: ：切成 500-1000 token 的 chunks，太长 LLM 读不完，太短语义断裂
+          - listitem [ref=f223e70]:
+            - strong [ref=f223e71]: Embed
+            - text: ：每个 chunk 通过 embedding model 转成向量（768-3072 维）
+          - listitem [ref=f223e72]:
+            - strong [ref=f223e73]: Store
+            - text: ：存入向量数据库，建立索引
+        - paragraph [ref=f223e74]: 线上推理时，用户 query → embed → 相似度检索 → top-K chunks → 拼到 prompt → LLM 生成。
+        - paragraph [ref=f223e75]:
+          - strong [ref=f223e76]: 最小可运行的 TypeScript 代码
+          - text: （用 Vercel AI SDK + pgvector）：
+        - code [ref=f223e78]:
+          - generic [ref=f223e79]: "import { embed, generateText } from 'ai';"
+          - generic [ref=f223e80]: "import { openai } from '@ai-sdk/openai';"
+          - generic [ref=f223e81]: "import { Pool } from 'pg';"
+          - generic [ref=f223e82]: // 1. 检索
+          - generic [ref=f223e83]: "const { embedding } = await embed({"
+          - generic [ref=f223e84]: "model: openai.embedding('text-embedding-3-small'),"
+          - generic [ref=f223e85]: "value: userQuery,"
+          - generic [ref=f223e86]: "});"
+          - generic [ref=f223e87]: "const pool = new Pool({ connectionString: process.env.DATABASE_URL });"
+          - generic [ref=f223e88]: "const { rows } = await pool.query("
+          - generic [ref=f223e89]: "`SELECT content FROM docs"
+          - generic [ref=f223e90]: ORDER BY embedding <=> $1
+          - generic [ref=f223e91]: "LIMIT 4`,"
+          - generic [ref=f223e92]: "[JSON.stringify(embedding)]"
+          - generic [ref=f223e93]: );
+          - generic [ref=f223e94]: // 2. 拼 prompt
+          - generic [ref=f223e95]: const context = rows.map((r) => r.content).join('\n\n---\n\n');
+          - generic [ref=f223e96]: "const { text } = await generateText({"
+          - generic [ref=f223e97]: "model: openai('gpt-4o'),"
+          - generic [ref=f223e98]: "system: '只基于下面的资料回答问题，不要编造。',"
+          - generic [ref=f223e99]: "prompt: `资料：\\n${context}\\n\\n问题：${userQuery}`,"
+          - generic [ref=f223e100]: "});"
+        - heading "二、5 个让基础 RAG 失效的坑" [level=2] [ref=f223e101]
+        - paragraph [ref=f223e102]: 你以为 4 步搞定，结果上线后用户投诉”答非所问”。90% 是这 5 个坑：
+        - heading "坑 1：chunk 切太大 / 太小" [level=3] [ref=f223e103]
+        - list [ref=f223e104]:
+          - listitem [ref=f223e105]:
+            - strong [ref=f223e106]: 太大
+            - text: ：一个 chunk 包含 5 个话题，检索时整段塞进 prompt，干扰答案
+          - listitem [ref=f223e107]:
+            - strong [ref=f223e108]: 太小
+            - text: ：每个 chunk 语义不完整，LLM 拼不出上下文
+        - paragraph [ref=f223e109]:
+          - strong [ref=f223e110]: 经验值
+          - text: ：500-1000 tokens 是 sweet spot，
+          - strong [ref=f223e111]: overlap 100-200 tokens
+          - text: 保证跨块语义连贯。
+        - heading "坑 2：query 表述和文档用词不一致" [level=3] [ref=f223e112]
+        - paragraph [ref=f223e113]:
+          - text: 用户问”如何重置密码”，文档里写的是”修改 login credentials”。
+          - strong [ref=f223e114]: 语义相同但用词不同
+          - text: ，纯向量检索会失败。
+        - paragraph [ref=f223e115]:
+          - strong [ref=f223e116]: 修法
+          - text: ：见下文技法 1（query rewriting）。
+        - heading "坑 3：检索返回的 chunk 质量差" [level=3] [ref=f223e117]
+        - paragraph [ref=f223e118]:
+          - text: 向量相似度高 ≠ 答案相关。两个文档话题相似但
+          - strong [ref=f223e119]: 方向相反
+          - text: （“应该做 X” vs “不要做 X”），top-K 全召回反而误导 LLM。
+        - paragraph [ref=f223e120]:
+          - strong [ref=f223e121]: 修法
+          - text: ：见下文技法 3（reranking）。
+        - heading "坑 4：缺乏 metadata 过滤" [level=3] [ref=f223e122]
+        - paragraph [ref=f223e123]: 100 万条 chunks 里，60% 是过期内容。LLM 拿到旧答案照答不误。
+        - paragraph [ref=f223e124]:
+          - strong [ref=f223e125]: 修法
+          - text: ：建索引时给每条 chunk 加 metadata（
+          - code [ref=f223e126]: created_at
+          - text: ","
+          - code [ref=f223e127]: category
+          - text: ","
+          - code [ref=f223e128]: source
+          - text: ），检索时
+          - strong [ref=f223e129]: 先 metadata 过滤再相似度排序
+          - text: 。
+        - heading "坑 5：直接返回 chunks，不格式化" [level=3] [ref=f223e130]
+        - paragraph [ref=f223e131]:
+          - text: LLM 拿到一堆原始文本块，不知道哪个是答案、哪个是上下文。需要 prompt engineering：
+          - strong [ref=f223e132]: 用 XML 标签包裹 context，明确划界
+          - text: ：
+        - code [ref=f223e134]:
+          - generic [ref=f223e135]: <context>
+          - generic [ref=f223e136]: <doc id="1" source="api-docs.md">...</doc>
+          - generic [ref=f223e137]: <doc id="2" source="faq.md">...</doc>
+          - generic [ref=f223e138]: </context>
+          - generic [ref=f223e139]: 请基于 <context> 中的资料回答下面的问题。
+          - generic [ref=f223e140]: 如果资料不足，请明确说"我不知道"，不要编造。
+          - generic [ref=f223e141]: "问题：{{user_query}}"
+        - heading "三、Advanced RAG 5 大技法" [level=2] [ref=f223e142]
+        - paragraph [ref=f223e143]: 基础 RAG 的召回率（recall）和精度（precision）都不够。Advanced RAG 通过 5 个技法系统性地提升质量：
+        - heading "技法 1：Query Rewriting（查询改写）" [level=3] [ref=f223e144]
+        - paragraph [ref=f223e145]: 把用户的口语化 query 改写成”文档风格”的正式 query，提升检索匹配率。
+        - code [ref=f223e147]:
+          - generic [ref=f223e148]: // 用 LLM 改写 query
+          - generic [ref=f223e149]: "const { text: rewritten } = await generateText({"
+          - generic [ref=f223e150]: "model: openai('gpt-4o-mini'),"
+          - generic [ref=f223e151]: "prompt: `把用户问题改写为更适合文档检索的查询，保留核心意图但用词更规范。"
+          - generic [ref=f223e152]: "用户问题：${userQuery}"
+          - generic [ref=f223e153]: "改写后的查询：`,"
+          - generic [ref=f223e154]: "});"
+          - generic [ref=f223e155]: // 再用改写后的 query 做向量检索
+        - paragraph [ref=f223e156]:
+          - strong [ref=f223e157]: 进阶
+          - text: ：HyDE（Hypothetical Document Embeddings）让 LLM 先生成”假设答案”，再用假设答案的 embedding 去检索。
+          - strong [ref=f223e158]: 对长尾 query 效果显著
+          - text: 。
+        - heading "技法 2：Hybrid Search（混合检索）" [level=3] [ref=f223e159]
+        - paragraph [ref=f223e160]:
+          - text: 向量检索擅长语义，但
+          - strong [ref=f223e161]: 对精确关键词、专有名词、型号代码很弱
+          - text: 。混合检索把向量检索 + 关键词检索（BM25）融合：
+        - code [ref=f223e163]:
+          - generic [ref=f223e164]: // 1. 向量检索 top 20
+          - generic [ref=f223e165]: const vectorResults = await vectorSearch(queryEmbedding, 20);
+          - generic [ref=f223e166]: // 2. BM25 关键词检索 top 20
+          - generic [ref=f223e167]: const bm25Results = await bm25Search(query, 20);
+          - generic [ref=f223e168]: // 3. Reciprocal Rank Fusion 合并
+          - generic [ref=f223e169]: const combined = rrfMerge(vectorResults, bm25Results);
+          - generic [ref=f223e170]: // → 取 top K 送 LLM
+        - paragraph [ref=f223e171]:
+          - link "Pinecone 文档" [ref=f223e172]:
+            - /url: https://docs.pinecone.io/guides/get-started/overview
+          - text: 把 hybrid search 列为生产 RAG 的推荐配置。
+          - strong [ref=f223e173]: 纯向量检索在精度要求高的场景会出问题
+          - text: （比如搜索特定 API 名称、错误码）。
+        - heading "技法 3：Reranking（重排序）" [level=3] [ref=f223e174]
+        - paragraph [ref=f223e175]: 先用便宜的方式（向量 / BM25）召回 top 50-100，再用贵的 cross-encoder 模型精排 top 5-10。
+        - code [ref=f223e177]:
+          - generic [ref=f223e178]: "import { cohere } from '@ai-sdk/cohere';"
+          - generic [ref=f223e179]: // 1. 粗排：向量检索 top 50
+          - generic [ref=f223e180]: const candidates = await vectorSearch(queryEmbedding, 50);
+          - generic [ref=f223e181]: // 2. 精排：Cross-encoder reranker
+          - generic [ref=f223e182]: "const reranked = await cohere.rerank({"
+          - generic [ref=f223e183]: "model: 'rerank-english-v3.0',"
+          - generic [ref=f223e184]: "query: userQuery,"
+          - generic [ref=f223e185]: "documents: candidates.map((c) => c.text),"
+          - generic [ref=f223e186]: "topK: 5,"
+          - generic [ref=f223e187]: "});"
+        - paragraph [ref=f223e188]:
+          - text: Reranker 把”召回的相关”重新排序成”真正有用的”，
+          - strong [ref=f223e189]: 通常把端到端准确率提升 15-30%
+          - text: 。
+        - heading "技法 4：Better Chunking" [level=3] [ref=f223e190]
+        - paragraph [ref=f223e191]:
+          - text: 基础的
+          - code [ref=f223e192]: RecursiveCharacterTextSplitter
+          - text: 对所有文档一刀切。但
+          - strong [ref=f223e193]: 不同类型文档的最优切法不同
+          - text: ：
+        - table [ref=f223e194]:
+          - rowgroup [ref=f223e195]:
+            - row "文档类型 推荐策略" [ref=f223e196]:
+              - columnheader "文档类型" [ref=f223e197]
+              - columnheader "推荐策略" [ref=f223e198]
+          - rowgroup [ref=f223e199]:
+            - 'row "Markdown / 结构化文本 按 header 切（# ##），保留完整章节" [ref=f223e200]':
+              - cell "Markdown / 结构化文本" [ref=f223e201]
+              - 'cell "按 header 切（# ##），保留完整章节" [ref=f223e202]':
+                - text: 按 header 切（
+                - code [ref=f223e203]: "#"
+                - code [ref=f223e204]: "##"
+                - text: ），保留完整章节
+            - row "代码 按函数 / 类切，保留上下文注释" [ref=f223e205]:
+              - cell "代码" [ref=f223e206]
+              - cell "按函数 / 类切，保留上下文注释" [ref=f223e207]
+            - row "表格 整表 + 表格描述（“这是 2025 年各产品定价”）" [ref=f223e208]:
+              - cell "表格" [ref=f223e209]
+              - cell "整表 + 表格描述（“这是 2025 年各产品定价”）" [ref=f223e210]
+            - row "长文档 滑动窗口 + 摘要预 chunk" [ref=f223e211]:
+              - cell "长文档" [ref=f223e212]
+              - cell "滑动窗口 + 摘要预 chunk" [ref=f223e213]
+        - paragraph [ref=f223e214]:
+          - strong [ref=f223e215]: 生产经验
+          - text: ：chunk 大小、overlap、是否带 header——这三个参数
+          - strong [ref=f223e216]: 每个数据集都要重新调
+          - text: ，没有银弹。
+        - heading "技法 5：Metadata Filtering" [level=3] [ref=f223e217]
+        - paragraph [ref=f223e218]: 检索时先按 metadata 缩小范围，再做相似度排序：
+        - code [ref=f223e220]:
+          - generic [ref=f223e221]: "const { rows } = await pool.query("
+          - generic [ref=f223e222]: "`SELECT content FROM docs"
+          - generic [ref=f223e223]: WHERE created_at > $2 -- 只看最近 1 年的文档
+          - generic [ref=f223e224]: AND category = $3 -- 只看 API 类文档
+          - generic [ref=f223e225]: ORDER BY embedding <=> $1
+          - generic [ref=f223e226]: "LIMIT 4`,"
+          - generic [ref=f223e227]: "[JSON.stringify(embedding), '2025-01-01', 'api-docs']"
+          - generic [ref=f223e228]: );
+        - paragraph [ref=f223e229]:
+          - strong [ref=f223e230]: 这一步比技法 1-4 都重要
+          - text: ——用户大半问题可以通过 metadata 直接锁定答案域，向量检索只是补充。
+        - heading "四、生产架构：从 Demo 到 100 QPS" [level=2] [ref=f223e231]
+        - paragraph [ref=f223e232]: Demo 跑通后，工程化要解决 5 个问题：
+        - heading "问题 1：冷启动延迟" [level=3] [ref=f223e233]
+        - paragraph [ref=f223e234]:
+          - text: 每次 query 都要先 embed（50ms）+ 检索（50ms）+ LLM 生成（1-3s）。
+          - strong [ref=f223e235]: 优化
+          - text: ：
+        - list [ref=f223e236]:
+          - listitem [ref=f223e237]:
+            - strong [ref=f223e238]: Embedding 缓存
+            - text: ：query embedding 缓存（命中率 30%+ 因为很多 query 重复）
+          - listitem [ref=f223e239]:
+            - strong [ref=f223e240]: Prompt cache
+            - text: ：OpenAI / Anthropic 对重复 prefix 自动 cache，节省 90% 成本 + 延迟
+          - listitem [ref=f223e241]:
+            - strong [ref=f223e242]: Pre-warm
+            - text: ：高频 query 提前算好 embedding
+        - heading "问题 2：检索质量监控" [level=3] [ref=f223e243]
+        - paragraph [ref=f223e244]:
+          - text: 生产里你不知道
+          - strong [ref=f223e245]: 检索到底返回了什么、LLM 到底用了什么
+          - text: 。需要：
+        - list [ref=f223e246]:
+          - listitem [ref=f223e247]:
+            - strong [ref=f223e248]: Trace 系统
+            - text: ：LangSmith / Langfuse / OpenLLMetry，每次 query 全链路记录
+          - listitem [ref=f223e249]:
+            - strong [ref=f223e250]: 离线评估集
+            - text: ：100-200 条标注 query，定期跑回归
+          - listitem [ref=f223e251]:
+            - strong [ref=f223e252]: 在线指标
+            - text: ：用户反馈、答案引用命中率
+        - heading "问题 3：增量更新" [level=3] [ref=f223e253]
+        - paragraph [ref=f223e254]:
+          - text: 新文档每天进来，需要
+          - strong [ref=f223e255]: 不停机更新向量索引
+          - text: ：
+        - code [ref=f223e257]:
+          - generic [ref=f223e258]: // 入库：先写 OLTP DB，再异步写向量 DB
+          - generic [ref=f223e259]: "await db.insert({ content, embedding: null, ... });"
+          - generic [ref=f223e260]: "queue.push({ type: 'embed', docId }); // 后台 worker 处理"
+          - generic [ref=f223e261]: // Worker：embed 后写入向量 DB
+          - generic [ref=f223e262]: "const { embedding } = await embed({ model, value: content });"
+          - generic [ref=f223e263]: "await vectorDB.upsert({ id: docId, embedding, content });"
+        - heading "问题 4：多租户隔离" [level=3] [ref=f223e264]
+        - paragraph [ref=f223e265]: 不同客户数据不能混在一起。两种做法：
+        - list [ref=f223e266]:
+          - listitem [ref=f223e267]:
+            - strong [ref=f223e268]: 物理隔离
+            - text: ：每个租户一个向量 index
+          - listitem [ref=f223e269]:
+            - strong [ref=f223e270]: 逻辑隔离
+            - text: ：共享 index，但每条记录带
+            - code [ref=f223e271]: tenant_id
+            - text: metadata，检索时强制
+            - code [ref=f223e272]: WHERE tenant_id = ?
+        - heading "问题 5：成本控制" [level=3] [ref=f223e273]
+        - paragraph [ref=f223e274]: 100 QPS × 1000 tokens × 1M Q/月 = 100B tokens/月。
+        - list [ref=f223e275]:
+          - listitem [ref=f223e276]:
+            - strong [ref=f223e277]: Tier 1
+            - text: ：高频 query 用小模型（gpt-4o-mini / Claude Haiku）+ 向量检索
+          - listitem [ref=f223e278]:
+            - strong [ref=f223e279]: Tier 2
+            - text: ：复杂 query 路由到 GPT-4o / Opus
+          - listitem [ref=f223e280]:
+            - strong [ref=f223e281]: Tier 3
+            - text: ：纯闲聊走 LLM 不走 RAG
+        - heading "踩坑提醒" [level=2] [ref=f223e282]
+        - list [ref=f223e283]:
+          - listitem [ref=f223e284]:
+            - strong [ref=f223e285]: 不要把整个向量库塞进 context
+            - text: 。一个 query 召回 20-50 个 chunks 是常见错误。
+            - strong [ref=f223e286]: top-K 在 3-8 之间最佳
+            - text: ，更多反而干扰。
+          - listitem [ref=f223e287]:
+            - strong [ref=f223e288]: 不要用 base embedding 算 retrieval 准确率
+            - text: 。换 chat model 之前，
+            - strong [ref=f223e289]: embedding model 必须先评估
+            - text: （下一帖会展开）。
+          - listitem [ref=f223e290]:
+            - strong [ref=f223e291]: 不要忽略 chunk 的来源标注
+            - text: 。每条 retrieved chunk 都要带
+            - code [ref=f223e292]: doc_id
+            - text: /
+            - code [ref=f223e293]: source_url
+            - text: ，LLM 输出时引用来源，用户能验证答案。
+          - listitem [ref=f223e294]:
+            - strong [ref=f223e295]: 不要假设 BM25 已死
+            - text: 。Hybrid search 在生产里几乎 always 优于纯向量，
+            - strong [ref=f223e296]: 特别是含专有名词的领域
+            - text: （法律 / 医疗 / API 文档）。
+          - listitem [ref=f223e297]:
+            - strong [ref=f223e298]: 不要把 embedding model 锁死在一家
+            - text: 。Cohere / OpenAI / Voyage / BGE 各有强项，按场景选型。
+        - heading "总结" [level=2] [ref=f223e299]
+        - paragraph [ref=f223e300]: 5 个 takeaway：
+        - list [ref=f223e301]:
+          - listitem [ref=f223e302]:
+            - strong [ref=f223e303]: 基础 RAG
+            - text: ：4 步 pipeline（Load → Split → Embed → Store），最小可用但召回 / 精度都不够。
+          - listitem [ref=f223e304]:
+            - strong [ref=f223e305]: 5 个常见坑
+            - text: ：chunk 切错、query 表述不一致、检索质量差、缺 metadata、prompt 不格式化——90% 的失败源自这 5 个。
+          - listitem [ref=f223e306]:
+            - strong [ref=f223e307]: Advanced RAG 5 技法
+            - text: ：query rewriting / hybrid search / reranking / better chunking / metadata filtering，
+            - strong [ref=f223e308]: 优先级：metadata > reranking > hybrid > chunking > query rewriting
+            - text: 。
+          - listitem [ref=f223e309]:
+            - strong [ref=f223e310]: 生产架构
+            - text: ：解决延迟（缓存）、质量（trace + eval）、更新（异步 pipeline）、隔离（metadata）、成本（分 tier）。
+          - listitem [ref=f223e311]:
+            - strong [ref=f223e312]: 别忽略 embedding model
+            - text: ：下一篇会专门讲怎么选。
+        - paragraph [ref=f223e313]:
+          - strong [ref=f223e314]: 下一篇
+          - text: ：
+          - link "Embedding 模型与向量数据库选型实战" [ref=f223e315]:
+            - /url: /blog/embedding-and-vector-db
+          - text: — 基础篇的最后一篇，把 RAG 的核心依赖讲透。
+        - heading "参考资料" [level=2] [ref=f223e316]
+        - list [ref=f223e317]:
+          - listitem [ref=f223e318]:
+            - link "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (Lewis et al., 2020)" [ref=f223e319]:
+              - /url: https://arxiv.org/abs/2005.11401
+            - text: — 原始 RAG 论文，NeurIPS 2020
+          - listitem [ref=f223e320]:
+            - link "LangChain RAG Tutorial" [ref=f223e321]:
+              - /url: https://docs.langchain.com/oss/python/langchain/rag
+            - text: — 4 步 pipeline 的官方落地，含索引 / Agent / Chain 两种范式对比
+          - listitem [ref=f223e322]:
+            - 'link "Pinecone: Vector DB Concepts for Production RAG" [ref=f223e323]':
+              - /url: https://docs.pinecone.io/guides/get-started/overview
+            - text: — 推荐的 hybrid search + reranking + metadata 三件套生产架构
+      - generic [ref=f223e324]:
+        - heading "评论" [level=3] [ref=f223e325]
+        - iframe [ref=f223e328]:
+          
+  - contentinfo [ref=f223e329]:
+    - generic [ref=f223e331]:
+      - paragraph [ref=f223e332]: © 2026 紫牙. 版权所有
+      - paragraph [ref=f223e333]: // 由 Astro 驱动
+  - generic [ref=f223e336]:
+    - button "Menu" [ref=f223e337]:
+      - img [ref=f223e339]
+      - generic: Menu
+    - button "Inspect" [ref=f223e343]:
+      - img [ref=f223e345]
+      - generic: Inspect
+    - button "Audit" [ref=f223e347]:
+      - img [ref=f223e349]
+      - generic: Audit
+    - button "Settings" [ref=f223e352]:
+      - img [ref=f223e354]
+      - generic: Settings

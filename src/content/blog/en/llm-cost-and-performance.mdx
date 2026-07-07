@@ -33,7 +33,7 @@ Visualized:
 
 <Mermaid client:load caption="Figure 1: Prompt cache hit mechanics" chart={`flowchart LR
   R[Request] --> PC{Prefix match?}
-  PC -->|Yes, 1024+ tokens| Cache[Hit cache<br/>90% cheaper]
+  PC -->|Yes, 1024+ tokens| Cache[Hit cache<br/>OpenAI 50%<br/>Anthropic 90%]
   PC -->|No| Miss[Miss<br/>full price]
   Cache --> LLM[LLM]
   Miss --> LLM
@@ -42,7 +42,7 @@ Visualized:
 
 ### OpenAI / Anthropic Native Prompt Cache
 
-**OpenAI** auto-caches any prompt prefix **>= 1024 tokens**, charging 50% less for cached reads. **Anthropic** has a similar 5-min TTL cache with **4 breakpoints**.
+**OpenAI** auto-caches prompt prefixes (gpt-4o / gpt-4o: **>= 1024 tokens**, **gpt-4o-mini: 2048 tokens**), charging **50% less** for cached reads (cache writes are not billed extra). **Anthropic** has a similar 5-min TTL cache with **4 breakpoints** (model-dependent: Sonnet 4 / Opus 4 / Haiku 4 all support 4; Claude 3.5 Sonnet also supports 4).
 
 ```typescript
 // OpenAI / Anthropic handle this automatically — no extra code.
@@ -68,7 +68,7 @@ const result = await generateText({
 | 60% | 60% × (2000/2500) ≈ **48% total savings** |
 | 90% | 90% × (2000/2500) ≈ **72% total savings** |
 
-**Key**: stable content (system prompt + few-shot examples + long-term context) goes first, **pad to at least 1024 tokens** so cache activates.
+**Key**: stable content (system prompt + few-shot examples + long-term context) goes first, **pad to at least the cache threshold** — 1024 tokens for gpt-4o, 2048 tokens for gpt-4o-mini.
 
 ## 2. Streaming: TTFT < 200ms
 
@@ -372,7 +372,7 @@ While open, **all requests fail fast** (no blocking), protecting downstream.
 
 5 things you must do:
 
-1. ✅ **Prompt cache optimization**: stable content first, pad to 1024 tokens
+1. ✅ **Prompt cache optimization**: stable content first, pad to ≥ 1024 tokens (gpt-4o) / ≥ 2048 tokens (gpt-4o-mini)
 2. ✅ **Full-stack streaming**: TTFT < 500ms
 3. ✅ **Semantic cache**: 50%+ hit rate for FAQ scenarios
 4. ✅ **Model routing**: 80% simple queries use mini models
@@ -390,7 +390,7 @@ While open, **all requests fail fast** (no blocking), protecting downstream.
 
 Five takeaways:
 
-- **Prompt cache 90% token savings**: stable content first, pad to 1024 tokens.
+- **Prompt cache token savings**: Anthropic 90% / OpenAI 50% on cache hits — stable content first, pad to ≥ 1024 tokens (gpt-4o) or ≥ 2048 tokens (gpt-4o-mini).
 - **Streaming is mandatory**: TTFT drops from 5s to 200ms, massive UX improvement.
 - **Semantic cache 50-80% hit rate**: FAQ / customer service scenarios benefit most.
 - **Model routing saves 50-70%**: 80% of queries on mini models, complex ones escalate.

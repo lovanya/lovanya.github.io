@@ -33,7 +33,7 @@ LLM 应用上线 3 个月后，**90% 的团队都会撞上一堵墙**——账�
 
 <Mermaid client:load caption="图 1：Prompt Cache 命中原理" chart={`flowchart LR
   R[请求] --> PC{前缀匹配?}
-  PC -->|是, 1024+ tokens| Cache[命中缓存<br/>便宜 90%]
+  PC -->|是, 1024+ tokens| Cache[命中缓存<br/>OpenAI 50%<br/>Anthropic 90%]
   PC -->|否| Miss[未命中<br/>全价]
   Cache --> LLM[LLM]
   Miss --> LLM
@@ -42,7 +42,7 @@ LLM 应用上线 3 个月后，**90% 的团队都会撞上一堵墙**——账�
 
 ### OpenAI / Anthropic 原生 Prompt Cache
 
-**OpenAI** 自动缓存任何**>= 1024 tokens** 的 prompt 前缀，命中部分便宜 50%（写入多 50%，读取便宜 50%）。**Anthropic** 类似的 5 分钟 TTL cache 缓存**4 个 breakpoints**。
+**OpenAI** 自动缓存**>= 1024 tokens** 的 prompt 前缀（gpt-4o / gpt-4o 是 1024，**gpt-4o-mini 是 2048**），命中部分**便宜 50%**（cache write 不额外收费，cache read 是基础价 50%）。**Anthropic** 类似的 5 分钟 TTL cache 缓存**4 个 breakpoints**（按模型支持数不同，Sonnet 4 / Opus 4 是 4，Haiku 4 是 4；Claude 3.5 Sonnet 也是 4）。
 
 ```typescript
 // OpenAI / Anthropic 自动处理，无需代码
@@ -68,7 +68,7 @@ const result = await generateText({
 | 60% | 60% × (2000/2500) ≈ **48% 总节省** |
 | 90% | 90% × (2000/2500) ≈ **72% 总节省** |
 
-**关键**：稳定内容（system prompt + few-shot examples + 长期上下文）放最前面，**至少凑够 1024 tokens** 让 cache 生效。
+**关键**：稳定内容（system prompt + few-shot examples + 长期上下文）放最前面，**至少凑够 cache 阈值**——gpt-4o 是 1024 tokens，gpt-4o-mini 是 2048 tokens。
 
 ## 二、Streaming：首字延迟 < 200ms
 
@@ -376,7 +376,7 @@ const result = await breaker.fire(() => callProvider(prompt));
 
 5 件事必做：
 
-1. ✅ **Prompt Cache 优化**：稳定内容放最前面，至少 1024 tokens
+1. ✅ **Prompt Cache 优化**：稳定内容放最前面，gpt-4o ≥ 1024 tokens / gpt-4o-mini ≥ 2048 tokens
 2. ✅ **全链路流式**：TTFT < 500ms
 3. ✅ **Semantic Cache**：FAQ 类场景命中率 50%+
 4. ✅ **模型路由**：80% 简单 query 用 mini 模型
@@ -394,7 +394,7 @@ const result = await breaker.fire(() => callProvider(prompt));
 
 5 个 takeaway：
 
-- **Prompt Cache 90% token 节省**：稳定内容放最前面凑够 1024 tokens。
+- **Prompt Cache 节省 token 成本**：稳定内容放最前面，凑够模型 cache 阈值（gpt-4o 1024 / gpt-4o-mini 2048）。
 - **Streaming 是必做**：TTFT 从 5s 降到 200ms，用户体验质变。
 - **Semantic Cache 50-80% 命中**：FAQ / 客服场景收益最大。
 - **模型路由省 50-70%**：80% query 用 mini 模型，复杂 query 才升级。

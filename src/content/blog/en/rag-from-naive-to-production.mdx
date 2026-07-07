@@ -224,7 +224,7 @@ After the demo works, engineering has to solve five more problems:
 Every query needs embed (50ms) + retrieve (50ms) + LLM generate (1-3s). **Optimizations**:
 
 - **Embedding cache**: cache query embeddings (30%+ hit rate because many queries repeat)
-- **Prompt cache**: OpenAI / Anthropic cache repeated prefixes — 90% cost + latency savings
+- **Prompt cache**: OpenAI / Anthropic cache repeated prefixes — **Anthropic 90% off, OpenAI 50% off** on cache hits
 - **Pre-warm**: pre-compute embeddings for the top high-frequency queries
 
 ### Problem 2: Retrieval Quality Monitoring

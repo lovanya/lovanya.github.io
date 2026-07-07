@@ -1,0 +1,31 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - navigation [ref=e4]:
+      - link "<林健 />" [ref=e5]:
+        - /url: /
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "首页" [ref=e9]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "博客" [ref=e11]:
+              - /url: /blog
+          - listitem [ref=e12]:
+            - link "关于我" [ref=e13]:
+              - /url: /about
+        - generic [ref=e14]:
+          - link "Switch to English" [ref=e15]:
+            - /url: /en/test-mermaid
+            - text: EN
+          - button "Toggle theme" [ref=e16]:
+            - img [ref=e17]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - heading "Mermaid Smoke Test" [level=1] [ref=e21]
+      - figure "A simple flowchart to verify the renderer" [ref=e23]:
+        - generic [ref=e25]: A simple flowchart to verify the renderer
+  - contentinfo [ref=e26]:
+    - generic [ref=e28]:
+      - paragraph [ref=e29]: © 2026 林健. 版权所有
+      - paragraph [ref=e30]: // 由 Astro 驱动

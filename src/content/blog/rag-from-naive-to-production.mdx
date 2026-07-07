@@ -223,7 +223,7 @@ Demo 跑通后，工程化要解决 5 个问题：
 每次 query 都要先 embed（50ms）+ 检索（50ms）+ LLM 生成（1-3s）。**优化**：
 
 - **Embedding 缓存**：query embedding 缓存（命中率 30%+ 因为很多 query 重复）
-- **Prompt cache**：OpenAI / Anthropic 对重复 prefix 自动 cache，节省 90% 成本 + 延迟
+- **Prompt cache**：OpenAI / Anthropic 对重复 prefix 自动 cache（**Anthropic 命中便宜 90%，OpenAI 便宜 50%**），省成本 + 延迟
 - **Pre-warm**：高频 query 提前算好 embedding
 
 ### 问题 2：检索质量监控

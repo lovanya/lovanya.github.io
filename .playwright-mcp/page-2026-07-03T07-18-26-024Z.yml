@@ -1,0 +1,194 @@
+- generic [active] [ref=f126e1]:
+  - banner [ref=f126e2]:
+    - navigation [ref=f126e4]:
+      - link "<林健 />" [ref=f126e5]:
+        - /url: /
+      - generic [ref=f126e6]:
+        - list [ref=f126e7]:
+          - listitem [ref=f126e8]:
+            - link "首页" [ref=f126e9]:
+              - /url: /
+          - listitem [ref=f126e10]:
+            - link "博客" [ref=f126e11]:
+              - /url: /blog
+          - listitem [ref=f126e12]:
+            - link "关于我" [ref=f126e13]:
+              - /url: /about
+        - generic [ref=f126e14]:
+          - link "Switch to English" [ref=f126e15]:
+            - /url: /en/blog
+            - text: EN
+          - button "Toggle theme" [ref=f126e16]:
+            - img [ref=f126e17]
+  - main [ref=f126e19]:
+    - generic [ref=f126e21]:
+      - generic [ref=f126e22]:
+        - heading "博客" [level=1] [ref=f126e23]
+        - paragraph [ref=f126e24]: 分享 Web 开发、AI 工程化与架构实践
+      - generic [ref=f126e25]:
+        - generic [ref=f126e26]:
+          - img
+          - searchbox "搜索博客" [ref=f126e27]
+        - generic [ref=f126e28]:
+          - button "全部 (7)" [ref=f126e29]
+          - button "#ai-engineering (3)" [ref=f126e30]
+          - button "#browser (1)" [ref=f126e31]
+          - button "#database (1)" [ref=f126e32]
+          - button "#git (1)" [ref=f126e33]
+          - button "#html5 (1)" [ref=f126e34]
+          - button "#javascript (1)" [ref=f126e35]
+          - button "#llm (3)" [ref=f126e36]
+          - button "#macos (3)" [ref=f126e37]
+          - button "#mongodb (1)" [ref=f126e38]
+          - button "#prompt-engineering (1)" [ref=f126e39]
+          - button "#selection (1)" [ref=f126e40]
+          - button "#terminal (2)" [ref=f126e41]
+          - button "#transformer (1)" [ref=f126e42]
+          - button "#zsh (1)" [ref=f126e43]
+        - generic [ref=f126e45]: 7 篇文章
+      - generic [ref=f126e46]:
+        - article [ref=f126e47]:
+          - link "> 2026年7月3日 · 1 min 大模型入门：Transformer 与 LLM 是怎么工作的 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚" [ref=f126e48]:
+            - /url: /blog/llm-fundamentals
+            - generic [ref=f126e49]:
+              - generic [ref=f126e50]: ">"
+              - time [ref=f126e51]: 2026年7月3日
+              - generic [ref=f126e52]: · 1 min
+            - heading "大模型入门：Transformer 与 LLM 是怎么工作的" [level=2] [ref=f126e53]
+            - paragraph [ref=f126e54]: 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚
+          - generic [ref=f126e55]:
+            - link:
+              - /url: /blog/llm-fundamentals
+            - link "#llm" [ref=f126e56]:
+              - /url: /blog?tag=llm
+            - link "#ai-engineering" [ref=f126e57]:
+              - /url: /blog?tag=ai-engineering
+            - link "#transformer" [ref=f126e58]:
+              - /url: /blog?tag=transformer
+        - article [ref=f126e59]:
+          - link "> 2026年7月3日 · 1 min Token、Context Window 与 Prompt Engineering 核心模式 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式" [ref=f126e60]:
+            - /url: /blog/tokens-context-and-prompts
+            - generic [ref=f126e61]:
+              - generic [ref=f126e62]: ">"
+              - time [ref=f126e63]: 2026年7月3日
+              - generic [ref=f126e64]: · 1 min
+            - heading "Token、Context Window 与 Prompt Engineering 核心模式" [level=2] [ref=f126e65]
+            - paragraph [ref=f126e66]: 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式
+          - generic [ref=f126e67]:
+            - link:
+              - /url: /blog/tokens-context-and-prompts
+            - link "#llm" [ref=f126e68]:
+              - /url: /blog?tag=llm
+            - link "#ai-engineering" [ref=f126e69]:
+              - /url: /blog?tag=ai-engineering
+            - link "#prompt-engineering" [ref=f126e70]:
+              - /url: /blog?tag=prompt-engineering
+        - article [ref=f126e71]:
+          - link "> 2026年7月3日 · 1 min 闭源 vs 开源 LLM：架构师选型决策框架 不再\"凭感觉选模型\"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略" [ref=f126e72]:
+            - /url: /blog/llm-selection-framework
+            - generic [ref=f126e73]:
+              - generic [ref=f126e74]: ">"
+              - time [ref=f126e75]: 2026年7月3日
+              - generic [ref=f126e76]: · 1 min
+            - heading "闭源 vs 开源 LLM：架构师选型决策框架" [level=2] [ref=f126e77]
+            - paragraph [ref=f126e78]: 不再"凭感觉选模型"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略
+          - generic [ref=f126e79]:
+            - link:
+              - /url: /blog/llm-selection-framework
+            - link "#llm" [ref=f126e80]:
+              - /url: /blog?tag=llm
+            - link "#ai-engineering" [ref=f126e81]:
+              - /url: /blog?tag=ai-engineering
+            - link "#selection" [ref=f126e82]:
+              - /url: /blog?tag=selection
+        - article [ref=f126e83]:
+          - link "> 2018年12月22日 · 1 min 在 Mac 上安装 Oh My Zsh 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。" [ref=f126e84]:
+            - /url: /blog/oh-my-zsh
+            - generic [ref=f126e85]:
+              - generic [ref=f126e86]: ">"
+              - time [ref=f126e87]: 2018年12月22日
+              - generic [ref=f126e88]: · 1 min
+            - heading "在 Mac 上安装 Oh My Zsh" [level=2] [ref=f126e89]
+            - paragraph [ref=f126e90]: 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。
+          - generic [ref=f126e91]:
+            - link:
+              - /url: /blog/oh-my-zsh
+            - link "#terminal" [ref=f126e92]:
+              - /url: /blog?tag=terminal
+            - link "#macos" [ref=f126e93]:
+              - /url: /blog?tag=macos
+            - link "#zsh" [ref=f126e94]:
+              - /url: /blog?tag=zsh
+        - article [ref=f126e95]:
+          - link "> 2018年11月12日 · 1 min MongoDB 安装教程 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。" [ref=f126e96]:
+            - /url: /blog/mongodb-install
+            - generic [ref=f126e97]:
+              - generic [ref=f126e98]: ">"
+              - time [ref=f126e99]: 2018年11月12日
+              - generic [ref=f126e100]: · 1 min
+            - heading "MongoDB 安装教程" [level=2] [ref=f126e101]
+            - paragraph [ref=f126e102]: 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。
+          - generic [ref=f126e103]:
+            - link:
+              - /url: /blog/mongodb-install
+            - link "#mongodb" [ref=f126e104]:
+              - /url: /blog?tag=mongodb
+            - link "#database" [ref=f126e105]:
+              - /url: /blog?tag=database
+            - link "#macos" [ref=f126e106]:
+              - /url: /blog?tag=macos
+        - article [ref=f126e107]:
+          - link "> 2018年11月12日 · 1 min Local Storage 使用指南 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。" [ref=f126e108]:
+            - /url: /blog/local-storage
+            - generic [ref=f126e109]:
+              - generic [ref=f126e110]: ">"
+              - time [ref=f126e111]: 2018年11月12日
+              - generic [ref=f126e112]: · 1 min
+            - heading "Local Storage 使用指南" [level=2] [ref=f126e113]
+            - paragraph [ref=f126e114]: 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。
+          - generic [ref=f126e115]:
+            - link:
+              - /url: /blog/local-storage
+            - link "#javascript" [ref=f126e116]:
+              - /url: /blog?tag=javascript
+            - link "#html5" [ref=f126e117]:
+              - /url: /blog?tag=html5
+            - link "#browser" [ref=f126e118]:
+              - /url: /blog?tag=browser
+        - article [ref=f126e119]:
+          - link "> 2018年11月12日 · 1 min macOS Git 分支管理 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。" [ref=f126e120]:
+            - /url: /blog/macos-git-branch
+            - generic [ref=f126e121]:
+              - generic [ref=f126e122]: ">"
+              - time [ref=f126e123]: 2018年11月12日
+              - generic [ref=f126e124]: · 1 min
+            - heading "macOS Git 分支管理" [level=2] [ref=f126e125]
+            - paragraph [ref=f126e126]: 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。
+          - generic [ref=f126e127]:
+            - link:
+              - /url: /blog/macos-git-branch
+            - link "#git" [ref=f126e128]:
+              - /url: /blog?tag=git
+            - link "#macos" [ref=f126e129]:
+              - /url: /blog?tag=macos
+            - link "#terminal" [ref=f126e130]:
+              - /url: /blog?tag=terminal
+  - contentinfo [ref=f126e131]:
+    - generic [ref=f126e133]:
+      - paragraph [ref=f126e134]: © 2026 林健. 版权所有
+      - paragraph [ref=f126e135]: // 由 Astro 驱动
+  - generic [ref=f126e138]:
+    - button "Menu" [ref=f126e139]:
+      - img [ref=f126e141]
+      - generic: Menu
+    - button "Inspect" [ref=f126e145]:
+      - img [ref=f126e147]
+      - generic: Inspect
+    - button "Audit" [ref=f126e149]:
+      - generic [ref=f126e150]:
+        - img [ref=f126e151]
+        - img [ref=f126e154]
+      - generic: Audit
+    - button "Settings" [ref=f126e157]:
+      - img [ref=f126e159]
+      - generic: Settings

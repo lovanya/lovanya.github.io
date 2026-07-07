@@ -1,0 +1,452 @@
+- generic [active] [ref=f249e1]:
+  - banner [ref=f249e2]:
+    - navigation [ref=f249e4]:
+      - link "返回首页" [ref=f249e5]:
+        - /url: /
+        - img [ref=f249e6]
+      - list [ref=f249e12]:
+        - listitem [ref=f249e13]:
+          - link "首页" [ref=f249e14]:
+            - /url: /
+        - listitem [ref=f249e15]:
+          - link "博客" [ref=f249e16]:
+            - /url: /blog
+        - listitem [ref=f249e17]:
+          - link "关于我" [ref=f249e18]:
+            - /url: /about
+      - generic [ref=f249e20]:
+        - link "Switch to English" [ref=f249e21]:
+          - /url: /en/blog/agent-architecture-patterns
+          - text: EN
+        - button "Toggle theme" [ref=f249e22]:
+          - img [ref=f249e23]
+  - main [ref=f249e25]:
+    - article [ref=f249e27]:
+      - link "返回列表" [ref=f249e28]:
+        - /url: /blog
+        - img [ref=f249e29]
+        - generic [ref=f249e31]: 返回列表
+      - generic [ref=f249e33]:
+        - heading "Agent 架构：ReAct、Plan-and-Execute 与多 Agent 协作" [level=1] [ref=f249e34]
+        - time [ref=f249e36]: 发布于 2026年7月7日
+      - generic [ref=f249e37]:
+        - heading "前言" [level=2] [ref=f249e38]
+        - paragraph [ref=f249e39]:
+          - text: 上一篇讲了 Function Calling —— LLM 可以调用工具。但生产里 90% 的复杂任务
+          - strong [ref=f249e40]: 不能一次 tool call 解决
+          - text: ：
+        - list [ref=f249e41]:
+          - listitem [ref=f249e42]:
+            - text: “帮我订机票，预算 2000 以内，下午出发” → 需要查机票 → 比较 → 选最优 → 填支付 → 出票，
+            - strong [ref=f249e43]: 5+ 步
+          - listitem [ref=f249e44]:
+            - text: “分析上季度销售数据并给老板做汇报 PPT” → 查 DB → 聚合 → 生成图表 → 写大纲 → 排版，
+            - strong [ref=f249e45]: 多步 + 多种工具
+        - paragraph [ref=f249e46]:
+          - text: 这些任务需要
+          - strong [ref=f249e47]: Agent
+          - text: —— 一个能
+          - strong [ref=f249e48]: 自主决定调用哪些工具、按什么顺序、循环多少步
+          - text: 的 LLM 系统。
+        - paragraph [ref=f249e49]: 这一篇覆盖三大主流 agent 架构：
+        - list [ref=f249e50]:
+          - listitem [ref=f249e51]:
+            - strong [ref=f249e52]: ReAct
+            - text: ：最简单的 thought / action / observation 循环
+          - listitem [ref=f249e53]:
+            - strong [ref=f249e54]: Plan-and-Execute
+            - text: ：先规划再执行，适合长链条任务
+          - listitem [ref=f249e55]:
+            - strong [ref=f249e56]: Multi-Agent
+            - text: ：拆分子任务，多个 agent 协作
+        - heading "一、ReAct：thought / action / observation 循环" [level=2] [ref=f249e57]
+        - paragraph [ref=f249e58]:
+          - link "ReAct" [ref=f249e59]:
+            - /url: https://arxiv.org/abs/2210.03629
+          - text: （Yao et al. 2022，ICLR 2023）的核心思想是让 LLM
+          - strong [ref=f249e60]: 交替生成推理和动作
+          - text: ：
+        - code [ref=f249e62]:
+          - generic [ref=f249e63]: "Thought 1: 我需要先查机票价格"
+          - generic [ref=f249e64]: "Action 1: search_flight({from: \"PEK\", to: \"SHA\", date: \"2026-07-15\"})"
+          - generic [ref=f249e65]: "Observation 1: 最低价 ¥1200（东航 MU5101）"
+          - generic [ref=f249e66]: "Thought 2: 价格在预算内，再看看具体航班时段"
+          - generic [ref=f249e67]: "Action 2: get_flight_details({flight: \"MU5101\"})"
+          - generic [ref=f249e68]: "Observation 2: 14:30 出发，17:00 到达"
+          - generic [ref=f249e69]: "Thought 3: 时段合适，可以出票"
+          - generic [ref=f249e70]: "Action 3: book_flight({flight: \"MU5101\", passenger: \"...\"})"
+          - generic [ref=f249e71]: "Observation 3: 订单确认：MU5101，¥1200"
+          - generic [ref=f249e72]: "Thought 4: 任务完成"
+          - generic [ref=f249e73]: "Final Answer: 已成功预订 7/15 北京-上海 MU5101，¥1200"
+        - figure "图 1：ReAct 循环" [ref=f249e75]:
+          - document [ref=f249e77]:
+            - generic [ref=f249e79]:
+              - generic [ref=f249e84]:
+                - paragraph [ref=f249e90]: 否
+                - paragraph [ref=f249e96]: 是
+              - generic [ref=f249e97]:
+                - paragraph [ref=f249e104]: Query
+                - paragraph [ref=f249e111]:
+                  - text: Thought
+                  - text: 我需要做什么
+                - paragraph [ref=f249e118]:
+                  - text: Action
+                  - text: 调用工具
+                - paragraph [ref=f249e125]:
+                  - text: Observation
+                  - text: 工具结果
+                - paragraph [ref=f249e132]: 完成了吗?
+                - paragraph [ref=f249e139]: Final Answer
+          - generic [ref=f249e140]: 图 1：ReAct 循环
+        - heading "代码实现" [level=3] [ref=f249e141]
+        - paragraph [ref=f249e142]: Vercel AI SDK + 自定义 ReAct：
+        - code [ref=f249e144]:
+          - generic [ref=f249e145]: "import { generateText, tool, isStepCount } from 'ai';"
+          - generic [ref=f249e146]: "import { openai } from '@ai-sdk/openai';"
+          - generic [ref=f249e147]: "import { z } from 'zod';"
+          - generic [ref=f249e148]: "const result = await generateText({"
+          - generic [ref=f249e149]: "model: openai('gpt-4o'),"
+          - generic [ref=f249e150]: "system: `You are a travel booking agent. For each turn:"
+          - generic [ref=f249e151]: 1. State your Thought (what to do next)
+          - generic [ref=f249e152]: 2. Take an Action (call a tool)
+          - generic [ref=f249e153]: 3. Receive Observation (tool result)
+          - generic [ref=f249e154]: 4. Repeat until done
+          - generic [ref=f249e155]: "End with a clear final answer when the task is complete.`,"
+          - generic [ref=f249e156]: "tools: {"
+          - generic [ref=f249e157]: "searchFlight: tool({ /* ... */ }),"
+          - generic [ref=f249e158]: "getFlightDetails: tool({ /* ... */ }),"
+          - generic [ref=f249e159]: "bookFlight: tool({ /* ... */ }),"
+          - generic [ref=f249e160]: "},"
+          - generic [ref=f249e161]: "stopWhen: isStepCount(10), // 最多 10 步"
+          - generic [ref=f249e162]: "prompt: userQuery,"
+          - generic [ref=f249e163]: "});"
+        - paragraph [ref=f249e164]:
+          - text: ReAct
+          - strong [ref=f249e165]: 简单、强大
+          - text: ，但
+          - strong [ref=f249e166]: 对长链条任务效率低
+          - text: ——LLM 每步都要重读所有历史，可能被早期错误带偏。
+        - heading "二、Plan-and-Execute：先规划再执行" [level=2] [ref=f249e167]
+        - paragraph [ref=f249e168]:
+          - text: 对于”5+ 步、有依赖关系的任务”，
+          - strong [ref=f249e169]: 先规划再执行
+          - text: 比 ReAct 更稳：
+        - figure "图 2：Plan-and-Execute 架构" [ref=f249e171]:
+          - document [ref=f249e173]:
+            - generic [ref=f249e175]:
+              - generic [ref=f249e180]:
+                - paragraph [ref=f249e186]: 是
+                - paragraph [ref=f249e192]: 否
+              - generic [ref=f249e193]:
+                - paragraph [ref=f249e200]: Query
+                - paragraph [ref=f249e207]:
+                  - text: Planner
+                  - text: LLM 一次性规划
+                - paragraph [ref=f249e214]:
+                  - text: Plan
+                  - text: 步骤列表
+                - paragraph [ref=f249e221]: Executor Step 1
+                - paragraph [ref=f249e228]: Result 1
+                - paragraph [ref=f249e235]: Executor Step 2
+                - paragraph [ref=f249e242]: Result 2
+                - paragraph [ref=f249e249]: Executor Step 3
+                - paragraph [ref=f249e256]: Result 3
+                - paragraph [ref=f249e263]:
+                  - text: Replan?
+                  - text: 检测失败/偏离
+                - paragraph [ref=f249e270]: Final Answer
+          - generic [ref=f249e271]: 图 2：Plan-and-Execute 架构
+        - heading "实现示例" [level=3] [ref=f249e272]
+        - code [ref=f249e274]:
+          - generic [ref=f249e275]: "import { generateObject, generateText, tool } from 'ai';"
+          - generic [ref=f249e276]: "import { openai } from '@ai-sdk/openai';"
+          - generic [ref=f249e277]: "import { z } from 'zod';"
+          - generic [ref=f249e278]: // 1. Planner 一次性生成计划
+          - generic [ref=f249e279]: "const plan = await generateObject({"
+          - generic [ref=f249e280]: "model: openai('gpt-4o'),"
+          - generic [ref=f249e281]: "schema: z.object({"
+          - generic [ref=f249e282]: "steps: z.array(z.object({"
+          - generic [ref=f249e283]: "id: z.number(),"
+          - generic [ref=f249e284]: "action: z.string(),"
+          - generic [ref=f249e285]: "toolName: z.string(),"
+          - generic [ref=f249e286]: "dependsOn: z.array(z.number()).optional(),"
+          - generic [ref=f249e287]: "})),"
+          - generic [ref=f249e288]: "}),"
+          - generic [ref=f249e289]: "prompt: `将用户任务拆解为可执行的步骤计划。"
+          - generic [ref=f249e290]: "用户任务：${userQuery}`,"
+          - generic [ref=f249e291]: "});"
+          - generic [ref=f249e292]: // 2. 按计划逐步执行（带依赖检查）
+          - generic [ref=f249e293]: const results = new Map();
+          - generic [ref=f249e294]: "for (const step of plan.object.steps) {"
+          - generic [ref=f249e295]: // 等待依赖完成
+          - generic [ref=f249e296]: "if (step.dependsOn) {"
+          - generic [ref=f249e297]: "for (const dep of step.dependsOn) {"
+          - generic [ref=f249e298]: await results.get(dep); // 实际是 await 一个 promise
+          - generic [ref=f249e299]: "}"
+          - generic [ref=f249e300]: "}"
+          - generic [ref=f249e302]: // 执行当前步骤
+          - generic [ref=f249e303]: const stepResult = await executeStep(step, results);
+          - generic [ref=f249e304]: results.set(step.id, stepResult);
+          - generic [ref=f249e305]: "}"
+          - generic [ref=f249e306]: // 3. Replan 兜底（任何步骤失败时重新规划）
+          - generic [ref=f249e307]: // 4. 最终汇总
+          - generic [ref=f249e308]: "const summary = await generateText({"
+          - generic [ref=f249e309]: "model: openai('gpt-4o'),"
+          - generic [ref=f249e310]: "prompt: `基于以下执行结果回答用户：${JSON.stringify(results)}`,"
+          - generic [ref=f249e311]: "});"
+        - paragraph [ref=f249e312]:
+          - strong [ref=f249e313]: 适用场景
+          - text: ：
+        - list [ref=f249e314]:
+          - listitem [ref=f249e315]: 长链条（5+ 步）任务
+          - listitem [ref=f249e316]: 步骤间有数据依赖（“先查 X 再用 X 的结果做 Y”）
+          - listitem [ref=f249e317]: 用户希望看到”计划”（透明度）
+        - paragraph [ref=f249e318]:
+          - strong [ref=f249e319]: 缺点
+          - text: ：单次 plan 可能不准确，需要 replan 机制兜底。
+        - heading "三、Multi-Agent：拆分子任务 + 协作" [level=2] [ref=f249e320]
+        - paragraph [ref=f249e321]:
+          - text: 当任务
+          - strong [ref=f249e322]: 有多个独立子领域
+          - text: 时，拆成多个 agent 比一个超级 agent 更优：
+        - code [ref=f249e324]:
+          - generic [ref=f249e325]: ┌── Researcher Agent ──┐
+          - generic [ref=f249e326]: │ 查机票 + 酒店 │
+          - generic [ref=f249e327]: User Query ── Router ─┼── Budget Agent ──────┼── Aggregator ── Final
+          - generic [ref=f249e328]: │ 控制总预算 │
+          - generic [ref=f249e329]: └── Planner Agent ─────┘
+          - generic [ref=f249e330]: 编排执行顺序
+        - heading "经典实现：Supervisor 模式" [level=3] [ref=f249e331]
+        - code [ref=f249e333]:
+          - generic [ref=f249e334]: // 每个 agent 是一个独立的 system prompt + tools 集合
+          - generic [ref=f249e335]: "const agents = {"
+          - generic [ref=f249e336]: "researcher: new Agent({"
+          - generic [ref=f249e337]: "name: 'Researcher',"
+          - generic [ref=f249e338]: "systemPrompt: '你是研究员，负责查机票和酒店...',"
+          - generic [ref=f249e339]: "tools: [searchFlightTool, searchHotelTool],"
+          - generic [ref=f249e340]: "}),"
+          - generic [ref=f249e341]: "budget: new Agent({"
+          - generic [ref=f249e342]: "name: 'BudgetController',"
+          - generic [ref=f249e343]: "systemPrompt: '你是预算控制器，确保总开销 < ¥2000...',"
+          - generic [ref=f249e344]: "tools: [sumCostsTool, checkBudgetTool],"
+          - generic [ref=f249e345]: "}),"
+          - generic [ref=f249e346]: "planner: new Agent({"
+          - generic [ref=f249e347]: "name: 'Planner',"
+          - generic [ref=f249e348]: "systemPrompt: '你是规划师，把任务拆成步骤...',"
+          - generic [ref=f249e349]: "tools: [], // 纯推理 agent"
+          - generic [ref=f249e350]: "}),"
+          - generic [ref=f249e351]: "};"
+          - generic [ref=f249e352]: // Supervisor 决定下一步调用哪个 agent
+          - generic [ref=f249e353]: "async function supervisor(userQuery: string) {"
+          - generic [ref=f249e354]: "const state = { messages: [], currentAgent: 'planner' };"
+          - generic [ref=f249e356]: "while (!state.done) {"
+          - generic [ref=f249e357]: const agent = agents[state.currentAgent];
+          - generic [ref=f249e358]: const result = await agent.run(state);
+          - generic [ref=f249e359]: state.messages.push(...result.messages);
+          - generic [ref=f249e361]: // Supervisor LLM 决定下一步
+          - generic [ref=f249e362]: "const next = await generateText({"
+          - generic [ref=f249e363]: "model: openai('gpt-4o-mini'),"
+          - generic [ref=f249e364]: "system: `根据当前状态决定下一步调用哪个 agent：researcher / budget / planner / done`,"
+          - generic [ref=f249e365]: "prompt: JSON.stringify(state),"
+          - generic [ref=f249e366]: "});"
+          - generic [ref=f249e368]: state.currentAgent = parseNextAgent(next.text);
+          - generic [ref=f249e369]: if (state.currentAgent === 'done') state.done = true;
+          - generic [ref=f249e370]: "}"
+          - generic [ref=f249e372]: return state.messages;
+          - generic [ref=f249e373]: "}"
+        - heading "Multi-Agent 的 3 种主流模式" [level=3] [ref=f249e374]
+        - list [ref=f249e375]:
+          - listitem [ref=f249e376]:
+            - strong [ref=f249e377]: Supervisor（主管）
+            - text: ：中心化协调，适合
+            - strong [ref=f249e378]: 异构任务
+          - listitem [ref=f249e379]:
+            - strong [ref=f249e380]: Swarm（群）
+            - text: ：agent 之间直接对话（
+            - link "LangGraph Swarm" [ref=f249e381]:
+              - /url: https://docs.langchain.com/oss/python/langgraph/overview
+            - text: ），适合
+            - strong [ref=f249e382]: 动态交接
+          - listitem [ref=f249e383]:
+            - strong [ref=f249e384]: Hierarchical（分层）
+            - text: ：agent 嵌套 agent（如一个 supervisor 管 3 个 sub-agent，每个 sub-agent 又管 3 个 worker），适合
+            - strong [ref=f249e385]: 大规模任务
+        - heading "Multi-Agent 的陷阱" [level=3] [ref=f249e386]
+        - list [ref=f249e387]:
+          - listitem [ref=f249e388]:
+            - strong [ref=f249e389]: Token 爆炸
+            - text: ：多个 agent 累积 context 可能超过模型限制
+          - listitem [ref=f249e390]:
+            - strong [ref=f249e391]: 协调死锁
+            - text: ：A 等 B 的输出，B 等 A 的输出
+          - listitem [ref=f249e392]:
+            - strong [ref=f249e393]: 职责不清
+            - text: ：边界模糊导致重复工作
+        - paragraph [ref=f249e394]:
+          - strong [ref=f249e395]: 经验法则
+          - text: ：先 ReAct / Plan-and-Execute，
+          - strong [ref=f249e396]: 真正需要时
+          - text: 才上 Multi-Agent。
+        - heading "四、LangGraph：状态机式的 agent 编排" [level=2] [ref=f249e397]
+        - paragraph [ref=f249e398]:
+          - link "LangGraph" [ref=f249e399]:
+            - /url: https://docs.langchain.com/oss/python/langgraph/overview
+          - text: 是 LangChain 的底层编排框架，把 agent 抽象成
+          - strong [ref=f249e400]: 有向图（state graph）
+          - text: ：
+        - code [ref=f249e402]:
+          - generic [ref=f249e403]: from langgraph.graph import StateGraph, START, END
+          - generic [ref=f249e404]: from typing import TypedDict
+          - generic [ref=f249e405]: "class State(TypedDict):"
+          - generic [ref=f249e406]: "messages: list"
+          - generic [ref=f249e407]: "next_step: str"
+          - generic [ref=f249e408]: "def planner(state: State):"
+          - generic [ref=f249e409]: "# 决定下一步"
+          - generic [ref=f249e410]: "return {\"next_step\": \"researcher\"}"
+          - generic [ref=f249e411]: "def researcher(state: State):"
+          - generic [ref=f249e412]: "# 查机票"
+          - generic [ref=f249e413]: "return {\"messages\": state[\"messages\"] + [...]}"
+          - generic [ref=f249e414]: "def should_continue(state: State) -> str:"
+          - generic [ref=f249e415]: "if state[\"next_step\"] == \"done\":"
+          - generic [ref=f249e416]: return END
+          - generic [ref=f249e417]: return state["next_step"]
+          - generic [ref=f249e418]: graph = (
+          - generic [ref=f249e419]: StateGraph(State)
+          - generic [ref=f249e420]: .add_node("planner", planner)
+          - generic [ref=f249e421]: .add_node("researcher", researcher)
+          - generic [ref=f249e422]: .add_edge(START, "planner")
+          - generic [ref=f249e423]: .add_conditional_edges("planner", should_continue)
+          - generic [ref=f249e424]: .compile()
+          - generic [ref=f249e425]: )
+        - paragraph [ref=f249e426]: LangGraph 的核心价值：
+        - list [ref=f249e427]:
+          - listitem [ref=f249e428]:
+            - strong [ref=f249e429]: 状态持久化
+            - text: ：agent 可以暂停 / 恢复（用于 human-in-the-loop）
+          - listitem [ref=f249e430]:
+            - strong [ref=f249e431]: 可调试
+            - text: ：每一步的状态变化都可 trace
+          - listitem [ref=f249e432]:
+            - strong [ref=f249e433]: 生产可用
+            - text: ：内置 checkpointing、错误恢复、并行执行
+        - heading "五、选型决策树" [level=2] [ref=f249e434]
+        - figure "图 3：Agent 架构选型决策" [ref=f249e436]:
+          - document [ref=f249e438]:
+            - generic [ref=f249e440]:
+              - generic [ref=f249e448]:
+                - paragraph [ref=f249e454]: 1-3 步
+                - paragraph [ref=f249e460]: 5+ 步, 有依赖
+                - paragraph [ref=f249e466]: 多个独立子任务
+                - paragraph [ref=f249e472]: 是
+                - paragraph [ref=f249e478]: 否
+                - paragraph [ref=f249e484]: 是
+                - paragraph [ref=f249e490]: 否
+              - generic [ref=f249e491]:
+                - paragraph [ref=f249e498]: 选 Agent 架构
+                - paragraph [ref=f249e505]: 任务多复杂?
+                - paragraph [ref=f249e512]: ReAct 单 agent
+                - paragraph [ref=f249e519]: Plan-and-Execute
+                - paragraph [ref=f249e526]: Multi-Agent
+                - paragraph [ref=f249e533]: 需要 human 介入?
+                - paragraph [ref=f249e540]:
+                  - text: LangGraph
+                  - text: 状态可暂停
+                - paragraph [ref=f249e547]: 需要可调试 / 可观测?
+                - paragraph [ref=f249e554]: 按上面选
+          - generic [ref=f249e555]: 图 3：Agent 架构选型决策
+        - heading "踩坑提醒" [level=2] [ref=f249e556]
+        - list [ref=f249e557]:
+          - listitem [ref=f249e558]:
+            - strong [ref=f249e559]: 不要从 Multi-Agent 起步
+            - text: 。80% 的任务单 agent + 好的 ReAct 就够。先简单后复杂。
+          - listitem [ref=f249e560]:
+            - strong [ref=f249e561]:
+              - text: 永远设
+              - code [ref=f249e562]: stopWhen
+            - text: 。没有 step 限制的 agent 会
+            - strong [ref=f249e563]: 无限循环烧光 token
+            - text: 。
+          - listitem [ref=f249e564]:
+            - strong [ref=f249e565]: 每个 agent 的 system prompt 要明确职责边界
+            - text: 。“你做 A，不要做 B，否则会出错” 这种边界说明比泛泛”你是一个有用的助手”好 10 倍。
+          - listitem [ref=f249e566]:
+            - strong [ref=f249e567]: Multi-Agent 需要共享状态层
+            - text: 。没有统一的 state store，agent 之间无法有效协作（经典 anti-pattern）。
+          - listitem [ref=f249e568]:
+            - strong [ref=f249e569]: tool 失败率高的 agent 必须有 retry + fallback
+            - text: 。真实 API 不可能 100% 可靠，没有降级方案的 agent 是定时炸弹。
+        - heading "总结" [level=2] [ref=f249e570]
+        - paragraph [ref=f249e571]: 5 个 takeaway：
+        - list [ref=f249e572]:
+          - listitem [ref=f249e573]:
+            - strong [ref=f249e574]: ReAct
+            - text: ：最简单的 thought / action / observation 循环，适合 1-5 步任务。
+            - strong [ref=f249e575]: 80% 场景的默认选择
+            - text: 。
+          - listitem [ref=f249e576]:
+            - strong [ref=f249e577]: Plan-and-Execute
+            - text: ：先规划再执行，适合 5+ 步、有依赖的任务。
+            - strong [ref=f249e578]: 需要 replan 兜底
+            - text: 。
+          - listitem [ref=f249e579]:
+            - strong [ref=f249e580]: Multi-Agent
+            - text: ：拆分子任务 + 协调，适合异构 / 大规模任务。
+            - strong [ref=f249e581]: 架构复杂，慎用
+            - text: 。
+          - listitem [ref=f249e582]:
+            - strong [ref=f249e583]: LangGraph
+            - text: ：状态机式编排，
+            - strong [ref=f249e584]: 生产级 agent 必备
+            - text: ，支持持久化、human-in-the-loop、可调试。
+          - listitem [ref=f249e585]:
+            - strong [ref=f249e586]: 永远设 stopWhen + retry + fallback
+            - text: 。Agent 是 LLM + 工具调用，
+            - strong [ref=f249e587]: 任何一环不可靠都会让 agent 失败
+            - text: 。
+        - paragraph [ref=f249e588]:
+          - strong [ref=f249e589]: 下一篇
+          - text: ：
+          - link "LLM 应用的 Memory 系统设计" [ref=f249e590]:
+            - /url: /blog/llm-memory-systems
+          - text: — 进入工程化三件套。
+        - heading "参考资料" [level=2] [ref=f249e591]
+        - list [ref=f249e592]:
+          - listitem [ref=f249e593]:
+            - 'link "ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., 2022)" [ref=f249e594]':
+              - /url: https://arxiv.org/abs/2210.03629
+            - text: — 原始 ReAct 论文，ICLR 2023
+          - listitem [ref=f249e595]:
+            - link "LangGraph Overview" [ref=f249e596]:
+              - /url: https://docs.langchain.com/oss/python/langgraph/overview
+            - text: — 状态机式 agent 编排框架，节点 / 边 / 循环 / 持久化
+          - listitem [ref=f249e597]:
+            - link "Vercel AI SDK — Tools & Tool Calling" [ref=f249e598]:
+              - /url: https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling
+            - text: —
+            - code [ref=f249e599]: stopWhen
+            - text: /
+            - code [ref=f249e600]: isStepCount
+            - text: 多步控制
+      - generic [ref=f249e601]:
+        - heading "评论" [level=3] [ref=f249e602]
+        - iframe [ref=f249e605]:
+          
+  - contentinfo [ref=f249e606]:
+    - generic [ref=f249e608]:
+      - paragraph [ref=f249e609]: © 2026 紫牙. 版权所有
+      - paragraph [ref=f249e610]: // 由 Astro 驱动
+  - generic [ref=f249e613]:
+    - button "Menu" [ref=f249e614]:
+      - img [ref=f249e616]
+      - generic: Menu
+    - button "Inspect" [ref=f249e620]:
+      - img [ref=f249e622]
+      - generic: Inspect
+    - button "Audit" [ref=f249e624]:
+      - generic [ref=f249e625]:
+        - img [ref=f249e626]
+        - img [ref=f249e629]
+      - generic: Audit
+    - button "Settings" [ref=f249e632]:
+      - img [ref=f249e634]
+      - generic: Settings

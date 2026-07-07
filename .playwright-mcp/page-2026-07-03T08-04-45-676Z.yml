@@ -1,0 +1,171 @@
+- generic [active] [ref=f189e1]:
+  - banner [ref=f189e2]:
+    - navigation [ref=f189e4]:
+      - link "返回首页" [ref=f189e5]:
+        - /url: /
+        - img [ref=f189e6]
+      - list [ref=f189e16]:
+        - listitem [ref=f189e17]:
+          - link "首页" [ref=f189e18]:
+            - /url: /
+        - listitem [ref=f189e19]:
+          - link "博客" [ref=f189e20]:
+            - /url: /blog
+        - listitem [ref=f189e21]:
+          - link "关于我" [ref=f189e22]:
+            - /url: /about
+      - generic [ref=f189e24]:
+        - link "Switch to English" [ref=f189e25]:
+          - /url: /en/blog
+          - text: EN
+        - button "Toggle theme" [ref=f189e26]:
+          - img [ref=f189e27]
+  - main [ref=f189e29]:
+    - generic [ref=f189e31]:
+      - generic [ref=f189e32]:
+        - heading "博客" [level=1] [ref=f189e33]
+        - paragraph [ref=f189e34]: 分享 Web 开发、AI 工程化与架构实践
+      - generic [ref=f189e35]:
+        - generic [ref=f189e36]:
+          - img
+          - searchbox "搜索博客" [ref=f189e37]
+        - generic [ref=f189e38]:
+          - button "全部 (7)" [ref=f189e39]
+          - button "ai-engineering (3)" [ref=f189e40]
+          - button "browser (1)" [ref=f189e41]
+          - button "database (1)" [ref=f189e42]
+          - button "git (1)" [ref=f189e43]
+          - button "html5 (1)" [ref=f189e44]
+          - button "javascript (1)" [ref=f189e45]
+          - button "llm (3)" [ref=f189e46]
+          - button "macos (3)" [ref=f189e47]
+          - button "mongodb (1)" [ref=f189e48]
+          - button "prompt-engineering (1)" [ref=f189e49]
+          - button "selection (1)" [ref=f189e50]
+          - button "terminal (2)" [ref=f189e51]
+          - button "transformer (1)" [ref=f189e52]
+          - button "zsh (1)" [ref=f189e53]
+        - generic [ref=f189e55]: 7 篇文章
+      - generic [ref=f189e56]:
+        - article [ref=f189e57]:
+          - generic [ref=f189e58]:
+            - generic [ref=f189e59]: ">"
+            - time [ref=f189e60]: 2026年7月3日
+            - generic [ref=f189e61]: · 1 min
+          - link "大模型入门：Transformer 与 LLM 是怎么工作的" [ref=f189e62]:
+            - /url: /blog/llm-fundamentals
+          - paragraph [ref=f189e63]: 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚
+          - generic [ref=f189e64]:
+            - link "llm" [ref=f189e65]:
+              - /url: /blog?tag=llm
+            - link "ai-engineering" [ref=f189e66]:
+              - /url: /blog?tag=ai-engineering
+            - link "transformer" [ref=f189e67]:
+              - /url: /blog?tag=transformer
+        - article [ref=f189e68]:
+          - generic [ref=f189e69]:
+            - generic [ref=f189e70]: ">"
+            - time [ref=f189e71]: 2026年7月3日
+            - generic [ref=f189e72]: · 1 min
+          - link "Token、Context Window 与 Prompt Engineering 核心模式" [ref=f189e73]:
+            - /url: /blog/tokens-context-and-prompts
+          - paragraph [ref=f189e74]: 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式
+          - generic [ref=f189e75]:
+            - link "llm" [ref=f189e76]:
+              - /url: /blog?tag=llm
+            - link "ai-engineering" [ref=f189e77]:
+              - /url: /blog?tag=ai-engineering
+            - link "prompt-engineering" [ref=f189e78]:
+              - /url: /blog?tag=prompt-engineering
+        - article [ref=f189e79]:
+          - generic [ref=f189e80]:
+            - generic [ref=f189e81]: ">"
+            - time [ref=f189e82]: 2026年7月3日
+            - generic [ref=f189e83]: · 1 min
+          - link "闭源 vs 开源 LLM：架构师选型决策框架" [ref=f189e84]:
+            - /url: /blog/llm-selection-framework
+          - paragraph [ref=f189e85]: 不再"凭感觉选模型"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略
+          - generic [ref=f189e86]:
+            - link "llm" [ref=f189e87]:
+              - /url: /blog?tag=llm
+            - link "ai-engineering" [ref=f189e88]:
+              - /url: /blog?tag=ai-engineering
+            - link "selection" [ref=f189e89]:
+              - /url: /blog?tag=selection
+        - article [ref=f189e90]:
+          - generic [ref=f189e91]:
+            - generic [ref=f189e92]: ">"
+            - time [ref=f189e93]: 2018年12月22日
+            - generic [ref=f189e94]: · 1 min
+          - link "在 Mac 上安装 Oh My Zsh" [ref=f189e95]:
+            - /url: /blog/oh-my-zsh
+          - paragraph [ref=f189e96]: 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。
+          - generic [ref=f189e97]:
+            - link "terminal" [ref=f189e98]:
+              - /url: /blog?tag=terminal
+            - link "macos" [ref=f189e99]:
+              - /url: /blog?tag=macos
+            - link "zsh" [ref=f189e100]:
+              - /url: /blog?tag=zsh
+        - article [ref=f189e101]:
+          - generic [ref=f189e102]:
+            - generic [ref=f189e103]: ">"
+            - time [ref=f189e104]: 2018年11月12日
+            - generic [ref=f189e105]: · 1 min
+          - link "MongoDB 安装教程" [ref=f189e106]:
+            - /url: /blog/mongodb-install
+          - paragraph [ref=f189e107]: 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。
+          - generic [ref=f189e108]:
+            - link "mongodb" [ref=f189e109]:
+              - /url: /blog?tag=mongodb
+            - link "database" [ref=f189e110]:
+              - /url: /blog?tag=database
+            - link "macos" [ref=f189e111]:
+              - /url: /blog?tag=macos
+        - article [ref=f189e112]:
+          - generic [ref=f189e113]:
+            - generic [ref=f189e114]: ">"
+            - time [ref=f189e115]: 2018年11月12日
+            - generic [ref=f189e116]: · 1 min
+          - link "Local Storage 使用指南" [ref=f189e117]:
+            - /url: /blog/local-storage
+          - paragraph [ref=f189e118]: 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。
+          - generic [ref=f189e119]:
+            - link "javascript" [ref=f189e120]:
+              - /url: /blog?tag=javascript
+            - link "html5" [ref=f189e121]:
+              - /url: /blog?tag=html5
+            - link "browser" [ref=f189e122]:
+              - /url: /blog?tag=browser
+        - article [ref=f189e123]:
+          - generic [ref=f189e124]:
+            - generic [ref=f189e125]: ">"
+            - time [ref=f189e126]: 2018年11月12日
+            - generic [ref=f189e127]: · 1 min
+          - link "macOS Git 分支管理" [ref=f189e128]:
+            - /url: /blog/macos-git-branch
+          - paragraph [ref=f189e129]: 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。
+          - generic [ref=f189e130]:
+            - link "git" [ref=f189e131]:
+              - /url: /blog?tag=git
+            - link "macos" [ref=f189e132]:
+              - /url: /blog?tag=macos
+            - link "terminal" [ref=f189e133]:
+              - /url: /blog?tag=terminal
+  - contentinfo [ref=f189e134]:
+    - generic [ref=f189e136]:
+      - paragraph [ref=f189e137]: © 2026 紫牙. 版权所有
+      - paragraph [ref=f189e138]: // 由 Astro 驱动
+  - generic [ref=f189e141]:
+    - button "Menu" [ref=f189e142]:
+      - img [ref=f189e144]
+      - generic: Menu
+    - button "Inspect" [ref=f189e148]:
+      - img [ref=f189e150]
+      - generic: Inspect
+    - button "Audit" [ref=f189e152]:
+      - img [ref=f189e154]
+      - generic: Audit
+    - button "Settings" [ref=f189e157]:
+      - img [ref=f189e159]
+      - generic: Settings

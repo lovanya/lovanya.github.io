@@ -1,0 +1,236 @@
+- generic [active] [ref=f110e1]:
+  - banner [ref=f110e2]:
+    - navigation [ref=f110e4]:
+      - link "<林健 />" [ref=f110e5]:
+        - /url: /
+      - generic [ref=f110e6]:
+        - list [ref=f110e7]:
+          - listitem [ref=f110e8]:
+            - link "首页" [ref=f110e9]:
+              - /url: /
+          - listitem [ref=f110e10]:
+            - link "博客" [ref=f110e11]:
+              - /url: /blog
+          - listitem [ref=f110e12]:
+            - link "关于我" [ref=f110e13]:
+              - /url: /about
+        - generic [ref=f110e14]:
+          - link "Switch to English" [ref=f110e15]:
+            - /url: /en/blog
+            - text: EN
+          - button "Toggle theme" [ref=f110e16]:
+            - img [ref=f110e17]
+  - main [ref=f110e19]:
+    - generic [ref=f110e21]:
+      - generic [ref=f110e22]:
+        - heading "博客" [level=1] [ref=f110e23]
+        - paragraph [ref=f110e24]: 分享 Web 开发、AI 工程化与架构实践
+      - generic [ref=f110e25]:
+        - generic [ref=f110e26]:
+          - img
+          - searchbox "搜索博客" [ref=f110e27]
+        - generic [ref=f110e28]:
+          - button "全部 (7)" [ref=f110e29]
+          - button "#ai-engineering (3)" [ref=f110e30]
+          - button "#browser (1)" [ref=f110e31]
+          - button "#database (1)" [ref=f110e32]
+          - button "#git (1)" [ref=f110e33]
+          - button "#html5 (1)" [ref=f110e34]
+          - button "#javascript (1)" [ref=f110e35]
+          - button "#llm (3)" [ref=f110e36]
+          - button "#macos (3)" [ref=f110e37]
+          - button "#mongodb (1)" [ref=f110e38]
+          - button "#prompt-engineering (1)" [ref=f110e39]
+          - button "#selection (1)" [ref=f110e40]
+          - button "#terminal (2)" [ref=f110e41]
+          - button "#transformer (1)" [ref=f110e42]
+          - button "#zsh (1)" [ref=f110e43]
+        - generic [ref=f110e45]: 7 篇文章
+      - generic [ref=f110e46]:
+        - article [ref=f110e47]:
+          - link [ref=f110e48]:
+            - /url: /blog/llm-fundamentals
+          - generic [ref=f110e49]:
+            - link "> 2026年7月3日 · 1 min 大模型入门：Transformer 与 LLM 是怎么工作的 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚" [ref=f110e50]:
+              - /url: /blog/llm-fundamentals
+              - generic [ref=f110e51]:
+                - generic [ref=f110e52]: ">"
+                - time [ref=f110e53]: 2026年7月3日
+                - generic [ref=f110e54]: · 1 min
+              - heading "大模型入门：Transformer 与 LLM 是怎么工作的" [level=2] [ref=f110e55]
+              - paragraph [ref=f110e56]: 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚
+            - generic [ref=f110e57]:
+              - link:
+                - /url: /blog/llm-fundamentals
+              - link "#llm" [ref=f110e58]:
+                - /url: /blog?tag=llm
+              - link "#ai-engineering" [ref=f110e59]:
+                - /url: /blog?tag=ai-engineering
+              - link "#transformer" [ref=f110e60]:
+                - /url: /blog?tag=transformer
+            - generic [ref=f110e61]:
+              - generic [ref=f110e62]: 阅读全文
+              - generic [ref=f110e63]: →
+        - article [ref=f110e64]:
+          - link [ref=f110e65]:
+            - /url: /blog/tokens-context-and-prompts
+          - generic [ref=f110e66]:
+            - link "> 2026年7月3日 · 1 min Token、Context Window 与 Prompt Engineering 核心模式 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式" [ref=f110e67]:
+              - /url: /blog/tokens-context-and-prompts
+              - generic [ref=f110e68]:
+                - generic [ref=f110e69]: ">"
+                - time [ref=f110e70]: 2026年7月3日
+                - generic [ref=f110e71]: · 1 min
+              - heading "Token、Context Window 与 Prompt Engineering 核心模式" [level=2] [ref=f110e72]
+              - paragraph [ref=f110e73]: 把 LLM 底层知识落地为 prompt 设计技法 — tokenization、context 边界、5 个必会的 prompt 模式
+            - generic [ref=f110e74]:
+              - link:
+                - /url: /blog/tokens-context-and-prompts
+              - link "#llm" [ref=f110e75]:
+                - /url: /blog?tag=llm
+              - link "#ai-engineering" [ref=f110e76]:
+                - /url: /blog?tag=ai-engineering
+              - link "#prompt-engineering" [ref=f110e77]:
+                - /url: /blog?tag=prompt-engineering
+            - generic [ref=f110e78]:
+              - generic [ref=f110e79]: 阅读全文
+              - generic [ref=f110e80]: →
+        - article [ref=f110e81]:
+          - link [ref=f110e82]:
+            - /url: /blog/llm-selection-framework
+          - generic [ref=f110e83]:
+            - link "> 2026年7月3日 · 1 min 闭源 vs 开源 LLM：架构师选型决策框架 不再\"凭感觉选模型\"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略" [ref=f110e84]:
+              - /url: /blog/llm-selection-framework
+              - generic [ref=f110e85]:
+                - generic [ref=f110e86]: ">"
+                - time [ref=f110e87]: 2026年7月3日
+                - generic [ref=f110e88]: · 1 min
+              - heading "闭源 vs 开源 LLM：架构师选型决策框架" [level=2] [ref=f110e89]
+              - paragraph [ref=f110e90]: 不再"凭感觉选模型"——5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略
+            - generic [ref=f110e91]:
+              - link:
+                - /url: /blog/llm-selection-framework
+              - link "#llm" [ref=f110e92]:
+                - /url: /blog?tag=llm
+              - link "#ai-engineering" [ref=f110e93]:
+                - /url: /blog?tag=ai-engineering
+              - link "#selection" [ref=f110e94]:
+                - /url: /blog?tag=selection
+            - generic [ref=f110e95]:
+              - generic [ref=f110e96]: 阅读全文
+              - generic [ref=f110e97]: →
+        - article [ref=f110e98]:
+          - link [ref=f110e99]:
+            - /url: /blog/oh-my-zsh
+          - generic [ref=f110e100]:
+            - link "> 2018年12月22日 · 1 min 在 Mac 上安装 Oh My Zsh 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。" [ref=f110e101]:
+              - /url: /blog/oh-my-zsh
+              - generic [ref=f110e102]:
+                - generic [ref=f110e103]: ">"
+                - time [ref=f110e104]: 2018年12月22日
+                - generic [ref=f110e105]: · 1 min
+              - heading "在 Mac 上安装 Oh My Zsh" [level=2] [ref=f110e106]
+              - paragraph [ref=f110e107]: 详细介绍如何在 macOS 上安装和配置 Oh My Zsh，让你的终端更高效美观。
+            - generic [ref=f110e108]:
+              - link:
+                - /url: /blog/oh-my-zsh
+              - link "#terminal" [ref=f110e109]:
+                - /url: /blog?tag=terminal
+              - link "#macos" [ref=f110e110]:
+                - /url: /blog?tag=macos
+              - link "#zsh" [ref=f110e111]:
+                - /url: /blog?tag=zsh
+            - generic [ref=f110e112]:
+              - generic [ref=f110e113]: 阅读全文
+              - generic [ref=f110e114]: →
+        - article [ref=f110e115]:
+          - link [ref=f110e116]:
+            - /url: /blog/mongodb-install
+          - generic [ref=f110e117]:
+            - link "> 2018年11月12日 · 1 min MongoDB 安装教程 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。" [ref=f110e118]:
+              - /url: /blog/mongodb-install
+              - generic [ref=f110e119]:
+                - generic [ref=f110e120]: ">"
+                - time [ref=f110e121]: 2018年11月12日
+                - generic [ref=f110e122]: · 1 min
+              - heading "MongoDB 安装教程" [level=2] [ref=f110e123]
+              - paragraph [ref=f110e124]: 详细介绍如何在 macOS 上安装和配置 MongoDB，包括基本的使用方法。
+            - generic [ref=f110e125]:
+              - link:
+                - /url: /blog/mongodb-install
+              - link "#mongodb" [ref=f110e126]:
+                - /url: /blog?tag=mongodb
+              - link "#database" [ref=f110e127]:
+                - /url: /blog?tag=database
+              - link "#macos" [ref=f110e128]:
+                - /url: /blog?tag=macos
+            - generic [ref=f110e129]:
+              - generic [ref=f110e130]: 阅读全文
+              - generic [ref=f110e131]: →
+        - article [ref=f110e132]:
+          - link [ref=f110e133]:
+            - /url: /blog/local-storage
+          - generic [ref=f110e134]:
+            - link "> 2018年11月12日 · 1 min Local Storage 使用指南 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。" [ref=f110e135]:
+              - /url: /blog/local-storage
+              - generic [ref=f110e136]:
+                - generic [ref=f110e137]: ">"
+                - time [ref=f110e138]: 2018年11月12日
+                - generic [ref=f110e139]: · 1 min
+              - heading "Local Storage 使用指南" [level=2] [ref=f110e140]
+              - paragraph [ref=f110e141]: 介绍 HTML5 Local Storage 的基本概念、使用方法和最佳实践。
+            - generic [ref=f110e142]:
+              - link:
+                - /url: /blog/local-storage
+              - link "#javascript" [ref=f110e143]:
+                - /url: /blog?tag=javascript
+              - link "#html5" [ref=f110e144]:
+                - /url: /blog?tag=html5
+              - link "#browser" [ref=f110e145]:
+                - /url: /blog?tag=browser
+            - generic [ref=f110e146]:
+              - generic [ref=f110e147]: 阅读全文
+              - generic [ref=f110e148]: →
+        - article [ref=f110e149]:
+          - link [ref=f110e150]:
+            - /url: /blog/macos-git-branch
+          - generic [ref=f110e151]:
+            - link "> 2018年11月12日 · 1 min macOS Git 分支管理 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。" [ref=f110e152]:
+              - /url: /blog/macos-git-branch
+              - generic [ref=f110e153]:
+                - generic [ref=f110e154]: ">"
+                - time [ref=f110e155]: 2018年11月12日
+                - generic [ref=f110e156]: · 1 min
+              - heading "macOS Git 分支管理" [level=2] [ref=f110e157]
+              - paragraph [ref=f110e158]: 介绍 Git 分支管理的基本概念和常用命令，包括创建、切换、合并分支等操作。
+            - generic [ref=f110e159]:
+              - link:
+                - /url: /blog/macos-git-branch
+              - link "#git" [ref=f110e160]:
+                - /url: /blog?tag=git
+              - link "#macos" [ref=f110e161]:
+                - /url: /blog?tag=macos
+              - link "#terminal" [ref=f110e162]:
+                - /url: /blog?tag=terminal
+            - generic [ref=f110e163]:
+              - generic [ref=f110e164]: 阅读全文
+              - generic [ref=f110e165]: →
+  - contentinfo [ref=f110e166]:
+    - generic [ref=f110e168]:
+      - paragraph [ref=f110e169]: © 2026 林健. 版权所有
+      - paragraph [ref=f110e170]: // 由 Astro 驱动
+  - generic [ref=f110e173]:
+    - button "Menu" [ref=f110e174]:
+      - img [ref=f110e176]
+      - generic: Menu
+    - button "Inspect" [ref=f110e180]:
+      - img [ref=f110e182]
+      - generic: Inspect
+    - button "Audit" [ref=f110e184]:
+      - generic [ref=f110e185]:
+        - img [ref=f110e186]
+        - img [ref=f110e189]
+      - generic: Audit
+    - button "Settings" [ref=f110e192]:
+      - img [ref=f110e194]
+      - generic: Settings

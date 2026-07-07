@@ -1,0 +1,203 @@
+- generic [active] [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - navigation [ref=f4e4]:
+      - link "<林健 />" [ref=f4e5]:
+        - /url: /
+      - generic [ref=f4e6]:
+        - list [ref=f4e7]:
+          - listitem [ref=f4e8]:
+            - link "首页" [ref=f4e9]:
+              - /url: /
+          - listitem [ref=f4e10]:
+            - link "博客" [ref=f4e11]:
+              - /url: /blog
+          - listitem [ref=f4e12]:
+            - link "关于我" [ref=f4e13]:
+              - /url: /about
+        - generic [ref=f4e14]:
+          - link "Switch to English" [ref=f4e15]:
+            - /url: /en/blog/local-storage
+            - text: EN
+          - button "Toggle theme" [ref=f4e16]:
+            - img [ref=f4e17]
+  - main [ref=f4e19]:
+    - article [ref=f4e21]:
+      - link "返回列表" [ref=f4e22]:
+        - /url: /blog
+        - img [ref=f4e23]
+        - generic [ref=f4e25]: 返回列表
+      - generic [ref=f4e27]:
+        - heading "Local Storage 使用指南" [level=1] [ref=f4e28]
+        - time [ref=f4e30]: 发布于 2018年11月12日
+      - generic [ref=f4e31]:
+        - heading "前言" [level=2] [ref=f4e32]
+        - paragraph [ref=f4e33]: Local Storage 是 HTML5 提供的客户端存储方案，允许在浏览器中保存键值对数据。本文介绍 Local Storage 的基本概念和使用方法。
+        - heading "基本概念" [level=2] [ref=f4e34]
+        - heading "特性" [level=3] [ref=f4e35]
+        - list [ref=f4e36]:
+          - listitem [ref=f4e37]:
+            - strong [ref=f4e38]: 持久化存储
+            - text: ：数据不会过期，除非手动清除
+          - listitem [ref=f4e39]:
+            - strong [ref=f4e40]: 同源策略
+            - text: ：只能访问同源的数据
+          - listitem [ref=f4e41]:
+            - strong [ref=f4e42]: 容量限制
+            - text: ：通常为 5-10MB
+          - listitem [ref=f4e43]:
+            - strong [ref=f4e44]: 同步 API
+            - text: ：操作会阻塞主线程
+        - heading "与 Session Storage 的区别" [level=3] [ref=f4e45]
+        - table [ref=f4e46]:
+          - rowgroup [ref=f4e47]:
+            - row "特性 Local Storage Session Storage" [ref=f4e48]:
+              - columnheader "特性" [ref=f4e49]
+              - columnheader "Local Storage" [ref=f4e50]
+              - columnheader "Session Storage" [ref=f4e51]
+          - rowgroup [ref=f4e52]:
+            - row "生命周期 永久 会话期间" [ref=f4e53]:
+              - cell "生命周期" [ref=f4e54]
+              - cell "永久" [ref=f4e55]
+              - cell "会话期间" [ref=f4e56]
+            - row "作用域 同源 同源 + 标签页" [ref=f4e57]:
+              - cell "作用域" [ref=f4e58]
+              - cell "同源" [ref=f4e59]
+              - cell "同源 + 标签页" [ref=f4e60]
+            - row "容量 5-10MB 5-10MB" [ref=f4e61]:
+              - cell "容量" [ref=f4e62]
+              - cell "5-10MB" [ref=f4e63]
+              - cell "5-10MB" [ref=f4e64]
+        - heading "基本使用" [level=2] [ref=f4e65]
+        - heading "存储数据" [level=3] [ref=f4e66]
+        - code [ref=f4e68]:
+          - generic [ref=f4e69]: // 存储字符串
+          - generic [ref=f4e70]: localStorage.setItem('username', 'John');
+          - generic [ref=f4e71]: // 存储对象（需要序列化）
+          - generic [ref=f4e72]: "const user = { name: 'John', age: 25 };"
+          - generic [ref=f4e73]: localStorage.setItem('user', JSON.stringify(user));
+          - generic [ref=f4e74]: // 存储数组
+          - generic [ref=f4e75]: const tags = ['javascript', 'html5', 'css3'];
+          - generic [ref=f4e76]: localStorage.setItem('tags', JSON.stringify(tags));
+        - heading "读取数据" [level=3] [ref=f4e77]
+        - code [ref=f4e79]:
+          - generic [ref=f4e80]: // 读取字符串
+          - generic [ref=f4e81]: const username = localStorage.getItem('username');
+          - generic [ref=f4e82]: // 读取对象（需要反序列化）
+          - generic [ref=f4e83]: const user = JSON.parse(localStorage.getItem('user'));
+          - generic [ref=f4e84]: // 读取数组
+          - generic [ref=f4e85]: const tags = JSON.parse(localStorage.getItem('tags'));
+        - heading "删除数据" [level=3] [ref=f4e86]
+        - code [ref=f4e88]:
+          - generic [ref=f4e89]: // 删除单个项
+          - generic [ref=f4e90]: localStorage.removeItem('username');
+          - generic [ref=f4e91]: // 清空所有数据
+          - generic [ref=f4e92]: localStorage.clear();
+        - heading "使用场景" [level=2] [ref=f4e93]
+        - heading "保存用户偏好" [level=3] [ref=f4e94]
+        - code [ref=f4e96]:
+          - generic [ref=f4e97]: // 保存主题设置
+          - generic [ref=f4e98]: localStorage.setItem('theme', 'dark');
+          - generic [ref=f4e99]: // 保存语言设置
+          - generic [ref=f4e100]: localStorage.setItem('language', 'zh-CN');
+        - heading "缓存数据" [level=3] [ref=f4e101]
+        - code [ref=f4e103]:
+          - generic [ref=f4e104]: // 缓存 API 响应
+          - generic [ref=f4e105]: "async function fetchData(url) {"
+          - generic [ref=f4e106]: "const cacheKey = `cache_${url}`;"
+          - generic [ref=f4e107]: const cached = localStorage.getItem(cacheKey);
+          - generic [ref=f4e109]: "if (cached) {"
+          - generic [ref=f4e110]: return JSON.parse(cached);
+          - generic [ref=f4e111]: "}"
+          - generic [ref=f4e113]: const response = await fetch(url);
+          - generic [ref=f4e114]: const data = await response.json();
+          - generic [ref=f4e116]: localStorage.setItem(cacheKey, JSON.stringify(data));
+          - generic [ref=f4e117]: return data;
+          - generic [ref=f4e118]: "}"
+        - heading "表单自动保存" [level=3] [ref=f4e119]
+        - code [ref=f4e121]:
+          - generic [ref=f4e122]: // 保存表单数据
+          - generic [ref=f4e123]: "function saveFormData() {"
+          - generic [ref=f4e124]: "const formData = {"
+          - generic [ref=f4e125]: "name: document.getElementById('name').value,"
+          - generic [ref=f4e126]: "email: document.getElementById('email').value,"
+          - generic [ref=f4e127]: "};"
+          - generic [ref=f4e128]: localStorage.setItem('formData', JSON.stringify(formData));
+          - generic [ref=f4e129]: "}"
+          - generic [ref=f4e130]: // 恢复表单数据
+          - generic [ref=f4e131]: "function restoreFormData() {"
+          - generic [ref=f4e132]: const formData = JSON.parse(localStorage.getItem('formData'));
+          - generic [ref=f4e133]: "if (formData) {"
+          - generic [ref=f4e134]: document.getElementById('name').value = formData.name;
+          - generic [ref=f4e135]: document.getElementById('email').value = formData.email;
+          - generic [ref=f4e136]: "}"
+          - generic [ref=f4e137]: "}"
+        - heading "最佳实践" [level=2] [ref=f4e138]
+        - heading "错误处理" [level=3] [ref=f4e139]
+        - code [ref=f4e141]:
+          - generic [ref=f4e142]: "function safeSetItem(key, value) {"
+          - generic [ref=f4e143]: "try {"
+          - generic [ref=f4e144]: localStorage.setItem(key, value);
+          - generic [ref=f4e145]: return true;
+          - generic [ref=f4e146]: "} catch (e) {"
+          - generic [ref=f4e147]: console.error('localStorage setItem failed:', e);
+          - generic [ref=f4e148]: return false;
+          - generic [ref=f4e149]: "}"
+          - generic [ref=f4e150]: "}"
+          - generic [ref=f4e151]: "function safeGetItem(key) {"
+          - generic [ref=f4e152]: "try {"
+          - generic [ref=f4e153]: return localStorage.getItem(key);
+          - generic [ref=f4e154]: "} catch (e) {"
+          - generic [ref=f4e155]: console.error('localStorage getItem failed:', e);
+          - generic [ref=f4e156]: return null;
+          - generic [ref=f4e157]: "}"
+          - generic [ref=f4e158]: "}"
+        - heading "封装工具类" [level=3] [ref=f4e159]
+        - code [ref=f4e161]:
+          - generic [ref=f4e162]: "const storage = {"
+          - generic [ref=f4e163]: "set(key, value) {"
+          - generic [ref=f4e164]: "try {"
+          - generic [ref=f4e165]: localStorage.setItem(key, JSON.stringify(value));
+          - generic [ref=f4e166]: "} catch (e) {"
+          - generic [ref=f4e167]: console.error('Storage set error:', e);
+          - generic [ref=f4e168]: "}"
+          - generic [ref=f4e169]: "},"
+          - generic [ref=f4e171]: "get(key, defaultValue = null) {"
+          - generic [ref=f4e172]: "try {"
+          - generic [ref=f4e173]: const item = localStorage.getItem(key);
+          - generic [ref=f4e174]: "return item ? JSON.parse(item) : defaultValue;"
+          - generic [ref=f4e175]: "} catch (e) {"
+          - generic [ref=f4e176]: console.error('Storage get error:', e);
+          - generic [ref=f4e177]: return defaultValue;
+          - generic [ref=f4e178]: "}"
+          - generic [ref=f4e179]: "},"
+          - generic [ref=f4e181]: "remove(key) {"
+          - generic [ref=f4e182]: "try {"
+          - generic [ref=f4e183]: localStorage.removeItem(key);
+          - generic [ref=f4e184]: "} catch (e) {"
+          - generic [ref=f4e185]: console.error('Storage remove error:', e);
+          - generic [ref=f4e186]: "}"
+          - generic [ref=f4e187]: "}"
+          - generic [ref=f4e188]: "};"
+        - heading "总结" [level=2] [ref=f4e189]
+        - paragraph [ref=f4e190]: Local Storage 是一个简单易用的客户端存储方案，适合保存用户偏好、缓存数据等场景。使用时要注意错误处理和数据序列化。
+      - generic [ref=f4e191]:
+        - heading "评论" [level=3] [ref=f4e192]
+        - iframe [ref=f4e195]:
+          
+  - contentinfo [ref=f4e196]:
+    - generic [ref=f4e198]:
+      - paragraph [ref=f4e199]: © 2026 林健. 版权所有
+      - paragraph [ref=f4e200]: // 由 Astro 驱动
+  - generic [ref=f4e203]:
+    - button "Menu" [ref=f4e204]:
+      - img [ref=f4e206]
+      - generic: Menu
+    - button "Inspect" [ref=f4e210]:
+      - img [ref=f4e212]
+      - generic: Inspect
+    - button "Audit" [ref=f4e214]:
+      - img [ref=f4e216]
+      - generic: Audit
+    - button "Settings" [ref=f4e219]:
+      - img [ref=f4e221]
+      - generic: Settings
