@@ -1,0 +1,291 @@
+---
+title: "RAG: From Naive RAG to Production-Grade Architecture"
+description: More than 'stuff context into the prompt' — the RAG evolution path, five advanced techniques, and the engineering traps of production RAG.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'rag']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+If you've built anything with LLMs, you've almost certainly hit this wall: the model confidently fabricates facts, cites nonexistent documents, or returns stale API answers. **The model isn't weak — it just hasn't seen your data.**
+
+RAG (Retrieval-Augmented Generation) is the dominant industrial solution. Its premise is simple:
+
+> **Don't let the LLM answer from memory. Look up the source material first, then answer from it.**
+
+But "naive RAG" and "production-grade RAG" are galaxies apart. This post walks that path:
+
+1. **Naive RAG** — the 4-step pipeline, the minimum viable loop
+2. **Five common failure modes**
+3. **Five Advanced RAG techniques** — query rewriting / hybrid search / reranking / chunking / metadata
+4. **Production architecture** — from demo to 100 QPS
+
+## 1. Naive RAG: The 4-Step Pipeline
+
+The term "RAG" was formalized in Facebook AI's 2020 paper [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) (Lewis et al.). The LangChain [RAG tutorial](https://docs.langchain.com/oss/python/langchain/rag) operationalized it as a 4-step standard pipeline:
+
+<Mermaid client:load caption="Figure 1: Naive RAG 4-step pipeline" chart={`flowchart LR
+  D[Source Docs] --> L[Load]
+  L --> S[Split]
+  S --> E[Embed]
+  E --> V[(Vector DB)]
+  Q[User Query] --> QE[Embed]
+  QE --> R[Similarity Search]
+  V --> R
+  R --> P[Prompt Assembly]
+  P --> LLM[LLM Generate]
+  LLM --> A[Answer]`} />
+
+Each step's role:
+
+- **Load**: fetch documents (PDF / web / DB / Notion) into `Document` objects
+- **Split**: chunk into 500-1000 token pieces; too long loses LLM focus, too short loses context
+- **Embed**: turn each chunk into a vector (768-3072 dimensions) via an embedding model
+- **Store**: index chunks + vectors in a vector DB
+
+At inference time: user query → embed → similarity search → top-K chunks → assemble prompt → LLM generates.
+
+**Minimal production-ready TypeScript** (Vercel AI SDK + pgvector):
+
+```typescript
+import { embed, generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Pool } from 'pg';
+
+// 1. Retrieve
+const { embedding } = await embed({
+  model: openai.embedding('text-embedding-3-small'),
+  value: userQuery,
+});
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { rows } = await pool.query(
+  `SELECT content FROM docs
+   ORDER BY embedding <=> $1
+   LIMIT 4`,
+  [JSON.stringify(embedding)]
+);
+
+// 2. Assemble prompt
+const context = rows.map((r) => r.content).join('\n\n---\n\n');
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: 'Only answer based on the provided materials. Do not fabricate.',
+  prompt: `Materials:\n${context}\n\nQuestion: ${userQuery}`,
+});
+```
+
+## 2. Five Failure Modes That Break Naive RAG
+
+You ship the 4-step pipeline, then user complaints start: "it answers the wrong thing." 90% of the time, it's one of these five:
+
+### Pitfall 1: Chunk Size Wrong
+
+- **Too large**: one chunk covers 5 topics; the whole chunk enters the prompt and confuses the LLM
+- **Too small**: each chunk's semantics are incomplete; LLM can't reconstruct context
+
+**Heuristic**: 500-1000 tokens is the sweet spot, **overlap 100-200 tokens** preserves cross-chunk continuity.
+
+### Pitfall 2: Query Phrasing Mismatch
+
+User asks "how do I reset my password" but the docs say "modify login credentials". **Semantically identical, lexically different** — pure vector search fails here.
+
+**Fix**: see technique 1 (query rewriting).
+
+### Pitfall 3: High Similarity ≠ Relevant Answer
+
+Two chunks may be topically similar but **opposite in stance** ("do X" vs "don't do X"). Top-K retrieval poisons the LLM with both.
+
+**Fix**: see technique 3 (reranking).
+
+### Pitfall 4: No Metadata Filtering
+
+In 1M chunks, 60% are stale. The LLM happily answers from outdated sources.
+
+**Fix**: tag every chunk with metadata (`created_at`, `category`, `source`) at index time; **filter on metadata before similarity search**.
+
+### Pitfall 5: Raw Chunks Without Formatting
+
+The LLM gets a wall of text and can't tell where the answer is. Format the context explicitly with XML delimiters:
+
+```xml
+<context>
+<doc id="1" source="api-docs.md">...</doc>
+<doc id="2" source="faq.md">...</doc>
+</context>
+
+Answer the question below using only the <context> above.
+If the materials don't answer it, say "I don't know" rather than fabricating.
+Question: {{user_query}}
+```
+
+## 3. Five Advanced RAG Techniques
+
+Naive RAG's recall and precision are both too low. Advanced RAG systematically upgrades them with five techniques:
+
+### Technique 1: Query Rewriting
+
+Rewrite a colloquial user query into a "document-style" formal query, boosting retrieval match.
+
+```typescript
+// Use an LLM to rewrite the query
+const { text: rewritten } = await generateText({
+  model: openai('gpt-4o-mini'),
+  prompt: `Rewrite the user question to be more document-retrieval-friendly:
+keep the core intent but use more standard terminology.
+
+User question: ${userQuery}
+
+Rewritten query:`,
+});
+
+// Then do vector search with the rewritten query
+```
+
+**Advanced**: HyDE (Hypothetical Document Embeddings) makes the LLM first generate a "hypothetical answer", then embeds *that* and searches with it. **Strong improvement on long-tail queries.**
+
+### Technique 2: Hybrid Search
+
+Vector search is good at semantics but **bad at exact keywords, proper nouns, model numbers**. Hybrid fuses vector search + BM25 keyword search:
+
+```typescript
+// 1. Vector search top 20
+const vectorResults = await vectorSearch(queryEmbedding, 20);
+
+// 2. BM25 keyword search top 20
+const bm25Results = await bm25Search(query, 20);
+
+// 3. Reciprocal Rank Fusion to merge
+const combined = rrfMerge(vectorResults, bm25Results);
+// → take top K for the LLM
+```
+
+The [Pinecone docs](https://docs.pinecone.io/guides/get-started/overview) list hybrid search as the recommended production config. **Pure vector search fails on precision-critical queries** (specific API names, error codes).
+
+### Technique 3: Reranking
+
+Use cheap methods (vector / BM25) to recall top 50-100, then use an expensive cross-encoder model to rerank to top 5-10.
+
+```typescript
+import { cohere } from '@ai-sdk/cohere';
+
+// 1. Coarse retrieval: vector top 50
+const candidates = await vectorSearch(queryEmbedding, 50);
+
+// 2. Fine ranking: cross-encoder reranker
+const reranked = await cohere.rerank({
+  model: 'rerank-english-v3.0',
+  query: userQuery,
+  documents: candidates.map((c) => c.text),
+  topK: 5,
+});
+```
+
+Reranking reorders "loosely relevant" to "actually useful", typically **lifting end-to-end accuracy by 15-30%**.
+
+### Technique 4: Better Chunking
+
+Naive `RecursiveCharacterTextSplitter` slices everything the same way. But **different document types need different chunking**:
+
+| Document Type | Recommended Strategy |
+|---|---|
+| Markdown / structured text | Split on headers (`#` `##`), keep sections intact |
+| Code | Split on function / class boundaries, preserve context comments |
+| Tables | Whole table + table caption (e.g. "2025 product pricing") |
+| Long documents | Sliding window + summary pre-chunk |
+
+**Production rule**: chunk size, overlap, and whether to include the section header — **all three need to be retuned per dataset**. There is no silver bullet.
+
+### Technique 5: Metadata Filtering
+
+Narrow the search space with metadata before doing similarity ranking:
+
+```typescript
+const { rows } = await pool.query(
+  `SELECT content FROM docs
+   WHERE created_at > $2          -- only docs from the past year
+     AND category = $3            -- only API docs
+   ORDER BY embedding <=> $1
+   LIMIT 4`,
+  [JSON.stringify(embedding), '2025-01-01', 'api-docs']
+);
+```
+
+**This step beats techniques 1-4 in importance** — most user questions can be answered by metadata alone; vector search just fills gaps.
+
+## 4. Production Architecture: Demo → 100 QPS
+
+After the demo works, engineering has to solve five more problems:
+
+### Problem 1: Cold-Start Latency
+
+Every query needs embed (50ms) + retrieve (50ms) + LLM generate (1-3s). **Optimizations**:
+
+- **Embedding cache**: cache query embeddings (30%+ hit rate because many queries repeat)
+- **Prompt cache**: OpenAI / Anthropic cache repeated prefixes — 90% cost + latency savings
+- **Pre-warm**: pre-compute embeddings for the top high-frequency queries
+
+### Problem 2: Retrieval Quality Monitoring
+
+In production you don't know **what got retrieved or what the LLM actually used**. You need:
+
+- **Tracing**: LangSmith / Langfuse / OpenLLMetry for end-to-end trace per query
+- **Offline eval set**: 100-200 labeled queries, regression-run regularly
+- **Online metrics**: user feedback, answer citation hit rate
+
+### Problem 3: Incremental Updates
+
+New docs arrive daily; the vector index must update **without downtime**:
+
+```typescript
+// Ingest: write OLTP DB first, async-write to vector DB
+await db.insert({ content, embedding: null, ... });
+queue.push({ type: 'embed', docId });  // background worker handles it
+
+// Worker: embed then upsert to vector DB
+const { embedding } = await embed({ model, value: content });
+await vectorDB.upsert({ id: docId, embedding, content });
+```
+
+### Problem 4: Multi-Tenant Isolation
+
+Different customers' data must never mix. Two patterns:
+
+- **Physical**: one vector index per tenant
+- **Logical**: shared index, every record tagged with `tenant_id`, queries always filter `WHERE tenant_id = ?`
+
+### Problem 5: Cost Control
+
+100 QPS × 1000 tokens × 1M queries/mo = 100B tokens/mo.
+
+- **Tier 1**: cheap model + vector search for high-frequency queries (gpt-4o-mini / Claude Haiku)
+- **Tier 2**: route complex queries to GPT-4o / Opus
+- **Tier 3**: pure chat (no RAG) for casual conversation
+
+## Pitfalls for Senior Architects
+
+1. **Don't dump the whole vector DB into context.** A common mistake is returning 20-50 chunks. **Top-K of 3-8 is optimal**; more chunks just create noise.
+2. **Don't judge retrieval accuracy using a base LLM.** Before swapping chat models, **you must evaluate the embedding model first** (covered in the next post).
+3. **Don't skip source citations.** Every retrieved chunk must carry `doc_id` / `source_url`. The LLM cites its sources, and users can verify the answer.
+4. **Don't assume BM25 is dead.** Hybrid search almost always beats pure vector in production, **especially in domains with proper nouns** (legal / medical / API docs).
+5. **Don't lock in one embedding provider.** Cohere / OpenAI / Voyage / BGE each have different strengths. Choose by use case.
+
+## Summary
+
+Five takeaways:
+
+- **Naive RAG**: 4-step pipeline (Load → Split → Embed → Store), minimum viable but recall and precision are both weak.
+- **5 common pitfalls**: wrong chunk size, query phrasing mismatch, bad retrieval quality, no metadata, unformatted prompts — 90% of failures come from these.
+- **5 Advanced RAG techniques**: query rewriting / hybrid search / reranking / better chunking / metadata filtering. **Priority: metadata > reranking > hybrid > chunking > query rewriting**.
+- **Production architecture**: solve latency (caching), quality (trace + eval), updates (async pipeline), isolation (metadata), cost (tiered routing).
+- **Don't ignore the embedding model**: next post covers how to choose.
+
+**Next up**: [Embedding Models & Vector Database Selection in Practice](/en/blog/embedding-and-vector-db) — the last post in the foundations section, covering RAG's core dependencies.
+
+## References
+
+- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (Lewis et al., 2020)](https://arxiv.org/abs/2005.11401) — the original RAG paper, NeurIPS 2020
+- [LangChain RAG Tutorial](https://docs.langchain.com/oss/python/langchain/rag) — the canonical 4-step pipeline, with the Indexing / Agent / Chain pattern comparison
+- [Pinecone: Vector DB Concepts for Production RAG](https://docs.pinecone.io/guides/get-started/overview) — the recommended hybrid search + reranking + metadata production stack

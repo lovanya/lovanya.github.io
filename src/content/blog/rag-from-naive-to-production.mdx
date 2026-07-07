@@ -1,0 +1,290 @@
+---
+title: "RAG 检索增强生成：从基础 RAG 到生产级架构"
+description: 不止是"塞 context 进 prompt"——RAG 的演进路线、advanced RAG 五大技法、生产架构的工程陷阱
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'rag']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+如果你做过 LLM 应用，几乎肯定踩过这个坑：模型一本正经地编造事实，引用不存在的文档，给出过时的 API 答案。**这些不是模型不够强，而是模型"没看过"你的数据。**
+
+RAG（Retrieval-Augmented Generation，检索增强生成）是工业界最主流的解决方案。它的核心思想很简单：
+
+> **不要让 LLM 凭记忆回答，先去查资料，再基于资料回答。**
+
+但"基础 RAG" 和"生产级 RAG"之间隔着十万八千里。这一篇会按这条路线展开：
+
+1. **基础 RAG**：4 步 pipeline，理解最小可用闭环
+2. **5 个让 RAG 失效的常见坑**
+3. **Advanced RAG 5 大技法**：query rewriting / hybrid search / reranking / chunking / metadata
+4. **生产架构**：从 Demo 到能扛 100 QPS 的工程化改造
+
+## 一、基础 RAG：4 步 pipeline
+
+2020 年 Facebook AI 的论文 [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)（Lewis et al.）正式命名了 RAG。LangChain 的 [RAG tutorial](https://docs.langchain.com/oss/python/langchain/rag) 把这套范式落地成了 4 步标准 pipeline：
+
+<Mermaid client:load caption="图 1：基础 RAG 的 4 步 pipeline" chart={`flowchart LR
+  D[原始文档] --> L[Load<br/>抓取]
+  L --> S[Split<br/>分块]
+  S --> E[Embed<br/>向量化]
+  E --> V[(Vector DB)]
+  Q[用户 query] --> QE[Embed]
+  QE --> R[相似度检索]
+  V --> R
+  R --> P[Prompt 拼接]
+  P --> LLM[LLM 生成]
+  LLM --> A[答案]`} />
+
+每一步的作用：
+
+- **Load**：抓取文档（PDF / 网页 / 数据库 / Notion）成 `Document` 对象
+- **Split**：切成 500-1000 token 的 chunks，太长 LLM 读不完，太短语义断裂
+- **Embed**：每个 chunk 通过 embedding model 转成向量（768-3072 维）
+- **Store**：存入向量数据库，建立索引
+
+线上推理时，用户 query → embed → 相似度检索 → top-K chunks → 拼到 prompt → LLM 生成。
+
+**最小可运行的 TypeScript 代码**（用 Vercel AI SDK + pgvector）：
+
+```typescript
+import { embed, generateText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { Pool } from 'pg';
+
+// 1. 检索
+const { embedding } = await embed({
+  model: openai.embedding('text-embedding-3-small'),
+  value: userQuery,
+});
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { rows } = await pool.query(
+  `SELECT content FROM docs
+   ORDER BY embedding <=> $1
+   LIMIT 4`,
+  [JSON.stringify(embedding)]
+);
+
+// 2. 拼 prompt
+const context = rows.map((r) => r.content).join('\n\n---\n\n');
+const { text } = await generateText({
+  model: openai('gpt-4o'),
+  system: '只基于下面的资料回答问题，不要编造。',
+  prompt: `资料：\n${context}\n\n问题：${userQuery}`,
+});
+```
+
+## 二、5 个让基础 RAG 失效的坑
+
+你以为 4 步搞定，结果上线后用户投诉"答非所问"。90% 是这 5 个坑：
+
+### 坑 1：chunk 切太大 / 太小
+
+- **太大**：一个 chunk 包含 5 个话题，检索时整段塞进 prompt，干扰答案
+- **太小**：每个 chunk 语义不完整，LLM 拼不出上下文
+
+**经验值**：500-1000 tokens 是 sweet spot，**overlap 100-200 tokens** 保证跨块语义连贯。
+
+### 坑 2：query 表述和文档用词不一致
+
+用户问"如何重置密码"，文档里写的是"修改 login credentials"。**语义相同但用词不同**，纯向量检索会失败。
+
+**修法**：见下文技法 1（query rewriting）。
+
+### 坑 3：检索返回的 chunk 质量差
+
+向量相似度高 ≠ 答案相关。两个文档话题相似但**方向相反**（"应该做 X" vs "不要做 X"），top-K 全召回反而误导 LLM。
+
+**修法**：见下文技法 3（reranking）。
+
+### 坑 4：缺乏 metadata 过滤
+
+100 万条 chunks 里，60% 是过期内容。LLM 拿到旧答案照答不误。
+
+**修法**：建索引时给每条 chunk 加 metadata（`created_at`, `category`, `source`），检索时**先 metadata 过滤再相似度排序**。
+
+### 坑 5：直接返回 chunks，不格式化
+
+LLM 拿到一堆原始文本块，不知道哪个是答案、哪个是上下文。需要 prompt engineering：**用 XML 标签包裹 context，明确划界**：
+
+```xml
+<context>
+<doc id="1" source="api-docs.md">...</doc>
+<doc id="2" source="faq.md">...</doc>
+</context>
+
+请基于 <context> 中的资料回答下面的问题。
+如果资料不足，请明确说"我不知道"，不要编造。
+问题：{{user_query}}
+```
+
+## 三、Advanced RAG 5 大技法
+
+基础 RAG 的召回率（recall）和精度（precision）都不够。Advanced RAG 通过 5 个技法系统性地提升质量：
+
+### 技法 1：Query Rewriting（查询改写）
+
+把用户的口语化 query 改写成"文档风格"的正式 query，提升检索匹配率。
+
+```typescript
+// 用 LLM 改写 query
+const { text: rewritten } = await generateText({
+  model: openai('gpt-4o-mini'),
+  prompt: `把用户问题改写为更适合文档检索的查询，保留核心意图但用词更规范。
+
+用户问题：${userQuery}
+
+改写后的查询：`,
+});
+
+// 再用改写后的 query 做向量检索
+```
+
+**进阶**：HyDE（Hypothetical Document Embeddings）让 LLM 先生成"假设答案"，再用假设答案的 embedding 去检索。**对长尾 query 效果显著**。
+
+### 技法 2：Hybrid Search（混合检索）
+
+向量检索擅长语义，但**对精确关键词、专有名词、型号代码很弱**。混合检索把向量检索 + 关键词检索（BM25）融合：
+
+```typescript
+// 1. 向量检索 top 20
+const vectorResults = await vectorSearch(queryEmbedding, 20);
+
+// 2. BM25 关键词检索 top 20
+const bm25Results = await bm25Search(query, 20);
+
+// 3. Reciprocal Rank Fusion 合并
+const combined = rrfMerge(vectorResults, bm25Results);
+// → 取 top K 送 LLM
+```
+
+[Pinecone 文档](https://docs.pinecone.io/guides/get-started/overview) 把 hybrid search 列为生产 RAG 的推荐配置。**纯向量检索在精度要求高的场景会出问题**（比如搜索特定 API 名称、错误码）。
+
+### 技法 3：Reranking（重排序）
+
+先用便宜的方式（向量 / BM25）召回 top 50-100，再用贵的 cross-encoder 模型精排 top 5-10。
+
+```typescript
+import { cohere } from '@ai-sdk/cohere';
+
+// 1. 粗排：向量检索 top 50
+const candidates = await vectorSearch(queryEmbedding, 50);
+
+// 2. 精排：Cross-encoder reranker
+const reranked = await cohere.rerank({
+  model: 'rerank-english-v3.0',
+  query: userQuery,
+  documents: candidates.map((c) => c.text),
+  topK: 5,
+});
+```
+
+Reranker 把"召回的相关"重新排序成"真正有用的"，**通常把端到端准确率提升 15-30%**。
+
+### 技法 4：Better Chunking
+
+基础的 `RecursiveCharacterTextSplitter` 对所有文档一刀切。但**不同类型文档的最优切法不同**：
+
+| 文档类型 | 推荐策略 |
+|---------|---------|
+| Markdown / 结构化文本 | 按 header 切（`#` `##`），保留完整章节 |
+| 代码 | 按函数 / 类切，保留上下文注释 |
+| 表格 | 整表 + 表格描述（"这是 2025 年各产品定价"） |
+| 长文档 | 滑动窗口 + 摘要预 chunk |
+
+**生产经验**：chunk 大小、overlap、是否带 header——这三个参数**每个数据集都要重新调**，没有银弹。
+
+### 技法 5：Metadata Filtering
+
+检索时先按 metadata 缩小范围，再做相似度排序：
+
+```typescript
+const { rows } = await pool.query(
+  `SELECT content FROM docs
+   WHERE created_at > $2          -- 只看最近 1 年的文档
+     AND category = $3            -- 只看 API 类文档
+   ORDER BY embedding <=> $1
+   LIMIT 4`,
+  [JSON.stringify(embedding), '2025-01-01', 'api-docs']
+);
+```
+
+**这一步比技法 1-4 都重要**——用户大半问题可以通过 metadata 直接锁定答案域，向量检索只是补充。
+
+## 四、生产架构：从 Demo 到 100 QPS
+
+Demo 跑通后，工程化要解决 5 个问题：
+
+### 问题 1：冷启动延迟
+
+每次 query 都要先 embed（50ms）+ 检索（50ms）+ LLM 生成（1-3s）。**优化**：
+
+- **Embedding 缓存**：query embedding 缓存（命中率 30%+ 因为很多 query 重复）
+- **Prompt cache**：OpenAI / Anthropic 对重复 prefix 自动 cache，节省 90% 成本 + 延迟
+- **Pre-warm**：高频 query 提前算好 embedding
+
+### 问题 2：检索质量监控
+
+生产里你不知道**检索到底返回了什么、LLM 到底用了什么**。需要：
+
+- **Trace 系统**：LangSmith / Langfuse / OpenLLMetry，每次 query 全链路记录
+- **离线评估集**：100-200 条标注 query，定期跑回归
+- **在线指标**：用户反馈、答案引用命中率
+
+### 问题 3：增量更新
+
+新文档每天进来，需要**不停机更新向量索引**：
+
+```typescript
+// 入库：先写 OLTP DB，再异步写向量 DB
+await db.insert({ content, embedding: null, ... });
+queue.push({ type: 'embed', docId });  // 后台 worker 处理
+
+// Worker：embed 后写入向量 DB
+const { embedding } = await embed({ model, value: content });
+await vectorDB.upsert({ id: docId, embedding, content });
+```
+
+### 问题 4：多租户隔离
+
+不同客户数据不能混在一起。两种做法：
+
+- **物理隔离**：每个租户一个向量 index
+- **逻辑隔离**：共享 index，但每条记录带 `tenant_id` metadata，检索时强制 `WHERE tenant_id = ?`
+
+### 问题 5：成本控制
+
+100 QPS × 1000 tokens × 1M Q/月 = 100B tokens/月。
+
+- **Tier 1**：高频 query 用小模型（gpt-4o-mini / Claude Haiku）+ 向量检索
+- **Tier 2**：复杂 query 路由到 GPT-4o / Opus
+- **Tier 3**：纯闲聊走 LLM 不走 RAG
+
+## 踩坑提醒
+
+1. **不要把整个向量库塞进 context**。一个 query 召回 20-50 个 chunks 是常见错误。**top-K 在 3-8 之间最佳**，更多反而干扰。
+2. **不要用 base embedding 算 retrieval 准确率**。换 chat model 之前，**embedding model 必须先评估**（下一帖会展开）。
+3. **不要忽略 chunk 的来源标注**。每条 retrieved chunk 都要带 `doc_id` / `source_url`，LLM 输出时引用来源，用户能验证答案。
+4. **不要假设 BM25 已死**。Hybrid search 在生产里几乎 always 优于纯向量，**特别是含专有名词的领域**（法律 / 医疗 / API 文档）。
+5. **不要把 embedding model 锁死在一家**。Cohere / OpenAI / Voyage / BGE 各有强项，按场景选型。
+
+## 总结
+
+5 个 takeaway：
+
+- **基础 RAG**：4 步 pipeline（Load → Split → Embed → Store），最小可用但召回 / 精度都不够。
+- **5 个常见坑**：chunk 切错、query 表述不一致、检索质量差、缺 metadata、prompt 不格式化——90% 的失败源自这 5 个。
+- **Advanced RAG 5 技法**：query rewriting / hybrid search / reranking / better chunking / metadata filtering，**优先级：metadata > reranking > hybrid > chunking > query rewriting**。
+- **生产架构**：解决延迟（缓存）、质量（trace + eval）、更新（异步 pipeline）、隔离（metadata）、成本（分 tier）。
+- **别忽略 embedding model**：下一篇会专门讲怎么选。
+
+**下一篇**：[Embedding 模型与向量数据库选型实战](/blog/embedding-and-vector-db) — 基础篇的最后一篇，把 RAG 的核心依赖讲透。
+
+## 参考资料
+
+- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks (Lewis et al., 2020)](https://arxiv.org/abs/2005.11401) — 原始 RAG 论文，NeurIPS 2020
+- [LangChain RAG Tutorial](https://docs.langchain.com/oss/python/langchain/rag) — 4 步 pipeline 的官方落地，含索引 / Agent / Chain 两种范式对比
+- [Pinecone: Vector DB Concepts for Production RAG](https://docs.pinecone.io/guides/get-started/overview) — 推荐的 hybrid search + reranking + metadata 三件套生产架构
