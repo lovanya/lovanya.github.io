@@ -194,8 +194,8 @@ await Eval('customer-support-v3', {
   },
   scores: [Factuality, LevenshteinScorer],
   experimentName: 'prompt-v3-test',
-})();
-```
+});
+// Eval is awaited directly — no double IIFE needed
 
 `Eval` will:
 1. Run each input through the task

@@ -195,7 +195,8 @@ await Eval('customer-support-v3', {
   },
   scores: [Factuality, LevenshteinScorer],
   experimentName: 'prompt-v3-test',
-})();
+});
+// Eval 直接 await，不需双重 IIFE
 ```
 
 `Eval` 会：

@@ -163,7 +163,7 @@ DeepSeek 在 Hugging Face 上线了多代模型（[deepseek-ai 主页](https://h
 
 <Mermaid client:load caption="图 2：LLM 路由架构" chart={`flowchart LR
   U[用户请求] --> R{路由器<br/>Router}
-  R -->|简单 query| S[小模型<br/>7B / Sonnet Haiku]
+  R -->|简单 query| S[小模型<br/>7B / Claude Haiku]
   R -->|复杂推理| L[大模型<br/>Claude Opus / GPT-4o]
   R -->|敏感数据| P[私有部署<br/>Qwen-72B]
   R -->|降级| F[备用供应商<br/>Bedrock / DeepSeek]
