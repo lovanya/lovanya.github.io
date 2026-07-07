@@ -1,0 +1,290 @@
+---
+title: "LLM Observability: Tracing, Logging & Debugging"
+description: After your LLM app is in production, how do you know what it's doing — Langfuse architecture, OpenTelemetry GenAI semantics, token cost monitoring, production debugging.
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'observability']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+The traditional Web observability triad — **Logging / Metrics / Tracing** — is mature. But LLM apps turn it all upside down:
+
+- **Same prompt produces different output each time** — "error rate" metrics no longer apply
+- **Failure is in the prompt, not the code** — traditional debug can't see root cause
+- **Cost is variable** — one API call might cost $0.001, another $1
+- **Latency is a probability distribution** — same query, LLM might answer in 200ms or 4s
+
+These traits make "nobody knows what happens in production" the #1 pain point of LLM apps. This post covers:
+
+1. **Why LLM observability is different**
+2. **Three mainstream platforms**: Langfuse / LangSmith / OpenLLMetry
+3. **5 essential trace dimensions**
+4. **Production debugging playbook**
+
+## 1. Traditional vs LLM Observability
+
+| Dimension | Traditional Web App | LLM App |
+|---|---|---|
+| **Error signal** | HTTP 500, stack trace | Status 200 + wrong answer |
+| **Root cause** | Breakpoint + stack trace | Prompt content + model reasoning |
+| **Performance** | Fixed latency (p50/p99) | Probability distribution (200ms-4s) |
+| **Cost** | Fixed | Variable per call (depends on tokens) |
+| **Regression** | Unit tests | Must inspect actual output quality |
+
+Visualized:
+
+<Mermaid client:load caption="Figure 1: Traditional vs LLM observability" chart={`flowchart TB
+  subgraph Traditional
+    T1[Request] --> T2[Code path]
+    T2 --> T3[Stack trace / logs]
+    T3 --> T4[Errors / performance]
+  end
+  subgraph LLM
+    L1[Request + prompt] --> L2[Multi-step reasoning]
+    L2 --> L3[Full trace<br/>prompt + tools + response]
+    L3 --> L4[Quality + cost + latency]
+  end`} />
+
+## 2. Three Mainstream LLM Observability Platforms
+
+### Platform 1: Langfuse (Open Source, TypeScript Friendly)
+
+[Langfuse](https://langfuse.com/docs/observability) is currently the most active open-source LLM observability platform:
+
+- **Tracing**: captures every request's prompt, response, token usage, latency, tool calls, retrieval steps
+- **Async reporting**: doesn't add latency to main flow
+- **Prompt management**: versioned prompts, A/B testing
+- **LLM-as-Judge evaluation**: automated quality scoring
+- **Self-hosted / Cloud**: two deployment options
+- **Multi-framework integration**: OpenAI / LangChain / Vercel AI SDK / LlamaIndex
+
+```typescript
+import { Langfuse } from 'langfuse';
+
+const langfuse = new Langfuse({
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+  secretKey: process.env.LANGFUSE_SECRET_KEY,
+});
+
+// Auto-trace OpenAI calls
+import { openai } from '@ai-sdk/openai';
+import { observeOpenAI } from '@langfuse/openai';
+
+const tracedOpenAI = observeOpenAI(openai);
+
+// Each generateText auto-reports
+const result = await generateText({
+  model: tracedOpenAI('gpt-4o'),
+  prompt: '...',
+});
+```
+
+### Platform 2: LangSmith (LangChain Ecosystem)
+
+LangSmith is LangChain's official observability platform, deeply integrated with LangChain / LangGraph:
+
+- Auto-trace chains / agents / tool calls
+- Dataset management (for evaluation)
+- A/B testing
+- Online debugging
+
+**Best for**: teams already using LangChain / LangGraph.
+
+### Platform 3: OpenLLMetry (OpenTelemetry Standard)
+
+LLM instrumentation built on OpenTelemetry:
+
+- **OTel-native**: integrates with existing Datadog / Grafana / Honeycomb
+- **Multi-language SDKs**: Python / JS / Go
+- **GenAI semantic conventions**: standardized trace field names
+
+```typescript
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OpenAIInstrumentation } from '@traceloop/instrumentation-openai';
+
+const sdk = new NodeSDK({
+  instrumentations: [
+    new OpenAIInstrumentation(),
+  ],
+});
+sdk.start();
+
+// OpenAI calls auto-traced to your OTel backend
+```
+
+**Best for**: enterprises with existing OTel infrastructure wanting unified LLM + traditional observability.
+
+### Selection
+
+| Scenario | Recommendation |
+|---|---|
+| Open source + TypeScript ecosystem | Langfuse |
+| Already using LangChain / LangGraph | LangSmith |
+| Existing OTel infrastructure | OpenLLMetry |
+| Full cloud-hosted + enterprise SLA | LangSmith / Arize |
+
+## 3. 5 Essential Trace Dimensions
+
+Just "tracing" isn't enough — traces need to carry the **right information**. These 5 dimensions are production essentials:
+
+### 1. User Context
+
+```typescript
+langfuse.trace({
+  userId: 'u_123',
+  sessionId: 'sess_abc',
+  tags: ['production', 'v2.3'],
+  metadata: { source: 'web', userTier: 'premium' },
+});
+```
+
+**Why**: you frequently need to "find traces by user" or "by session".
+
+### 2. Prompt Version
+
+```typescript
+const prompt = langfuse.getPrompt('customer-support-v3');
+// Auto-records prompt name + version + hash
+```
+
+**Why**: after a prompt change, you need regression comparison. Without version, **you don't know whether the prompt changed or the model behavior changed**.
+
+### 3. Token Cost
+
+```typescript
+// Auto-extracted from API response
+result.usage = {
+  promptTokens: 234,
+  completionTokens: 567,
+  totalTokens: 801,
+  cost: 0.012,  // Langfuse auto-calculates by model
+};
+```
+
+**Why**: cost runaway is the #1 killer of LLM apps. **Must aggregate by query / user / feature**.
+
+### 4. Tool Call Details
+
+```typescript
+{
+  tool_calls: [
+    { name: 'search_web', input: {...}, output: '...', latencyMs: 340 },
+    { name: 'query_db', input: {...}, output: '...', latencyMs: 120 },
+  ],
+}
+```
+
+**Why**: 80% of agent failures are in tool calls (timeout / wrong params / output structure mismatch).
+
+### 5. Output Quality (Async Evaluation)
+
+```typescript
+// Non-blocking
+await langfuse.score({
+  traceId,
+  name: 'relevance',
+  value: await evaluateRelevance(trace.output, trace.input),
+});
+```
+
+**Why**: latency / cost only reflect "program behavior". **Quality must be evaluated separately** (LLM-as-Judge / human feedback).
+
+## 4. Production Debugging Playbook
+
+### Case 1: User Says "The Answer is Wrong"
+
+**Step 1**: get the traceId, pull the full trace from Langfuse:
+
+```bash
+# Langfuse UI / API
+GET /api/traces/{traceId}
+```
+
+**Step 2**: inspect prompt and response:
+
+```
+Prompt:
+  system: "You are a customer service agent"
+  user: "I have a problem with my order"
+  tools: [searchOrder, refund]
+
+Trace steps:
+  1. LLM: decide to call searchOrder → ok
+  2. searchOrder: returns order #123 status=shipped
+  3. LLM: response "Your order has shipped, expected tomorrow"
+
+Issue: user asked for a refund, but model searched for order status.
+Likely the prompt didn't clarify "user intent is refund".
+```
+
+**Fix**: optimize prompt to "first determine user intent, then pick the right tool".
+
+### Case 2: Cost Suddenly 10x
+
+**Step 1**: view token usage trends in Langfuse, group by tag / user:
+
+```
+Tag "experiment-batch-2026-07-07": 5M tokens in 1 hour
+Other tags: 0.5M tokens in 1 hour
+```
+
+**Step 2**: identify which experiment consumed tokens.
+
+**Fix**: shut down that experiment or rate-limit it.
+
+### Case 3: p99 Latency Spikes to 10s
+
+**Step 1**: view latency distribution:
+
+```
+p50: 800ms
+p95: 2s
+p99: 10s  ← anomaly
+```
+
+**Step 2**: check if LLM call or tool call is slow:
+
+```
+LLM call: 800ms (p99)
+search_web tool: 9s (p99)  ← anomaly
+```
+
+**Fix**: search_web third-party API is unstable; add timeout + retry + fallback.
+
+## 5. Production Checklist
+
+5 things to do before launch:
+
+1. ✅ Integrate Langfuse / LangSmith / OpenLLMetry, full tracing
+2. ✅ Tag by user / session / feature for queryability
+3. ✅ Aggregate token cost by feature to avoid runaway
+4. ✅ Trace tool calls separately for debuggability
+5. ✅ Async quality evaluation, weekly trace sampling review
+
+## Pitfalls for Senior Architects
+
+1. **Don't only trace HTTP status.** LLM returns 200 with garbage is common — **must trace actual output**.
+2. **Don't wait for problems to add observability.** Have tracing from day one — **otherwise you can't rewind**.
+3. **Don't ignore token cost.** A prompt change can double cost overnight — **cost monitoring equals feature monitoring**.
+4. **Don't keep traces forever.** GDPR / data compliance requires **automatic cleanup after 90 days**.
+5. **Don't use traces as logs.** Traces are structured event streams; **logs are text streams**. Different purposes.
+
+## Summary
+
+Five takeaways:
+
+- **LLM observability is different**: error signal in content, root cause in prompt, latency is a distribution, cost is variable.
+- **Three platform options**: Langfuse (open-source TS) / LangSmith (LangChain ecosystem) / OpenLLMetry (OTel integration).
+- **5 essential trace dimensions**: user context / prompt version / token cost / tool calls / output quality.
+- **Production debugging 3-step**: get traceId → inspect prompt + response → optimize prompt or tool calls.
+- **Day-one observability**: add it from launch, not after problems.
+
+**Next up**: [LLM Evaluation: Metrics, LLM-as-Judge & A/B Testing](/en/blog/llm-evaluation) — once observability gives you data, how do you decide "which prompt is better"?
+
+## References
+
+- [Langfuse Observability Docs](https://langfuse.com/docs/observability) — open-source LLM observability, TypeScript-friendly
+- [OpenTelemetry GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) — standardized trace fields for LLM calls
+- [Vercel AI SDK — Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — auto-instrument tool calls, easy observability integration

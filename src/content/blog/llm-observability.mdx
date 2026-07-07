@@ -1,0 +1,289 @@
+---
+title: "LLM 可观测性：Tracing、Logging 与调试"
+description: LLM 应用上线后怎么知道它在干什么——Langfuse 架构、OpenTelemetry GenAI 语义、token 成本监控、生产排错实战
+pubDate: 2026-07-07
+tags: ['llm', 'ai-engineering', 'observability']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+
+## 前言
+
+传统 Web 应用的 observability 三件套——**Logging / Metrics / Tracing**——已经成熟。但 LLM 应用把它们全部颠覆了：
+
+- **同一段 prompt 每次输出不一样**——metrics 的"错误率"不再适用
+- **故障不在代码，在 prompt**——传统 debug 看不到根因
+- **成本是变量**——一次 API 调用可能花 $0.001，也可能花 $1
+- **延迟是概率分布**——同样问题，LLM 可能在 200ms 也可能在 4s 回答
+
+这些特性让"上线后没人知道发生了什么"成了 LLM 应用的头号痛点。这一篇覆盖：
+
+1. **LLM observability 为什么不一样**
+2. **三大主流平台**：Langfuse / LangSmith / OpenLLMetry
+3. **5 个必备的 trace 维度**
+4. **生产排错实战**
+
+## 一、传统 vs LLM Observability
+
+| 维度 | 传统 Web 应用 | LLM 应用 |
+|------|--------------|---------|
+| **错误信号** | HTTP 500、异常堆栈 | 状态码 200 + 答非所问 |
+| **根因定位** | 断点 + stack trace | prompt 内容 + 模型推理过程 |
+| **性能指标** | 固定 RT（p50/p99） | 概率分布（200ms-4s） |
+| **成本** | 固定 | 每次调用浮动（取决于 token 数） |
+| **回归** | 单元测试 | 必须看实际输出质量 |
+
+[Mermaid] 视觉化对比：
+
+<Mermaid client:load caption="图 1：传统 vs LLM Observability" chart={`flowchart TB
+  subgraph 传统
+    T1[请求] --> T2[代码路径]
+    T2 --> T3[栈追踪 / 日志]
+    T3 --> T4[错误 / 性能]
+  end
+  subgraph LLM
+    L1[请求 + prompt] --> L2[多步推理]
+    L2 --> L3[完整 trace<br/>prompt + tools + response]
+    L3 --> L4[质量 + 成本 + 延迟]
+  end`} />
+
+## 二、3 个主流 LLM Observability 平台
+
+### 平台 1：Langfuse（开源，TypeScript 友好）
+
+[Langfuse](https://langfuse.com/docs/observability) 是目前最活跃的开源 LLM observability 平台：
+
+- **Tracing**：捕获每个请求的 prompt、response、token 用量、延迟、工具调用、检索步骤
+- **异步上报**：不影响主流程延迟
+- **Prompt 管理**：版本化 prompt，A/B 测试
+- **LLM-as-Judge 评估**：自动跑质量评估
+- **自托管 / 云端**：两种部署
+- **多框架集成**：OpenAI / LangChain / Vercel AI SDK / LlamaIndex
+
+```typescript
+import { Langfuse } from 'langfuse';
+
+const langfuse = new Langfuse({
+  publicKey: process.env.LANGFUSE_PUBLIC_KEY,
+  secretKey: process.env.LANGFUSE_SECRET_KEY,
+});
+
+// 自动 trace OpenAI 调用
+import { openai } from '@ai-sdk/openai';
+import { observeOpenAI } from '@langfuse/openai';
+
+const tracedOpenAI = observeOpenAI(openai);
+
+// 每次 generateText 都会自动上报
+const result = await generateText({
+  model: tracedOpenAI('gpt-4o'),
+  prompt: '...',
+});
+```
+
+### 平台 2：LangSmith（LangChain 生态）
+
+LangSmith 是 LangChain 官方的可观测平台，深度集成 LangChain / LangGraph：
+
+- 自动 trace 链 / agent / 工具调用
+- 数据集管理（用于评估）
+- A/B 测试
+- 在线 debugging
+
+**适合**：已经在用 LangChain / LangGraph 的团队。
+
+### 平台 3：OpenLLMetry（OpenTelemetry 标准）
+
+基于 OpenTelemetry 的 LLM instrumentation：
+
+- **OTel 原生**：可以接入现有的 Datadog / Grafana / Honeycomb
+- **多语言 SDK**：Python / JS / Go
+- **GenAI 语义约定**：标准化的 trace 字段名
+
+```typescript
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { OpenAIInstrumentation } from '@traceloop/instrumentation-openai';
+
+const sdk = new NodeSDK({
+  instrumentations: [
+    new OpenAIInstrumentation(),
+  ],
+});
+sdk.start();
+
+// OpenAI 调用自动 trace 到你的 OTel backend
+```
+
+**适合**：已有 OTel 基础设施的企业，要统一 LLM + 传统服务的 observability。
+
+### 选型决策
+
+| 场景 | 推荐 |
+|------|------|
+| 开源 + TypeScript 生态 | Langfuse |
+| 已用 LangChain / LangGraph | LangSmith |
+| 已有 OTel 基础设施 | OpenLLMetry |
+| 全云端托管 + 企业级 SLA | LangSmith / Arize |
+
+## 三、5 个必备的 trace 维度
+
+光"trace" 不够——你需要 trace 携带**正确的信息**。下面 5 个维度是生产必备：
+
+### 1. 用户上下文
+
+```typescript
+langfuse.trace({
+  userId: 'u_123',
+  sessionId: 'sess_abc',
+  tags: ['production', 'v2.3'],
+  metadata: { source: 'web', userTier: 'premium' },
+});
+```
+
+**为什么**：生产里你经常需要"按用户查 trace"、"按 session 查完整对话"。
+
+### 2. Prompt 版本
+
+```typescript
+const prompt = langfuse.getPrompt('customer-support-v3');
+// 自动记录 prompt 名称 + 版本 + hash
+```
+
+**为什么**：prompt 改了之后回归对比。如果没有版本，**不知道是 prompt 改了还是模型行为变了**。
+
+### 3. Token 成本
+
+```typescript
+// 自动从 API response 提取
+result.usage = {
+  promptTokens: 234,
+  completionTokens: 567,
+  totalTokens: 801,
+  cost: 0.012,  // Langfuse 根据模型自动算
+};
+```
+
+**为什么**：成本失控是 LLM 应用头号死法。**必须按 query / user / feature 维度统计**。
+
+### 4. 工具调用详情
+
+```typescript
+{
+  tool_calls: [
+    { name: 'search_web', input: {...}, output: '...', latencyMs: 340 },
+    { name: 'query_db', input: {...}, output: '...', latencyMs: 120 },
+  ],
+}
+```
+
+**为什么**：agent 的故障 80% 在工具调用（超时 / 错参数 / 返回结构对不上）。
+
+### 5. 输出质量（异步评估）
+
+```typescript
+// 不阻塞主流程
+await langfuse.score({
+  traceId,
+  name: 'relevance',
+  value: await evaluateRelevance(trace.output, trace.input),
+});
+```
+
+**为什么**：延迟 / 成本只能反映"程序行为"，**质量必须另外评估**（LLM-as-Judge / 人工反馈）。
+
+## 四、生产排错实战
+
+### 案例 1：用户说"答案不对"
+
+**第一步**：拿到 traceId，从 Langfuse 拉完整 trace：
+
+```bash
+# Langfuse UI / API
+GET /api/traces/{traceId}
+```
+
+**第二步**：看 prompt 和 response：
+
+```
+Prompt:
+  system: "你是客服"
+  user: "我订单有问题"
+  tools: [searchOrder, refund]
+
+Trace steps:
+  1. LLM: decide to call searchOrder → ok
+  2. searchOrder: returns order #123 status=shipped
+  3. LLM: response "您的订单已发货，预计明天到达"
+
+问题：用户问的是退款，模型搜了订单状态。可能是 prompt 没说清"用户意图是退款"。
+```
+
+**修法**：优化 prompt，明确"先判断用户意图，再决定调哪个工具"。
+
+### 案例 2：成本突然翻 10 倍
+
+**第一步**：从 Langfuse 看 token 用量趋势，按 tag / user 聚合：
+
+```
+Tag "experiment-batch-2026-07-07": 5M tokens in 1 hour
+其他 tag: 0.5M tokens in 1 hour
+```
+
+**第二步**：定位到具体是哪个 experiment 占用了 token。
+
+**修法**：关闭该 experiment 或限流。
+
+### 案例 3：p99 延迟突然飙到 10s
+
+**第一步**：看 latency 分布：
+
+```
+p50: 800ms
+p95: 2s
+p99: 10s  ← 异常
+```
+
+**第二步**：看是 LLM 调用慢还是工具调用慢：
+
+```
+LLM call: 800ms (p99)
+search_web tool: 9s (p99)  ← 异常
+```
+
+**修法**：search_web 第三方 API 不稳定，加超时 + 重试 + fallback。
+
+## 五、生产 checklist
+
+上线前必做的 5 件事：
+
+1. ✅ **集成 Langfuse / LangSmith / OpenLLMetry**，全量 trace
+2. ✅ **按 user / session / tag 标记**，方便查询
+3. ✅ **Token 成本按 feature 聚合**，避免失控
+4. ✅ **工具调用单独 trace**，便于排错
+5. ✅ **异步质量评估**，每周 review 抽样 trace
+
+## 踩坑提醒
+
+1. **不要只 trace HTTP 状态**。LLM 返回 200 但内容垃圾是常事，**必须 trace 实际输出**。
+2. **不要等出问题才上 observability**。上线第一天就要有 trace，**否则出问题无从回溯**。
+3. **不要忽略 token 成本**。一次 prompt 改动可能让成本翻倍，**成本监控和功能监控同等重要**。
+4. **不要把 trace 数据存太久**。GDPR / 数据合规要求下，**90 天后自动清理**。
+5. **不要把 trace 当日志用**。Trace 是结构化的事件流，**日志是文本流**，用途不同。
+
+## 总结
+
+5 个 takeaway：
+
+- **LLM observability 不一样**：错误信号在内容里、根因在 prompt、延迟是概率分布、成本是变量。
+- **三大平台选型**：Langfuse（开源 TS）/ LangSmith（LangChain 生态）/ OpenLLMetry（OTel 集成）。
+- **5 个必备 trace 维度**：用户上下文 / prompt 版本 / token 成本 / 工具调用 / 输出质量。
+- **生产排错三步**：拿 traceId → 看 prompt + response → 优化 prompt 或工具调用。
+- **上线第一天就要有 observability**，不要等出问题。
+
+**下一篇**：[LLM 应用的评估体系：Metrics、LLM-as-Judge 与 A/B 测试](/blog/llm-evaluation) — 当 observability 有了数据，怎么判断"哪个 prompt 更好"。
+
+## 参考资料
+
+- [Langfuse Observability Docs](https://langfuse.com/docs/observability) — 开源 LLM observability 平台，TypeScript 友好
+- [OpenTelemetry GenAI Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) — LLM 调用的 OTel 标准化 trace 字段
+- [Vercel AI SDK — Tool Calling](https://ai-sdk.dev/docs/ai-sdk-core/tools-and-tool-calling) — 自动 instrument 工具调用，便于 observability 集成
