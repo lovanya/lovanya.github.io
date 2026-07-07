@@ -21,7 +21,7 @@ LLM 应用上线 3 个月后，**90% 的团队都会撞上一堵墙**——账�
 
 这一篇覆盖 5 大优化手段，**按 ROI 排序**：
 
-1. **Prompt Cache**（90% token 节省，最容易）
+1. **Prompt Cache**（最高 90% token 节省，最容易）
 2. **Streaming**（首字延迟降到 200ms）
 3. **Semantic Cache**（重复 query 走缓存）
 4. **模型路由**（按 query 难度分层）
@@ -42,7 +42,7 @@ LLM 应用上线 3 个月后，**90% 的团队都会撞上一堵墙**——账�
 
 ### OpenAI / Anthropic 原生 Prompt Cache
 
-**OpenAI** 自动缓存**>= 1024 tokens** 的 prompt 前缀（gpt-4o / gpt-4o 是 1024，**gpt-4o-mini 是 2048**），命中部分**便宜 50%**（cache write 不额外收费，cache read 是基础价 50%）。**Anthropic** 类似的 5 分钟 TTL cache 缓存**4 个 breakpoints**（按模型支持数不同，Sonnet 4 / Opus 4 是 4，Haiku 4 是 4；Claude 3.5 Sonnet 也是 4）。
+**OpenAI** 自动缓存**>= 1024 tokens** 的 prompt 前缀（gpt-4o 是 1024，**gpt-4o-mini 是 2048**），命中部分**便宜 50%**（cache write 不额外收费，cache read 是基础价 50%）。**Anthropic** 提供 5 分钟 TTL 的 prompt cache，支持 4 个 breakpoints（Sonnet 4 / Opus 4 / Haiku 4 / Claude 3.5 Sonnet 均支持）。
 
 ```typescript
 // OpenAI / Anthropic 自动处理，无需代码
@@ -349,11 +349,15 @@ const result = await Promise.race([
 
 ```typescript
 async function robustGenerate(prompt: string) {
-  const models = ['gpt-4o', 'claude-sonnet', 'gpt-4o-mini'];
+  const models = [
+    openai('gpt-4o'),
+    anthropic('claude-sonnet-4-5'),
+    openai('gpt-4o-mini'),
+  ];
   
-  for (const modelId of models) {
+  for (const model of models) {
     try {
-      return await generateText({ model: modelId, prompt });
+      return await generateText({ model, prompt });
     } catch (e) {
       // 失败继续尝试下一个
       continue;

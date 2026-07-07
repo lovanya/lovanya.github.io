@@ -62,7 +62,7 @@ console.log(`${enc.encode(text).length} tokens, 约 $${(enc.encode(text).length 
 
 **踩坑提醒**：
 
-- **不要在 prompt 里写"用 500 字以内回答"**。你应该算 token：500 中文字 ≈ 750-1000 tokens。模型对 token 数比字符数敏感得多。
+- **不要在 prompt 里写"用 500 字以内回答"**。你应该算 token：500 中文字 ≈ 500-1000 tokens（1 个汉字 ≈ 1-2 token，看具体词）。模型对 token 数比字符数敏感得多。
 - **代码 token 比想象中贵**。`function getUserById(id: string)` 这种 ≈ 10+ tokens。给 LLM 喂 2000 行代码 ≈ 几万 token，注意 cost。
 - **markdown / JSON 标点也要算**。每个 `{}`、`:`、`,` 都是独立 token。
 

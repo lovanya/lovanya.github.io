@@ -14,7 +14,7 @@ import Mermaid from '../../components/Blog/Mermaid';
 - **同一段 prompt 每次输出不一样**——metrics 的"错误率"不再适用
 - **故障不在代码，在 prompt**——传统 debug 看不到根因
 - **成本是变量**——一次 API 调用可能花 $0.001，也可能花 $1
-- **延迟是概率分布**——同样问题，LLM 可能在 200ms 也可能在 4s 回答
+- **延迟是概率分布**——同样的问题，LLM 可能在 200ms 内回答，也可能在 4s 内回答
 
 这些特性让"上线后没人知道发生了什么"成了 LLM 应用的头号痛点。这一篇覆盖：
 
@@ -159,13 +159,16 @@ const prompt = langfuse.getPrompt('customer-support-v3');
 ### 3. Token 成本
 
 ```typescript
-// 自动从 API response 提取
-result.usage = {
-  promptTokens: 234,
-  completionTokens: 567,
-  totalTokens: 801,
-  cost: 0.012,  // Langfuse 根据模型自动算
-};
+// Langfuse 自动从 API response 提取 usage 信息
+// 以下为自动提取后的结果示例
+{
+  usage: {
+    promptTokens: 234,
+    completionTokens: 567,
+    totalTokens: 801,
+    cost: 0.012,  // Langfuse 根据模型自动计算
+  },
+}
 ```
 
 **为什么**：成本失控是 LLM 应用头号死法。**必须按 query / user / feature 维度统计**。
@@ -186,7 +189,11 @@ result.usage = {
 ### 5. 输出质量（异步评估）
 
 ```typescript
-// 不阻塞主流程
+// 不阻塞主流程，异步评估输出质量
+// 假设已获取 traceId 和 trace 数据
+const traceId = currentTrace.id;
+const trace = await langfuse.getTrace(traceId);
+
 await langfuse.score({
   traceId,
   name: 'relevance',
@@ -223,7 +230,7 @@ Trace steps:
 问题：用户问的是退款，模型搜了订单状态。可能是 prompt 没说清"用户意图是退款"。
 ```
 
-**修法**：优化 prompt，明确"先判断用户意图，再决定调哪个工具"。
+**解决方案**：优化 prompt，明确"先判断用户意图，再决定调哪个工具"。
 
 ### 案例 2：成本突然翻 10 倍
 
@@ -236,7 +243,7 @@ Tag "experiment-batch-2026-07-07": 5M tokens in 1 hour
 
 **第二步**：定位到具体是哪个 experiment 占用了 token。
 
-**修法**：关闭该 experiment 或限流。
+**解决方案**：关闭该 experiment 或限流。
 
 ### 案例 3：p99 延迟突然飙到 10s
 
@@ -255,7 +262,7 @@ LLM call: 800ms (p99)
 search_web tool: 9s (p99)  ← 异常
 ```
 
-**修法**：search_web 第三方 API 不稳定，加超时 + 重试 + fallback。
+**解决方案**：search_web 第三方 API 不稳定，加超时 + 重试 + fallback。
 
 ## 五、生产 checklist
 

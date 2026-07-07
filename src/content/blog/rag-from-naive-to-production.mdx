@@ -92,19 +92,19 @@ const { text } = await generateText({
 
 用户问"如何重置密码"，文档里写的是"修改 login credentials"。**语义相同但用词不同**，纯向量检索会失败。
 
-**修法**：见下文技法 1（query rewriting）。
+**解决方案**：见下文技法 1（query rewriting）。
 
 ### 坑 3：检索返回的 chunk 质量差
 
 向量相似度高 ≠ 答案相关。两个文档话题相似但**方向相反**（"应该做 X" vs "不要做 X"），top-K 全召回反而误导 LLM。
 
-**修法**：见下文技法 3（reranking）。
+**解决方案**：见下文技法 3（reranking）。
 
 ### 坑 4：缺乏 metadata 过滤
 
 100 万条 chunks 里，60% 是过期内容。LLM 拿到旧答案照答不误。
 
-**修法**：建索引时给每条 chunk 加 metadata（`created_at`, `category`, `source`），检索时**先 metadata 过滤再相似度排序**。
+**解决方案**：建索引时给每条 chunk 加 metadata（`created_at`, `category`, `source`），检索时**先 metadata 过滤再相似度排序**。
 
 ### 坑 5：直接返回 chunks，不格式化
 
@@ -257,7 +257,7 @@ await vectorDB.upsert({ id: docId, embedding, content });
 
 ### 问题 5：成本控制
 
-100 QPS × 1000 tokens × 1M Q/月 = 100B tokens/月。
+100 QPS × 1000 tokens × 86400 秒/天 × 30 天/月 ≈ 259B tokens/月。
 
 - **Tier 1**：高频 query 用小模型（gpt-4o-mini / Claude Haiku）+ 向量检索
 - **Tier 2**：复杂 query 路由到 GPT-4o / Opus

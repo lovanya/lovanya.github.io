@@ -250,23 +250,23 @@ ACME 公司 → 是 → 科技公司
 
 如果**无差别地存所有对话**，memory 库会膨胀成噪音仓库。每次检索 top-K 都可能召回无关内容。
 
-**修法**：用 LLM 提取关键事实后再存，只存"用户相关的、有未来价值的"内容。
+**解决方案**：用 LLM 提取关键事实后再存，只存"用户相关的、有未来价值的"内容。
 
 ### 陷阱 2：遗忘机制缺失
 
 用户 3 年前说"我喜欢蓝色"，今天审美变了。但 memory 里还有这条，**LLM 会继续按蓝色推荐**。
 
-**修法**：加"过期"机制——每条 memory 带 `created_at` + `expires_at`，定期清理。
+**解决方案**：加"过期"机制——每条 memory 带 `created_at` + `expires_at`，定期清理。
 
 ### 陷阱 3：跨用户隔离漏掉
 
 多租户场景下，memory 必须**按 user 隔离**。一个 bug 让用户 A 看到用户 B 的偏好，**直接是安全事故**。
 
 ```typescript
-// ❌ 危险
-const memories = await store.get(userId);
+// ❌ 危险：没有 userId 过滤，可能返回其他用户的数据
+const memories = await store.get({ query, topK: 5 });
 
-// ✅ 安全：每次 query 带 userId
+// ✅ 安全：每次 query 带 userId 过滤
 const memories = await store.search({ userId, query, topK: 5 });
 ```
 
@@ -274,7 +274,7 @@ const memories = await store.search({ userId, query, topK: 5 });
 
 如果 memory 检索返回的内容**质量差**（"用户喜欢 X"），LLM 会照着错信息回答。
 
-**修法**：在 prompt 里**明确划界**：
+**解决方案**：在 prompt 里**明确划界**：
 
 ```xml
 <user_memories>

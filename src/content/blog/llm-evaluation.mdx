@@ -90,7 +90,6 @@ const evalResult = await judge({
   expected: 'Paris is the capital of France',
 });
 // → { score: 1, choice: 'A' }
-// 0.9
 ```
 
 **优点**：能评估开放性回答，捕捉语义细节
@@ -102,7 +101,7 @@ const evalResult = await judge({
 **缓解**：
 - 用多个评委取平均
 - 调换答案 / 期望的位置各评一次取平均
-- 用**比生产更强的模型**当评委（GPT-4 评 GPT-4o-mini）
+- 用**比生产环境所用模型更强的模型**当评委（如 GPT-4o 评 GPT-4o-mini）
 
 ### 4. 任务特定指标（Task-Specific）
 

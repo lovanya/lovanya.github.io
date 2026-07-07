@@ -210,7 +210,7 @@ const { rows } = await pool.query(
    WHERE category = $2
    ORDER BY embedding <=> $1
    LIMIT 4`,
-  [JSON.stringify(embedding), 'api']
+  [embedding, 'api']  // pgvector 自动处理数组格式
 );
 ```
 
@@ -246,7 +246,7 @@ const { rows } = await pool.query(
 
 ## 总结
 
-5 个 takeaway：
+6 个 takeaway：
 
 - **Embedding 模型决定 RAG 上限**：5 维度评估（准确率 / 多语种 / 维度 / 成本 / 上下文），首选在自己数据上做离线 A/B。
 - **BGE-m3 是中文 / 多语种首选**：开源可自托管，支持 dense + sparse + 长文本。

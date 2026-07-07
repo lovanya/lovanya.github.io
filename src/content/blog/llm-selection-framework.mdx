@@ -90,15 +90,15 @@ import Mermaid from '../../components/Blog/Mermaid';
 
 **劣势**：
 
-- **成本**贵（尤其长 context + 大输出）
+- **成本高**（尤其长 context + 大输出）
 - **数据出境 / 隐私**风险
-- **供应商锁定**：换模型意味着改 prompt、改 system、改微调数据
+- **供应商锁定**：换模型意味着改 prompt、改 system prompt、改微调数据
 - **不可控**：模型被下架、API 行为变更你只能接受
 
 **适用场景**：
 
 - 中小团队快速验证
-- 数据不敏感 + 月调用 < 1M tokens
+- 数据不敏感 + 月调用 < 10M tokens
 - 需要顶级推理能力（金融分析 / 复杂代码 / 多步规划）
 - 没有 GPU 运维能力
 
@@ -154,7 +154,7 @@ DeepSeek 在 Hugging Face 上线了多代模型（[deepseek-ai 主页](https://h
 
 - **日均 < 5M tokens**：闭源 API 更划算
 - **日均 5M-50M tokens**：开源 API（DeepSeek / Qwen）性价比突出
-- **日均 > 50M tokens + 合规要求**：自托管开始回本
+- **日均 > 10M tokens + 合规要求**：自托管开始回本
 - **有突发流量**：API 弹性更好；自托管要预留 buffer
 
 ## 五、混合策略：路由 + 主备
