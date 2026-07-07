@@ -40,10 +40,10 @@ Visualized:
 Best for **single-correct-answer** scenarios:
 
 ```typescript
-import { exactMatch, bleuScore } from 'autoevals';
+import { ExactMatch, BLEU } from 'autoevals';
 
-exactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
-bleuScore({ output: 'Hello world', expected: 'Hello' }); // 0.5
+ExactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
+BLEU({ output: 'Hello world', expected: 'Hello' }); // 0.5
 ```
 
 **Use for**: classification, named entity recognition, answer extraction (tool calls for structured output).
@@ -69,15 +69,27 @@ const score = await embeddingSimilarity({
 **Use a stronger model to grade answers**. The workhorse for production LLM evaluation:
 
 ```typescript
-import { llmRubric } from 'autoevals';
+import { LLMClassifierFromTemplate } from 'autoevals';
 
-const score = await llmRubric({
-  output: 'Paris is the capital of France',
-  expected: 'Paris is the capital of France',
-  rubric: 'Is the answer correct and concise?',
+// LLM-as-Judge: use an LLM as judge to score output quality.
+// LLMClassifierFromTemplate requires a custom promptTemplate and choiceScores.
+const judge = LLMClassifierFromTemplate({
+  name: 'answer-quality',
+  promptTemplate: `You are a strict evaluator. Given the expected and actual answers, judge whether the actual answer is correct and concise.
+
+Expected: {{expected}}
+Actual: {{output}}
+
+Output only one option: A (fully correct) or B (incorrect or verbose).`,
+  choiceScores: { A: 1, B: 0 },
   model: 'gpt-4o',  // stronger model as judge
 });
-// 0.9
+
+const evalResult = await judge({
+  output: 'Paris is the capital of France',
+  expected: 'Paris is the capital of France',
+});
+// → { score: 1, choice: 'A' }
 ```
 
 **Strengths**: handles open-ended answers, captures semantic nuance

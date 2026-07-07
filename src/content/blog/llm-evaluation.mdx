@@ -40,10 +40,10 @@ import Mermaid from '../../components/Blog/Mermaid';
 适合**答案唯一**的场景：
 
 ```typescript
-import { exactMatch, bleuScore } from 'autoevals';
+import { ExactMatch, BLEU } from 'autoevals';
 
-exactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
-bleuScore({ output: 'Hello world', expected: 'Hello' }); // 0.5
+ExactMatch({ output: 'Paris', expected: 'Paris' });      // 1.0
+BLEU({ output: 'Hello world', expected: 'Hello' }); // 0.5
 ```
 
 **适用**：分类、命名实体识别、答案抽取（用工具调用做结构化输出）。
@@ -69,14 +69,27 @@ const score = await embeddingSimilarity({
 **用更强的模型给答案打分**。生产 LLM 评估的主力：
 
 ```typescript
-import { llmRubric } from 'autoevals';
+import { LLMClassifierFromTemplate } from 'autoevals';
 
-const score = await llmRubric({
-  output: '巴黎是法国的首都',
-  expected: 'Paris is the capital of France',
-  rubric: '答案是否正确、简洁',
+// LLM-as-Judge：用 LLM 当裁判评估输出质量
+// LLMClassifierFromTemplate 需要自定义 promptTemplate 和 choiceScores
+const judge = LLMClassifierFromTemplate({
+  name: 'answer-quality',
+  promptTemplate: `你是一个严格的评估员。给定预期答案和实际答案，判断实际答案是否正确且简洁。
+
+预期：{{expected}}
+实际：{{output}}
+
+只输出一个选项：A（完全正确）或 B（不正确或不简洁）`,
+  choiceScores: { A: 1, B: 0 },
   model: 'gpt-4o',  // 用更强的模型当裁判
 });
+
+const evalResult = await judge({
+  output: '巴黎是法国的首都',
+  expected: 'Paris is the capital of France',
+});
+// → { score: 1, choice: 'A' }
 // 0.9
 ```
 
