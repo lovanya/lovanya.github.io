@@ -1,77 +1,29 @@
 ---
-title: Starship 终端提示符完全指南：极速、跨平台、配置即代码
-description: 2026 年最新的 Starship 安装、配置、定制指南，毫秒级启动速度，跨平台统一体验。
+title: Starship 终端提示符安装与使用指南
+description: Starship 是一个 Rust 编写的跨平台终端提示符，毫秒级启动。本文介绍在 macOS 和 Windows 上的安装和基本配置。
 pubDate: 2026-07-07
-tags: ['terminal', 'macos', 'windows', 'linux', 'developer-tools', 'starship']
+tags: ['terminal', 'macos', 'windows', 'starship', 'developer-tools']
 ---
 
-import Mermaid from '../../components/Blog/Mermaid';
+## 简介
 
-## 前言
+Starship 是一个用 Rust 编写的跨平台终端提示符（prompt），**毫秒级启动**，**开箱即用**，支持 Bash、Zsh、Fish、PowerShell 等多种 Shell。
 
-Starship 是一个用 Rust 编写的跨平台终端提示符，**毫秒级启动**、**配置即代码**、**开箱即用**。相比 Oh My Zsh 的主题，Starship 启动速度快 10 倍以上，且跨平台表现一致。
+特点：
+- **快**：启动 < 10ms，几乎无感知
+- **跨平台**：macOS、Linux、Windows 统一体验
+- **配置即代码**：一个 `starship.toml` 接管所有
+- **智能检测**：自动显示 Git、Node.js、Python、Docker 等环境信息
 
-本文从安装到深度定制，完整覆盖 Starship 的使用。
+## macOS 安装
 
-<Mermaid client:load caption="图 1：Starship 架构" chart={`flowchart LR
-  S[Starship] --> R[Rust 核心]
-  S --> C[TOML 配置]
-  S --> M[模块系统]
-  M --> G[git]
-  M --> N[node]
-  M --> D[docker]
-  M --> K[kubernetes]
-  M --> P[python]
-  M --> X[自定义]`} />
-
-## 一、为什么选择 Starship
-
-### 核心优势
-
-| 特性 | Starship | Oh My Zsh | Powerlevel10k |
-|------|----------|-----------|---------------|
-| 启动速度 | < 10ms | 100-500ms | 50-100ms |
-| 跨平台 | 全部支持 | macOS/Linux | macOS/Linux |
-| 配置文件 | `starship.toml` | `~/.zshrc` | `~/.p10k.zsh` |
-| 预置模块 | 40+ | 300+ 插件 | 内置 |
-| 学习曲线 | 低 | 中 | 中 |
-
-### 适用场景
-
-- **追求极致性能**：不喜欢主题拖慢终端
-- **多平台统一**：macOS、Linux、Windows 同样的体验
-- **配置即代码**：`starship.toml` 可以纳入 dotfiles 仓库
-- **不想折腾**：开箱即用，自动检测环境
-
-## 二、平台安装
-
-### 前置条件
-
-- **macOS**：10.13+
-- **Linux**：任何现代发行版
-- **Windows**：Windows 10 1809+ 或 Windows 11
-
-支持的 Shell：
-- Bash 4.4+
-- Zsh 5.0+
-- Fish 3.1+
-- PowerShell 5.1+
-- Ion 1.0+
-- Elvish 0.18+
-- Tcsh 6.20+
-- Nushell 0.78+
-- Xonsh
-- Cmd
-
-### macOS 安装
-
-#### 1. 使用 Homebrew（推荐）
+### 1. 安装 Starship
 
 ```bash
 brew install starship
 ```
 
-#### 2. 初始化到 Shell 配置文件
+### 2. 初始化到 Shell
 
 **Zsh**（`~/.zshrc`）：
 ```bash
@@ -88,7 +40,7 @@ eval "$(starship init bash)"
 starship init fish | source
 ```
 
-#### 3. 验证
+### 3. 验证
 
 重启终端，运行：
 
@@ -98,518 +50,173 @@ starship --version
 
 **预期输出**：`starship 1.x.x`
 
-#### 4. 卸载
+### 4. 卸载
 
 ```bash
 brew uninstall starship
 ```
 
-并从 shell 配置文件中删除 `eval "$(starship init zsh)"` 行。
+然后从 Shell 配置文件中删掉 `eval "$(starship init ...)"` 那一行。
 
-### Windows 安装
+## Windows 安装
 
-#### 方法一：Scoop（推荐）
+### 方法一：Scoop（推荐）
 
 ```powershell
 scoop install starship
 ```
 
-#### 方法二：winget
+### 方法二：winget
 
 ```powershell
 winget install --id Starship.Starship
 ```
 
-#### 方法三：手动安装
+### 方法三：手动安装
 
-从 [GitHub Releases](https://github.com/starship/starship/releases) 下载 `starship-x86_64-pc-windows-msvc.zip`，解压到 `C:\Program Files\starship\`。
+从 [GitHub Releases](https://github.com/starship/starship/releases) 下载 `starship-x86_64-pc-windows-msvc.zip`，解压到 `C:\Program Files\starship\`，然后将其添加到系统 PATH。
 
-#### 初始化到 PowerShell
+### 初始化到 PowerShell
 
-创建或编辑 `$PROFILE`（`Microsoft.PowerShell_profile.ps1`）：
+编辑 `$PROFILE`：
 
 ```powershell
 Invoke-Expression (&starship init powershell)
 ```
 
-#### 验证
+### 验证
 
 ```powershell
 starship --version
 ```
 
-### Linux 安装
-
-#### 1. 使用官方脚本
+## Linux 安装
 
 ```bash
 curl -sS https://starship.rs/install.sh | sh
 ```
 
-**说明**：脚本会自动：
-- 检测系统架构
-- 下载最新版本
-- 安装到 `~/.local/bin/`
-- 提示添加到 PATH
+脚本会自动检测架构并安装到 `~/.local/bin/`。确保该目录在 PATH 中，然后同样在 `~/.zshrc` 或 `~/.bashrc` 中添加 `eval "$(starship init zsh)"`。
 
-#### 2. 确保 `~/.local/bin` 在 PATH 中
+## 字体配置（Nerd Font）
 
-**Bash**（`~/.bashrc`）：
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
+Starship 使用 Nerd Font 图标，必须先装字体。
 
-**Zsh**（`~/.zshrc`）：
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-**Fish**：
-```fish
-set -gx PATH $HOME/.local/bin $PATH
-```
-
-#### 3. 初始化
+### macOS
 
 ```bash
-eval "$(starship init zsh)"  # 或 bash、fish
-```
-
-#### 4. 验证
-
-```bash
-starship --version
-```
-
-### 初始化 Nushell
-
-```nushell
-mkdir ~/.cache/starship
-starship init nu | save -f ~/.cache/starship/init.nu
-```
-
-在 `~/.config/nushell/config.nu` 中添加：
-
-```nushell
-source ~/.cache/starship/init.nu
-```
-
-## 三、字体配置
-
-### Nerd Font（推荐）
-
-Starship 使用 Nerd Font 中的图标来增强显示效果。
-
-#### 安装 Nerd Font
-
-**macOS**：
-```bash
-brew tap homebrew/cask-fonts
 brew install --cask font-fira-code-nerd-font
 brew install --cask font-jetbrains-mono-nerd-font
 ```
 
-**Windows**：从 [Nerd Fonts Releases](https://github.com/ryanoasis/nerd-fonts/releases) 下载并安装。
+### Windows
 
-**Linux**（Ubuntu/Debian）：
-```bash
-mkdir -p ~/.local/share/fonts
-cd ~/.local/share/fonts
-curl -fLO https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
-unzip FiraCode.zip
-fc-cache -fv
-```
+从 [Nerd Fonts Releases](https://github.com/ryanoasis/nerd-fonts/releases) 下载安装 JetBrains Mono Nerd Font 或 Fira Code Nerd Font。
 
-#### 配置终端使用 Nerd Font
+### 配置终端
 
-- **iTerm2**：Preferences → Profiles → Text → Font
-- **Windows Terminal**：Settings → Profiles → Appearance → Font face
-- **GNOME Terminal**：Profile → Preferences → Custom font
-- **Alacritty**：`~/.config/alacritty/alacritty.toml`：
-  ```toml
-  [font]
-  normal = { family = "FiraCode Nerd Font", style = "Regular" }
-  ```
+在各终端的字体设置中选择刚安装的 Nerd Font 即可。
 
-## 四、配置文件
+## 基本配置
 
-### 配置文件位置
-
-- **macOS/Linux**：`~/.config/starship.toml`
+配置文件位置：
+- **macOS / Linux**：`~/.config/starship.toml`
 - **Windows**：`%USERPROFILE%\.config\starship.toml`
-
-### 创建配置文件
-
-```bash
-mkdir -p ~/.config
-touch ~/.config/starship.toml
-```
 
 ### 最小配置
 
+```bash
+mkdir -p ~/.config && touch ~/.config/starship.toml
+```
+
 ```toml
 # starship.toml
-
-# 禁用换行符前的提示符
 add_newline = false
 
-# 提示符字符
 [character]
 success_symbol = "[➜](bold green)"
 error_symbol = "[➜](bold red)"
 ```
 
-### 预设配置
-
-Starship 提供了多个 [官方预设](https://starship.rs/presets/)：
-
-```bash
-# 预览所有预设
-starship preset
-
-# 应用预设
-starship preset tokyo-night > ~/.config/starship.toml
-
-# 列出可用预设
-starship preset --list
-```
-
-常用预设：
-- `tokyo-night` - 东京夜色风格
-- `gruvbox-rainbow` - Gruvbox 彩虹色
-- `pastel-powerline` - 柔和 Powerline
-- `pure-preset` - 极简风格
-
-## 五、模块配置
-
-### 启用的模块（默认）
-
-Starship 默认启用以下模块：
-- `directory`
-- `git_branch`
-- `git_status`
-- `nodejs`
-- `python`
-- `rust`
-- `package`
-
-### 基础配置示例
+### 常用模块配置
 
 ```toml
-# 目录模块
 [directory]
 style = "bold cyan"
 truncation_length = 3
 truncation_symbol = "…/"
 
-[directory.substitutions]
-"Documents" = "📂 "
-"Downloads" = "📥 "
-"Developer" = "💻 "
-
-# Git 模块
 [git_branch]
 symbol = "🌱 "
-truncation_length = 4
-truncation_symbol = "…"
 
 [git_status]
 ahead = "⇡${count}"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
 behind = "⇣${count}"
-conflicted = "🏳️"
 
-# Node.js 模块
 [nodejs]
 symbol = "⬢ "
 style = "bold green"
-version_format = "v${raw}"
 
-# Python 模块
 [python]
 symbol = "🐍 "
 style = "bold yellow"
-
-# Rust 模块
-[rust]
-symbol = "🦀 "
-style = "bold red"
-
-# Docker 模块
-[docker_context]
-symbol = "🐳 "
 ```
 
-### 自定义命令模块
+### 使用预设
 
-显示自定义命令的输出：
-
-```toml
-[custom.example]
-command = "echo example"
-style = "bold yellow"
-when = "true"
-format = "[$symbol$output]($style)"
-```
-
-### 条件显示
-
-根据当前目录或文件显示：
-
-```toml
-[docker_context]
-only_with_files = true  # 仅在有 Dockerfile 时显示
-
-[package]
-disabled = false
-```
-
-### 时间模块
-
-```toml
-[time]
-disabled = false
-format = "🕙[ $time ]($style)"
-time_format = "%R"
-style = "bold yellow"
-```
-
-## 六、常用模块详解
-
-### 1. directory（目录）
-
-```toml
-[directory]
-style = "bold cyan"
-truncation_length = 3
-truncation_symbol = "…/"
-truncation_strategy = "in_middle"
-read_only = " 🔒"
-read_only_style = "bold red"
-home_symbol = "🏠 "
-```
-
-### 2. git_branch / git_status
-
-```toml
-[git_branch]
-symbol = "🌿 "
-style = "bold purple"
-truncation_length = 4
-ignore_branches = ["master", "main"]
-
-[git_status]
-style = "bold red"
-ahead = "⇡"
-behind = "⇣"
-diverged = "⇕"
-conflicted = "🏳️"
-untracked = "?️"
-stashed = "📦"
-modified = "!"
-staged = "+"
-renamed = "»"
-deleted = "✘"
-```
-
-### 3. character（提示符字符）
-
-```toml
-[character]
-success_symbol = "[➜](bold green)"
-error_symbol = "[➜](bold red)"
-vicmd_symbol = "[❮](bold green)"
-```
-
-### 4. 命令执行时间
-
-```toml
-[cmd_duration]
-min_time = 2_000  # 超过 2 秒才显示
-format = "took [$duration]($style)"
-style = "bold yellow"
-```
-
-### 5. 内存使用
-
-```toml
-[memory_usage]
-symbol = "🐏 "
-style = "bold dimmed white"
-threshold = 75  # 使用超过 75% 时显示
-format = "via $symbol[$ram_pct]($style) "
-```
-
-## 七、性能优化
-
-### 异步模块（减少阻塞）
-
-Starship 默认异步检测模块状态，但有些模块可能阻塞。检查慢模块：
+Starship 提供多个[官方预设](https://starship.rs/presets/)：
 
 ```bash
-starship timings
+# 预览所有预设
+starship preset --list
+
+# 应用一个预设
+starship preset tokyo-night > ~/.config/starship.toml
 ```
 
-**示例输出**：
-```
-━━━ timings ━━━
-directory: 0.5ms
-git_branch: 0.3ms
-git_status: 12.4ms  ← 较慢
-nodejs: 8.2ms
+常用预设：`tokyo-night`、`gruvbox-rainbow`、`pastel-powerline`、`pure-preset`。
+
+## 常见问题
+
+### 提示符显示乱码
+
+**原因**：未安装 Nerd Font。按上面的字体配置章节操作即可。
+
+### 模块不显示
+
+```bash
+starship explain   # 检查当前配置
+starship print     # 打印当前提示符
 ```
 
-优化方案：
-1. 禁用不常用的模块
-2. 使用 `detect_files` 减少自动检测
-3. 升级 Starship 到最新版
+### 启动慢
 
-### 减少模块数量
+```bash
+starship timings   # 查看各模块耗时
+```
+
+禁用不常用的模块来优化：
 
 ```toml
-# 禁用不需要的模块
 [package]
 disabled = true
 
 [python]
 disabled = true
-
-[rust]
-disabled = true
 ```
 
-### 使用预设的精简版本
+### 颜色显示不对
 
-```bash
-# 应用最小化预设
-starship preset pure-preset > ~/.config/starship.toml
-```
-
-## 八、IDE 集成
-
-### Visual Studio Code
-
-在 `~/.config/Code/User/settings.json` 中：
-
-```json
-{
-  "terminal.integrated.fontFamily": "FiraCode Nerd Font",
-  "terminal.integrated.shell.osx": "/bin/zsh"
-}
-```
-
-### JetBrains IDE
-
-Settings → Tools → Terminal → Shell path: `/bin/zsh`
-
-### Vim/Neovim
-
-使用 [vim-starhip](https://github.com/mhinz/vim-starhip) 或自定义 statusline。
-
-## 九、常见问题
-
-### 1. 提示符显示乱码
-
-**原因**：未安装 Nerd Font。
-
-**解决**：参考上面的字体配置章节。
-
-### 2. 启动慢
-
-**诊断**：
-```bash
-starship timings
-```
-
-**优化**：
-- 禁用不需要的模块
-- 升级到最新版 Starship
-- 异步模块生效
-
-### 3. 模块不显示
-
-**检查**：
-```bash
-# 查看配置语法
-starship explain
-
-# 测试配置
-starship print
-```
-
-### 4. 颜色不正确
-
-确保终端支持 256 色或真彩色（true color）：
+确保终端支持真彩色：
 
 ```bash
 echo $COLORTERM
 # 期望输出：truecolor 或 256color
 ```
 
-**iTerm2**：Preferences → Profiles → Terminal → Report terminal type: `xterm-256color`
-
-**Windows Terminal**：默认支持真彩色。
-
-## 十、最佳实践
-
-### 1. 配置纳入 dotfiles
-
-```bash
-# ~/.dotfiles/starship/starship.toml
-# 在 .zshrc 中：
-export STARSHIP_CONFIG=~/.dotfiles/starship/starship.toml
-eval "$(starship init zsh)"
-```
-
-### 2. 项目级配置
-
-为不同项目使用不同配置：
-
-```bash
-# 在项目根目录的 .starship.toml 中
-[directory]
-truncation_length = 5
-```
-
-Starship 会自动从当前目录向上查找 `.starship.toml`。
-
-### 3. 主题化
-
-使用 [starship-theme](https://github.com/topics/starship-theme) 主题：
-
-```bash
-# 克隆主题
-git clone https://github.com/your-theme/starship-theme.git
-
-# 复制配置
-cp starship-theme/starship.toml ~/.config/starship.toml
-```
-
-### 4. 与 tmux 配合
-
-在 `~/.tmux.conf` 中：
-
-```bash
-set -g default-terminal "tmux-256color"
-set -ga terminal-overrides ',xterm-256color:Tc'
-```
-
-## 总结
-
-Starship 的核心优势：
-
-1. **极速启动**：< 10ms，几乎无感知
-2. **跨平台一致**：macOS、Linux、Windows 同样的体验
-3. **配置即代码**：`starship.toml` 易于维护和分享
-4. **模块化设计**：按需启用，可深度定制
-
-如果你追求**极致性能**和**统一体验**，Starship 是当前最好的选择。
-
 ## 参考资料
 
-- [Starship 官方文档](https://starship.rs/) — 完整的配置参考
-- [Starship 模块列表](https://starship.rs/preset-list/) — 所有可用模块
-- [Starship 预设](https://starship.rs/presets/) — 官方预设主题
-- [Nerd Fonts](https://www.nerdfonts.com/) — 字体下载
-- [Starship GitHub](https://github.com/starship/starship) — 源代码和发布
-- [Starship 主题合集](https://github.com/topics/starship-theme) — 社区主题
+- [Starship 官方文档](https://starship.rs/)
+- [Starship 预设](https://starship.rs/presets/)
+- [Nerd Fonts](https://www.nerdfonts.com/)
+- [Starship GitHub](https://github.com/starship/starship)

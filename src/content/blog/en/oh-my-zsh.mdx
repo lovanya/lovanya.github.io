@@ -5,9 +5,21 @@ pubDate: 2018-12-22
 tags: ['terminal', 'macos', 'windows', 'zsh', 'developer-tools']
 ---
 
+import Mermaid from '../../../components/Blog/Mermaid';
+
 ## Introduction
 
 Oh My Zsh is an open-source Zsh configuration management framework with 300+ plugins and 150+ themes. This guide focuses on building a **truly productive terminal environment** from a developer efficiency perspective.
+
+<Mermaid client:load caption="Figure 1: Oh My Zsh ecosystem" chart={`flowchart LR
+  OZ[Oh My Zsh] --> T[150+ themes]
+  OZ --> P[300+ plugins]
+  OZ --> C[Config management]
+  T --> P10k[Powerlevel10k]
+  T --> AG[Agnoster]
+  P --> ZA[zsh-autosuggestions]
+  P --> ZH[zsh-syntax-highlighting]
+  P --> ZC[zsh-completions]`} />
 
 ## 1. Platform Installation
 
@@ -251,7 +263,23 @@ plugins=(extract)
 
 extract archive.tar.gz
 extract file.zip
-extract image.rar
+extract file.rar
+```
+
+#### git-extras
+
+Git enhancement commands:
+
+```bash
+brew install git-extras
+```
+
+Common commands:
+```bash
+git summary     # Repository summary
+git effort      # File contribution count
+git changelog   # Generate changelog
+git release     # Create release
 ```
 
 ### Development Plugins
@@ -395,6 +423,25 @@ gitnew() {
 
 port() {
   lsof -i :$1
+}
+
+# Quick file backup
+backup() {
+  cp "$1" "$1.backup.$(date +%Y%m%d%H%M%S)"
+}
+
+# Lazy load nvm (Node version manager)
+export NVM_LAZY_LOAD=true
+
+lazy_load_cmd() {
+  unset -f npm node npx 2>/dev/null
+  export PATH="$HOME/.nvm/versions/node/$(nvm version default)/bin:$PATH"
+}
+
+# Lazy load git-extras
+lazy_load_git_extras() {
+  unset -f git-summary git-effort 2>/dev/null
+  eval "$(git-extras --init)"
 }
 ```
 
