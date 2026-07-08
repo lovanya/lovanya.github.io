@@ -1,29 +1,175 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
+import { SITE_TITLE, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_URL, AUTHOR } from '../consts';
 
 interface Props {
   title: string;
-  description: string;
+  description?: string;
   lang?: 'zh' | 'en';
+  image?: string;
+  articleType?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
+  author?: string;
+  tags?: string[];
+  canonical?: string;
 }
 
-const { title, description, lang = 'zh' } = Astro.props;
-const currentPath = Astro.url.pathname;
----
+const {
+  title,
+  description,
+  lang = 'zh',
+  image = '/images/avatar.png',
+  articleType = 'website',
+  publishedTime,
+  modifiedTime,
+  author,
+  tags = [],
+  canonical,
+} = Astro.props;
 
+const currentPath = Astro.url.pathname;
+const currentUrl = new URL(currentPath, SITE_URL).toString();
+const canonicalUrl = canonical || currentUrl;
+const finalDescription = description || SITE_DESCRIPTION[lang];
+const siteShortTitle = lang === 'zh' ? '紫牙的博客' : "Ziya's Tech Blog";
+// Only append site title if it's not already in the title
+const finalTitle = title.includes(siteShortTitle) || title.includes('紫牙') || title.includes('Ziya')
+  ? title
+  : `${title} | ${siteShortTitle}`;
+const imageUrl = image.startsWith('http') ? image : new URL(image, SITE_URL).toString();
+const keywords = SITE_KEYWORDS[lang] + (tags.length ? ',' + tags.join(',') : '');
+const authorName = author || `${AUTHOR.name}(${AUTHOR.alternateName})`;
+
+// Person 结构化数据 - 提升作者权威性
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: AUTHOR.name,
+  alternateName: [AUTHOR.alternateName, AUTHOR.englishName, 'Ziya'],
+  jobTitle: AUTHOR.jobTitle,
+  description: lang === 'zh' ? AUTHOR.description : AUTHOR.englishDescription,
+  url: SITE_URL,
+  email: AUTHOR.email,
+  sameAs: [
+    AUTHOR.github,
+  ],
+  knowsAbout: [
+    'Frontend Architecture',
+    'Micro-Frontend',
+    'Performance Optimization',
+    'React',
+    'Vue',
+    'TypeScript',
+    'Astro',
+    'AI Engineering',
+    'LLM',
+    'RAG',
+  ],
+};
+
+// Website 结构化数据
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_TITLE[lang],
+  alternateName: ['紫牙的博客', 'Ziya Blog', '紫牙博客'],
+  url: SITE_URL,
+  inLanguage: ['zh-CN', 'en-US'],
+  description: finalDescription,
+  author: {
+    '@type': 'Person',
+    name: AUTHOR.name,
+    alternateName: AUTHOR.alternateName,
+  },
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${SITE_URL}/blog?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+---
 <!doctype html>
 <html lang={lang} class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary SEO -->
+    <title>{finalTitle}</title>
+    <meta name="description" content={finalDescription} />
+    <meta name="keywords" content={keywords} />
+    <meta name="author" content={authorName} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="baiduspider" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="zh-CN" href={`${SITE_URL}${currentPath}`} />
+    <link rel="alternate" hreflang="en" href={`${SITE_URL}/en${currentPath === '/' ? '' : currentPath}`} />
+    <link rel="alternate" hreflang="x-default" href={`${SITE_URL}${currentPath}`} />
+
+    <!-- Favicon & App Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png" />
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon-next.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={articleType} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:locale:alternate" content={lang === 'zh' ? 'en_US' : 'zh_CN'} />
+    <meta property="og:url" content={currentUrl} />
+    <meta property="og:site_name" content={SITE_TITLE[lang]} />
+    <meta property="og:title" content={finalTitle} />
+    <meta property="og:description" content={finalDescription} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:alt" content={authorName} />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    {author && <meta property="article:author" content={author} />}
+    {tags.map((tag) => <meta property="article:tag" content={tag} />)}
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={finalTitle} />
+    <meta name="twitter:description" content={finalDescription} />
+    <meta name="twitter:image" content={imageUrl} />
+    <meta name="twitter:image:alt" content={authorName} />
+    <meta name="twitter:creator" content="@lovanya" />
+    <meta name="twitter:site" content="@lovanya" />
+
+    <!-- 百度站长验证 (替换为你的验证码) -->
+    <!-- <meta name="baidu-site-verification" content="your-baidu-code" /> -->
+
+    <!-- 360 站长验证 -->
+    <!-- <meta name="360-site-verification" content="your-360-code" /> -->
+
+    <!-- 搜狗站长验证 -->
+    <!-- <meta name="sogou_site_verification" content="your-sogou-code" /> -->
+
+    <!-- Bing 验证 -->
+    <meta name="msvalidate.01" content="" />
+
+    <!-- Theme & Appearance -->
+    <meta name="theme-color" content="#0a0e1a" />
+    <meta name="color-scheme" content="dark light" />
+
+    <!-- Structured Data: Person -->
+    <script type="application/ld+json" set:html={JSON.stringify(personJsonLd)} />
+
+    <!-- Structured Data: WebSite -->
+    <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+
     <!-- JetBrains Mono for cold tech aesthetic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- RSS Feed -->
+    <link rel="alternate" type="application/rss+xml" title={SITE_TITLE[lang]} href="/rss.xml" />
+
     <script is:inline>
       (function() {
         const savedTheme = localStorage.getItem('theme');
@@ -52,7 +198,13 @@ const currentPath = Astro.url.pathname;
         style="background-image: linear-gradient(rgba(0,229,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.3) 1px, transparent 1px); background-size: 30px 30px;"
       ></div>
       <div class="container relative z-10 flex flex-col items-center" style="gap: var(--space-2);">
-        <p class="font-mono text-sm">&copy; {new Date().getFullYear()} <span class="text-[var(--color-accent)]">{lang === 'zh' ? '紫牙' : 'Ziya'}</span>. {lang === 'zh' ? '版权所有' : 'All Rights Reserved'}</p>
+        <p class="font-mono text-sm">
+          &copy; {new Date().getFullYear()}
+          <a href="/" class="text-[var(--color-accent)] hover:underline" title={`${AUTHOR.name} - ${AUTHOR.jobTitle}`}>
+            {lang === 'zh' ? AUTHOR.alternateName : AUTHOR.englishName}
+          </a>
+          . {lang === 'zh' ? '版权所有' : 'All Rights Reserved'}
+        </p>
         <p class="text-xs opacity-50 font-mono">
           {'// '}{lang === 'zh' ? '由 Astro 驱动' : 'Powered by Astro'}
         </p>
@@ -71,6 +223,7 @@ const currentPath = Astro.url.pathname;
 
         const observer = new IntersectionObserver((entries) => {
           entries.forEach(entry => {
+            if (entry.target.classList.contains('visible')) return;
             if (entry.isIntersecting) {
               entry.target.classList.add('visible');
             }

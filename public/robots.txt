@@ -1,0 +1,24 @@
+# robots.txt for lovanya.github.io
+# https://lovanya.github.io
+
+User-agent: *
+Allow: /
+
+# 百度
+User-agent: Baiduspider
+Allow: /
+
+# 搜狗
+User-agent: Sogou Spider
+Allow: /
+
+# 360
+User-agent: 360Spider
+Allow: /
+
+# 头条
+User-agent: Bytespider
+Allow: /
+
+# Sitemap
+Sitemap: https://lovanya.github.io/sitemap-index.xml

@@ -7,8 +7,8 @@ const posts = (await getCollection('blog'))
   .filter((post) => post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const title = 'Blog | Ziya';
-const description = 'Notes on web development, AI engineering, and architecture';
+const title = "Ziya's Blog Posts - Frontend Architecture / Micro-Frontend / AI Engineering | Jian Lin";
+const description = "Collection of technical blog posts by Ziya (Jian Lin). Covering frontend architecture, micro-frontend, cross-platform development, performance optimization, React/Vue/Astro, TypeScript, LLM/RAG/Agent AI engineering.";
 
 // All unique tags across all posts (for the filter bar).
 const allTags = Array.from(
