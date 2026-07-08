@@ -45,9 +45,9 @@ const currentPath = Astro.url.pathname;
 const currentUrl = new URL(currentPath, SITE_URL).toString();
 const canonicalUrl = canonical || currentUrl;
 const finalDescription = description || SITE_DESCRIPTION[lang];
-const siteShortTitle = lang === 'zh' ? '紫牙的博客' : "Ziya's Tech Blog";
+const siteShortTitle = lang === 'zh' ? '林健(紫牙)的博客' : 'Jian Lin (Ziya) Blog';
 // Only append site title if it's not already in the title
-const finalTitle = title.includes(siteShortTitle) || title.includes('紫牙') || title.includes('Ziya')
+const finalTitle = title.includes(siteShortTitle) || title.includes('林健') || title.includes('紫牙') || title.includes('Jian Lin') || title.includes('Ziya')
   ? title
   : `${title} | ${siteShortTitle}`;
 const imageUrl = image.startsWith('http') ? image : new URL(image, SITE_URL).toString();
@@ -86,14 +86,38 @@ const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: SITE_TITLE[lang],
-  alternateName: ['紫牙的博客', 'Ziya Blog', '紫牙博客'],
+  alternateName: [
+    '林健的博客',
+    '林健的简历',
+    '林健的简历博客',
+    '紫牙的博客',
+    '紫牙博客',
+    '紫牙的简历',
+    'Ziya Blog',
+    'Ziya Resume',
+    'Jian Lin Blog',
+    'Jian Lin Resume',
+    'Jian Lin (Ziya) Blog',
+  ],
   url: SITE_URL,
   inLanguage: ['zh-CN', 'en-US'],
   description: finalDescription,
   author: {
     '@type': 'Person',
     name: AUTHOR.name,
+    alternateName: [AUTHOR.alternateName, '林健', 'Jian Lin', 'Ziya'],
+  },
+  publisher: {
+    '@type': 'Person',
+    name: AUTHOR.name,
     alternateName: AUTHOR.alternateName,
+    url: SITE_URL,
+  },
+  about: {
+    '@type': 'Person',
+    name: AUTHOR.name,
+    alternateName: AUTHOR.alternateName,
+    jobTitle: AUTHOR.jobTitle,
   },
   potentialAction: {
     '@type': 'SearchAction',
@@ -295,15 +319,18 @@ const websiteJsonLd = {
         style="background-image: linear-gradient(rgba(0,229,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.3) 1px, transparent 1px); background-size: 30px 30px;"
       ></div>
       <div class="container relative z-10 flex flex-col items-center" style="gap: var(--space-2);">
-        <p class="font-mono text-sm">
+        <p class="font-mono text-sm text-center">
           &copy; {new Date().getFullYear()}
           <a href="/" class="text-[var(--color-accent)] hover:underline" title={`${AUTHOR.name} - ${AUTHOR.jobTitle}`}>
-            {lang === 'zh' ? AUTHOR.alternateName : AUTHOR.englishName}
+            {lang === 'zh' ? `${AUTHOR.name}(${AUTHOR.alternateName})` : `${AUTHOR.englishName} (${AUTHOR.alternateName})`}
           </a>
           . {lang === 'zh' ? '版权所有' : 'All Rights Reserved'}
         </p>
-        <p class="text-xs opacity-50 font-mono">
-          {'// '}{lang === 'zh' ? '由 Astro 驱动' : 'Powered by Astro'}
+        <p class="text-xs opacity-50 font-mono text-center">
+          {lang === 'zh'
+            ? `// ${AUTHOR.name}的博客 | ${AUTHOR.alternateName}的博客 | ${AUTHOR.name}(${AUTHOR.alternateName})前端架构师 | 由 Astro 驱动`
+            : `// ${AUTHOR.englishName} Blog | ${AUTHOR.alternateName} Blog | Frontend Architect | Powered by Astro`
+          }
         </p>
       </div>
     </footer>

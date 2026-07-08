@@ -8,8 +8,8 @@ const posts = (await getCollection('blog'))
   .filter((post) => !post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const title = '紫牙的博客文章 - 前端架构 / 微前端 / AI 工程 | 林健';
-const description = '紫牙(林健)的技术博客文章合集。涵盖前端架构设计、微前端、跨端开发、性能优化、React/Vue/Astro、TypeScript、LLM/RAG/Agent 等 AI 工程实践。';
+const title = '林健的博客文章 - 林健(紫牙)前端架构师 | 微前端 / AI 工程';
+const description = '林健(紫牙)的博客文章合集,又称紫牙的博客、林健的博客。涵盖前端架构设计、微前端、跨端开发、性能优化、React/Vue/Astro、TypeScript、LLM/RAG/Agent 等 AI 工程实践。';
 
 const breadcrumbs = [{ label: '博客', href: '/blog' }];
 

@@ -7,8 +7,8 @@ const posts = (await getCollection('blog'))
   .filter((post) => !post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const siteTitle = '紫牙的博客 - 林健(紫牙)前端架构师';
-const siteDescription = '紫牙(林健)的前端技术博客。11 年前端架构经验,专注于企业级中后台、微前端、跨端开发、性能优化与 AI 工程实践。';
+const siteTitle = '林健(紫牙)的博客 - 林健前端架构师的个人网站';
+const siteDescription = '林健,网名紫牙,11 年前端架构经验。本站是林健的博客、林健的简历,也是紫牙的博客,专注于企业级中后台、微前端、跨端开发、性能优化与 AI 工程实践。';
 ---
 
 <BaseLayout title={siteTitle} description={siteDescription} lang="zh">
@@ -19,7 +19,7 @@ const siteDescription = '紫牙(林健)的前端技术博客。11 年前端架�
     set:html={JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: '紫牙的最新博客文章',
+      name: '林健(紫牙)的最新博客文章',
       description: siteDescription,
       numberOfItems: posts.length,
       itemListElement: posts.slice(0, 6).map((post, idx) => ({

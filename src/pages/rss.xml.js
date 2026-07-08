@@ -8,7 +8,7 @@ export async function GET(context) {
   return rss({
     title: '紫牙的博客 - 林健(紫牙)前端架构师',
     description:
-      '紫牙(林健)的前端技术博客。11 年前端架构经验,专注于企业级中后台、微前端、跨端开发、性能优化与 AI 工程实践。',
+      '林健(紫牙)的博客,又名紫牙的博客。11 年前端架构经验,专注于企业级中后台、微前端、跨端开发、性能优化与 AI 工程实践。',
     site: context.site,
     customData:
       '<language>zh-CN</language><atom:link href="https://lovanya.github.io/rss.xml" rel="self" type="application/rss+xml" xmlns:atom="http://www.w3.org/2005/Atom" />',

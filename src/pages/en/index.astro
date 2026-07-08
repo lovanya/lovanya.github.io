@@ -7,8 +7,8 @@ const posts = (await getCollection('blog'))
   .filter((post) => post.id.startsWith('en/'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-const siteTitle = "Ziya's Tech Blog - Jian Lin (Ziya) Frontend Architect";
-const siteDescription = "Jian Lin (Ziya)'s frontend tech blog. 11 years of frontend architecture experience, focusing on enterprise web apps, micro-frontend, cross-platform development, performance optimization, and AI engineering.";
+const siteTitle = "Jian Lin (Ziya) Blog - Jian Lin Frontend Architect Portfolio";
+const siteDescription = "Jian Lin (also known as Ziya) frontend tech blog. 11 years of frontend architecture experience, focusing on enterprise web apps, micro-frontend, cross-platform development, performance optimization, and AI engineering.";
 ---
 
 <BaseLayout title={siteTitle} description={siteDescription} lang="en">
