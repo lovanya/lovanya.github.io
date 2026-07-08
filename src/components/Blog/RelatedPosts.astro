@@ -1,0 +1,89 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  currentPost: CollectionEntry<'blog'>;
+  lang?: 'zh' | 'en';
+  limit?: number;
+}
+
+const { currentPost, lang = 'zh', limit = 3 } = Astro.props;
+const currentId = currentPost.id;
+const currentTags = currentPost.data.tags || [];
+
+// 获取同语言下的所有文章
+const allPosts = (await getCollection('blog'))
+  .filter((post) => {
+    if (lang === 'zh') return !post.id.startsWith('en/');
+    return post.id.startsWith('en/');
+  })
+  .filter((post) => post.id !== currentId);
+
+// 计算相关文章：按共享标签数 + 时间近度评分
+const scored = allPosts
+  .map((post) => {
+    const tags = post.data.tags || [];
+    const sharedTags = tags.filter((t) => currentTags.includes(t)).length;
+    const daysDiff =
+      Math.abs(currentPost.data.pubDate.getTime() - post.data.pubDate.getTime()) /
+      (1000 * 60 * 60 * 24);
+    // 标签权重高，时间权重低
+    const score = sharedTags * 10 - Math.log(daysDiff + 1);
+    return { post, score, sharedTags };
+  })
+  .filter(({ sharedTags }) => sharedTags > 0) // 至少有一个共享标签
+  .sort((a, b) => b.score - a.score)
+  .slice(0, limit);
+
+const relatedPosts = scored.map((s) => s.post);
+const headingText = lang === 'zh' ? '相关文章' : 'Related Posts';
+const noRelatedText = lang === 'zh' ? '暂无相关文章' : 'No related posts yet';
+---
+
+{
+  relatedPosts.length > 0 && (
+    <section
+      class="flex flex-col w-full mt-12 pt-8 border-t border-[var(--color-border)]"
+      aria-label={headingText}
+    >
+      <h2 class="text-2xl font-bold text-[var(--color-accent)] font-mono" style="margin-bottom: var(--space-6);">
+        // {headingText}
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-4);">
+        {relatedPosts.map((post) => {
+          const href = lang === 'en' ? `/en/blog/${post.id.replace('en/', '')}` : `/blog/${post.id}`;
+          return (
+            <a
+              href={href}
+              class="group flex flex-col p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-card-hover)] transition-all"
+              style="gap: var(--space-2);"
+            >
+              <div class="text-xs text-[var(--color-text-secondary)] font-mono">
+                {post.data.pubDate.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </div>
+              <h3 class="text-base font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors leading-snug">
+                {post.data.title}
+              </h3>
+              <p class="text-xs text-[var(--color-text-secondary)] line-clamp-2 leading-relaxed">
+                {post.data.description}
+              </p>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  )
+}
+
+{
+  relatedPosts.length === 0 && (
+    <div class="text-sm text-[var(--color-text-secondary)] font-mono opacity-50 mt-12 pt-8 border-t border-[var(--color-border)]">
+      {noRelatedText}
+    </div>
+  )
+}

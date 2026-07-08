@@ -1,7 +1,10 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Comments from '../../../components/Comments.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import RelatedPosts from '../../../components/Blog/RelatedPosts.astro';
 import { getCollection, render } from 'astro:content';
+import { SITE_URL } from '../../../consts';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog');
@@ -21,6 +24,21 @@ const description = post.data.description;
 const tags = post.data.tags || [];
 const publishedTime = post.data.pubDate.toISOString();
 const modifiedTime = post.data.updatedDate?.toISOString() || publishedTime;
+const postUrl = new URL(`/en/blog/${post.id.replace('en/', '')}`, SITE_URL).toString();
+
+const breadcrumbs = [
+  { label: 'Blog', href: '/en/blog' },
+  { label: title, href: `/en/blog/${post.id.replace('en/', '')}` },
+];
+
+const blogPosting = {
+  headline: title,
+  description,
+  image: post.data.heroImage || '/images/avatar.png',
+  datePublished: publishedTime,
+  dateModified: modifiedTime,
+  keywords: tags,
+};
 ---
 
 <BaseLayout
@@ -33,20 +51,13 @@ const modifiedTime = post.data.updatedDate?.toISOString() || publishedTime;
   tags={tags}
   author="Jian Lin (Ziya)"
   image={post.data.heroImage || '/images/avatar.png'}
+  breadcrumbs={breadcrumbs}
+  blogPosting={blogPosting}
 >
   <div class="container max-w-4xl" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
     <article class="flex flex-col w-full" style="gap: var(--title-gap);">
-      <!-- Back link -->
-      <a
-        href="/en/blog"
-        class="inline-flex items-center text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors self-start"
-        style="gap: var(--space-2);"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span class="text-sm font-mono">Back to List</span>
-      </a>
+      <!-- Breadcrumb -->
+      <Breadcrumb items={breadcrumbs} lang="en" />
 
       <!-- Header -->
       <header class="flex flex-col w-full" style="gap: var(--space-6);">
@@ -54,6 +65,10 @@ const modifiedTime = post.data.updatedDate?.toISOString() || publishedTime;
           <img
             src={post.data.heroImage}
             alt={post.data.title}
+            loading="lazy"
+            decoding="async"
+            width="1024"
+            height="256"
             class="w-full h-64 object-cover rounded-[var(--radius)]"
           />
         )}
@@ -81,6 +96,20 @@ const modifiedTime = post.data.updatedDate?.toISOString() || publishedTime;
               </span>
             )}
           </div>
+
+          {tags.length > 0 && (
+            <div class="flex flex-wrap items-center" style="gap: var(--space-2);">
+              <span class="text-xs text-[var(--color-text-secondary)] font-mono opacity-70">tags:</span>
+              {tags.map((tag) => (
+                <a
+                  href={`/en/blog?tag=${encodeURIComponent(tag)}`}
+                  class="text-xs font-mono px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)] transition-colors"
+                >
+                  #{tag}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -88,6 +117,21 @@ const modifiedTime = post.data.updatedDate?.toISOString() || publishedTime;
       <div class="prose prose-lg max-w-none">
         <Content />
       </div>
+
+      <!-- Share & Original Link -->
+      <div class="flex flex-wrap items-center justify-between pt-6 border-t border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] font-mono" style="gap: var(--space-4);">
+        <a
+          href={postUrl}
+          class="hover:text-[var(--color-accent)] transition-colors"
+          rel="canonical"
+        >
+          🔗 Original Link
+        </a>
+        <span class="opacity-50">Share to reach more people</span>
+      </div>
+
+      <!-- Related Posts -->
+      <RelatedPosts currentPost={post} lang="en" limit={3} />
 
       <!-- Comments -->
       <Comments lang="en" />

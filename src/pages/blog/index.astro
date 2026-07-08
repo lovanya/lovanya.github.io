@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/Blog/PostCard.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('blog'))
@@ -9,6 +10,8 @@ const posts = (await getCollection('blog'))
 
 const title = '紫牙的博客文章 - 前端架构 / 微前端 / AI 工程 | 林健';
 const description = '紫牙(林健)的技术博客文章合集。涵盖前端架构设计、微前端、跨端开发、性能优化、React/Vue/Astro、TypeScript、LLM/RAG/Agent 等 AI 工程实践。';
+
+const breadcrumbs = [{ label: '博客', href: '/blog' }];
 
 // All unique tags across all posts (for the filter bar).
 const allTags = Array.from(
@@ -22,9 +25,30 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
 }, {});
 ---
 
-<BaseLayout title={title} description={description} lang="zh">
+<BaseLayout title={title} description={description} lang="zh" breadcrumbs={breadcrumbs}>
+  <!-- ItemList schema for blog post collection -->
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: title,
+      description,
+      numberOfItems: posts.length,
+      itemListElement: posts.slice(0, 10).map((post, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        url: `https://lovanya.github.io/blog/${post.id}`,
+        name: post.data.title,
+      })),
+    })}
+  />
+
   <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
     <div class="flex flex-col items-center" style="gap: var(--title-gap);">
+      <Breadcrumb items={breadcrumbs} lang="zh" />
+
       <header class="text-center flex flex-col items-center" style="gap: var(--space-3);">
         <h1 class="text-4xl font-bold text-[var(--color-text)]">博客</h1>
         <p class="text-[var(--color-text-secondary)]">{description}</p>

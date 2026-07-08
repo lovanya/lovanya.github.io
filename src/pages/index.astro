@@ -12,6 +12,25 @@ const siteDescription = '紫牙(林健)的前端技术博客。11 年前端架�
 ---
 
 <BaseLayout title={siteTitle} description={siteDescription} lang="zh">
+  <!-- ItemList schema for latest posts on home page -->
+  <script
+    type="application/ld+json"
+    is:inline
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: '紫牙的最新博客文章',
+      description: siteDescription,
+      numberOfItems: posts.length,
+      itemListElement: posts.slice(0, 6).map((post, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 1,
+        url: `https://lovanya.github.io/blog/${post.id}`,
+        name: post.data.title,
+        description: post.data.description,
+      })),
+    })}
+  />
   <div class="container" style="padding-top: var(--space-24); padding-bottom: var(--space-24);">
     <div class="flex flex-col" style="gap: var(--section-gap);">
       <!-- Hero section -->

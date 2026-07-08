@@ -5,6 +5,7 @@ import RadarChart from '../components/Resume/RadarChart';
 import Timeline from '../components/Resume/Timeline';
 import ProjectCard from '../components/Resume/ProjectCard';
 import SkillTree from '../components/Resume/SkillTree';
+import Breadcrumb from '../components/Breadcrumb.astro';
 import Comments from '../components/Comments.astro';
 import { skills, experience, projects, techStack } from '../data/resume';
 
@@ -17,9 +18,18 @@ const sections = [
   { id: 'projects', title: '项目经历' },
   { id: 'techstack', title: '技术栈' },
 ];
+
+const breadcrumbs = [
+  { label: '关于我', href: '/about' },
+];
 ---
 
-<BaseLayout title={title} description={description} lang="zh">
+<BaseLayout
+  title={title}
+  description={description}
+  lang="zh"
+  breadcrumbs={breadcrumbs}
+>
   <Hero lang="zh" />
 
   <!-- Scroll-to-next arrow (fixed at bottom of viewport) -->

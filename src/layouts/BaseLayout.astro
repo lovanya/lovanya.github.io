@@ -14,6 +14,16 @@ interface Props {
   author?: string;
   tags?: string[];
   canonical?: string;
+  breadcrumbs?: { label: string; href: string }[];
+  blogPosting?: {
+    headline: string;
+    description: string;
+    image?: string;
+    datePublished: string;
+    dateModified?: string;
+    keywords?: string[];
+    wordCount?: number;
+  };
 }
 
 const {
@@ -27,6 +37,8 @@ const {
   author,
   tags = [],
   canonical,
+  breadcrumbs,
+  blogPosting,
 } = Astro.props;
 
 const currentPath = Astro.url.pathname;
@@ -162,10 +174,95 @@ const websiteJsonLd = {
     <!-- Structured Data: WebSite -->
     <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
 
-    <!-- JetBrains Mono for cold tech aesthetic -->
+    <!-- Structured Data: BlogPosting (for blog articles) -->
+    {
+      blogPosting && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: blogPosting.headline,
+            description: blogPosting.description,
+            image: blogPosting.image
+              ? blogPosting.image.startsWith('http')
+                ? blogPosting.image
+                : new URL(blogPosting.image, SITE_URL).toString()
+              : imageUrl,
+            datePublished: blogPosting.datePublished,
+            dateModified: blogPosting.dateModified || blogPosting.datePublished,
+            author: {
+              '@type': 'Person',
+              name: AUTHOR.name,
+              alternateName: AUTHOR.alternateName,
+              url: SITE_URL,
+            },
+            publisher: {
+              '@type': 'Person',
+              name: AUTHOR.name,
+              alternateName: AUTHOR.alternateName,
+              url: SITE_URL,
+              logo: {
+                '@type': 'ImageObject',
+                url: new URL('/images/avatar.png', SITE_URL).toString(),
+              },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': currentUrl,
+            },
+            keywords: blogPosting.keywords?.join(',') || tags.join(','),
+            wordCount: blogPosting.wordCount,
+            inLanguage: lang === 'zh' ? 'zh-CN' : 'en-US',
+            url: currentUrl,
+          })}
+        />
+      )
+    }
+
+    <!-- Structured Data: BreadcrumbList -->
+    {
+      breadcrumbs && breadcrumbs.length > 0 && (
+        <script
+          type="application/ld+json"
+          set:html={JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: breadcrumbs.map((crumb, idx) => ({
+              '@type': 'ListItem',
+              position: idx + 1,
+              name: crumb.label,
+              item: new URL(crumb.href, SITE_URL).toString(),
+            })),
+          })}
+        />
+      )
+    }
+
+    <!-- Preload JetBrains Mono for cold tech aesthetic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap"
+      />
+    </noscript>
+
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
 
     <!-- RSS Feed -->
     <link rel="alternate" type="application/rss+xml" title={SITE_TITLE[lang]} href="/rss.xml" />
