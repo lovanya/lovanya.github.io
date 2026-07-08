@@ -195,8 +195,7 @@ async function choosePromptVersion(userId: string): Promise<string> {
   const bucket = hashUserId(userId) % 100;
   
   if (bucket < 5) return 'v3-experiment';        // 5% new version
-  if (bucket < 100) return 'v2';                // 95% old version
-  return 'v2';
+  return 'v2';                                    // 95% old version
 }
 
 // Load prompt

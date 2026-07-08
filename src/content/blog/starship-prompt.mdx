@@ -33,7 +33,7 @@ Starship 是一个用 Rust 编写的跨平台终端提示符，**毫秒级启动
 | 启动速度 | < 10ms | 100-500ms | 50-100ms |
 | 跨平台 | 全部支持 | macOS/Linux | macOS/Linux |
 | 配置文件 | `starship.toml` | `~/.zshrc` | `~/.p10k.zsh` |
-| 预置模块 | 500+ | 300+ 插件 | 内置 |
+| 预置模块 | 40+ | 300+ 插件 | 内置 |
 | 学习曲线 | 低 | 中 | 中 |
 
 ### 适用场景
@@ -589,7 +589,7 @@ cp starship-theme/starship.toml ~/.config/starship.toml
 
 在 `~/.tmux.conf` 中：
 
-```tmux
+```bash
 set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ',xterm-256color:Tc'
 ```

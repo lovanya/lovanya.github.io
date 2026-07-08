@@ -42,7 +42,7 @@ Visualized:
 
 ### OpenAI / Anthropic Native Prompt Cache
 
-**OpenAI** auto-caches prompt prefixes (gpt-4o / gpt-4o: **>= 1024 tokens**, **gpt-4o-mini: 2048 tokens**), charging **50% less** for cached reads (cache writes are not billed extra). **Anthropic** has a similar 5-min TTL cache with **4 breakpoints** (model-dependent: Sonnet 4 / Opus 4 / Haiku 4 all support 4; Claude 3.5 Sonnet also supports 4).
+**OpenAI** auto-caches prompt prefixes (gpt-4o: **>= 1024 tokens**, **gpt-4o-mini: 2048 tokens**), charging **50% less** for cached reads (cache writes are not billed extra). **Anthropic** has a similar 5-min TTL cache with **4 breakpoints** (model-dependent: Sonnet 4 / Opus 4 / Haiku 4 all support 4; Claude 3.5 Sonnet also supports 4).
 
 ```typescript
 // OpenAI / Anthropic handle this automatically — no extra code.
@@ -344,11 +344,15 @@ const result = await Promise.race([
 
 ```typescript
 async function robustGenerate(prompt: string) {
-  const models = ['gpt-4o', 'claude-sonnet', 'gpt-4o-mini'];
+  const models = [
+    openai('gpt-4o'),
+    anthropic('claude-sonnet-4-5'),
+    openai('gpt-4o-mini'),
+  ];
   
-  for (const modelId of models) {
+  for (const model of models) {
     try {
-      return await generateText({ model: modelId, prompt });
+      return await generateText({ model, prompt });
     } catch (e) {
       // On failure, try next
       continue;

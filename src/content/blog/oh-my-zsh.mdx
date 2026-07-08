@@ -243,7 +243,7 @@ git clone https://github.com/zsh-users/zsh-syntax-highlighting \
 
 ```bash
 git clone https://github.com/zsh-users/zsh-completions \
-  ${ZSH_CUSTOM:-${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/custom}/plugins/zsh-completions
+  ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-completions
 ```
 
 ### 效率插件
@@ -359,7 +359,7 @@ plugins=(
 )
 
 # 补全缓存
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+fpath+=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-completions/src
 
 source $ZSH/oh-my-zsh.sh
 
