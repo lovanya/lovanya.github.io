@@ -1,0 +1,175 @@
+---
+title: "Add an AI Assistant to Your Static Blog: Pagefind + Gemini Pure Frontend Approach"
+description: "A pure frontend solution to add an AI chatbot to your Astro blog. No backend deployment required. Supports site search, page navigation, and AI chat."
+pubDate: 2026-07-08
+tags: ['astro', 'react', 'ai', 'pagefind', 'gemini', 'frontend', 'tutorial']
+---
+
+## The Problem
+
+Static blogs have a pain point: as content grows, readers can only browse archives or use basic full-text search. I wanted a floating AI chatbot that lets visitors:
+
+- **Search posts**: Find relevant content by keywords
+- **Navigate**: Say "resume" to jump to the about page
+- **Ask AI**: Get answers to technical questions directly
+
+And it had to be pure frontend — no backend to deploy, no servers to buy, no databases to maintain.
+
+## Tech Stack
+
+| Need | Solution | Why |
+|------|----------|-----|
+| Site search | **Pagefind** | Build-time index, static files, lazy loading, free |
+| AI chat | **Gemini API** | Permanent free tier, callable from browser |
+| Component | **React** | Native Astro support, drop-in with `client:load` |
+
+### Why Pagefind
+
+[Pagefind](https://pagefind.app/) is a Rust-based static search library. It scans HTML at build time, generates a sharded index, and loads chunks lazily via WASM in the browser. Initial load is ~30KB, subsequent chunks load on demand. No backend, no API key, no per-query billing.
+
+### Why Gemini API
+
+Google Gemini 2.0 Flash has a permanent free tier (10 RPM, 1500 RPD). You can restrict the API key by HTTP Referrer in Google AI Studio, making it safe to expose in client-side code.
+
+## Implementation
+
+### 1. Install Pagefind
+
+```bash
+npm install --save-dev pagefind
+```
+
+Update the build script to generate the search index after Astro builds:
+
+```jsonc
+// package.json
+{
+  "scripts": {
+    "build": "astro build && pagefind --source dist"
+  }
+}
+```
+
+`pagefind --source dist` scans the `dist/` directory and generates the search index in `dist/pagefind/`.
+
+### 2. The ChatBot Component
+
+The core is a React component with:
+- A floating robot button (fixed bottom-right)
+- A chat panel (opens on click)
+- Three response modes: navigation, search, AI chat
+
+The component lives at `src/components/ChatBot/ChatBot.tsx`. Here are the key parts.
+
+#### Navigation Commands
+
+A map of keywords to page paths:
+
+```tsx
+const NAV_COMMANDS = [
+  { keywords: ['resume', '简历', 'about'], label: '📄 Resume', url: '/about' },
+  { keywords: ['blog', '博客', 'posts'], label: '📝 Blog', url: '/blog' },
+  { keywords: ['home', '首页', '主页'], label: '🏠 Home', url: '/' },
+];
+```
+
+Matching input shows navigation buttons.
+
+#### Pagefind Search
+
+Dynamically imports the Pagefind JS API:
+
+```tsx
+async function searchPagefind(query: string) {
+  const pagefind = await import('/pagefind/pagefind.js');
+  const result = await pagefind.search(query);
+  const items = await Promise.all(
+    result.results.slice(0, 6).map(r => r.data())
+  );
+  return items.map(d => ({
+    label: d.meta.title,
+    url: d.url,
+  }));
+}
+```
+
+#### Gemini API Call
+
+```tsx
+async function askGemini(prompt: string, lang: string) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: `You are a blog assistant. User asks: ${prompt}` }],
+        }],
+      }),
+    }
+  );
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text;
+}
+```
+
+#### Message Flow
+
+```
+User sends message
+  ├─ Navigation keyword match → Show nav button
+  ├─ Pagefind search → Results found → Show link list
+  │                    └ No results → Show not found
+  └─ API key set → Query Gemini → Show AI response
+```
+
+### 3. Integrate with Astro
+
+Import the component in `BaseLayout.astro` with the `client:load` directive:
+
+```astro
+---
+import ChatBot from '../components/ChatBot/ChatBot';
+---
+<body>
+  <slot />
+  <ChatBot client:load />
+</body>
+```
+
+## Configure Gemini API Key
+
+1. Open [Google AI Studio](https://aistudio.google.com/)
+2. Click **Get API key** and create a key for a new project
+3. In the API key settings, **restrict HTTP Referrer** to your domain (e.g., `https://your-blog.com/*`)
+4. Create a `.env` file in your project root:
+
+```bash
+PUBLIC_GEMINI_API_KEY=your_api_key_here
+```
+
+The `PUBLIC_` prefix in Astro makes the variable available in client-side code.
+
+> **Security note**: An API key restricted by HTTP Referrer is safe to expose client-side — other domains can't use it.
+
+## Why No Backend
+
+This approach has no backend because:
+
+- **Pagefind** generates static files at build time, served from your CDN
+- **Gemini API** is called directly from the browser
+- **Astro** outputs pure static HTML + JS
+
+The architecture is "client → AI API" instead of "client → your server → AI API", eliminating the middle layer.
+
+## Result
+
+The robot button in the bottom-right corner of this blog is the result. Click it to open the chat panel — search posts, navigate pages, or ask technical questions.
+
+## References
+
+- [Pagefind Documentation](https://pagefind.app/)
+- [Gemini API Free Tier](https://ai.google.dev/pricing)
+- [Gemini API JavaScript SDK](https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=web)
+- [Astro React Integration](https://docs.astro.build/en/guides/framework-components/)

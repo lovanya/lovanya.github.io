@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Header from '../components/Header.astro';
+import ChatBot from '../components/ChatBot/ChatBot';
 import { SITE_TITLE, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_URL, AUTHOR } from '../consts';
 
 interface Props {
@@ -357,6 +358,7 @@ const websiteJsonLd = {
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
       })();
     </script>
+    <ChatBot client:load />
   </body>
 </html>
 

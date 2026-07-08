@@ -1,0 +1,175 @@
+---
+title: 给静态博客加上 AI 助手：Pagefind + Gemini 纯前端方案
+description: 纯前端方案给你的 Astro 博客加一个 AI 聊天悬浮机器人，无需后端部署，支持站内搜索、页面导航和 AI 对话。
+pubDate: 2026-07-08
+tags: ['astro', 'react', 'ai', 'pagefind', 'gemini', 'frontend', 'tutorial']
+---
+
+## 需求
+
+静态博客有个痛点：内容多了以后，读者找文章只能靠目录或全文搜索。我想要一个悬浮的 AI 聊天机器人，读者点开就能：
+
+- **搜索文章**：输入关键词找到相关内容
+- **导航页面**：说"简历"直接跳转关于页
+- **AI 回答**：直接问技术问题
+
+而且要求纯前端 —— 不部署后端，不买服务器，不维护数据库。
+
+## 方案选型
+
+| 需求 | 方案 | 理由 |
+|------|------|------|
+| 站内搜索 | **Pagefind** | 构建时生成索引，纯静态文件，按需加载，免费 |
+| AI 对话 | **Gemini API** | 免费层永久有效，浏览器端直接调用 |
+| 组件框架 | **React** | Astro 原生支持，`client:load` 直接挂载 |
+
+### 为什么 Pagefind
+
+[Pagefind](https://pagefind.app/) 是一个 Rust 写的静态搜索库。构建时扫描 HTML，生成分片索引，浏览器端通过 WASM 按需加载。初次加载只需 ~30KB，后续按查询增量加载。没有后端，没有 API key，没有按次计费。
+
+### 为什么 Gemini API
+
+Google Gemini 2.0 Flash 的免费层永久有效（10 RPM、1500 RPD），API key 可以在 Google AI Studio 设置 HTTP Referrer 限制，暴露在客户端也安全。
+
+## 实现
+
+### 1. 安装 Pagefind
+
+```bash
+npm install --save-dev pagefind
+```
+
+修改 `package.json` 构建脚本，在 Astro 构建完成后生成搜索索引：
+
+```jsonc
+// package.json
+{
+  "scripts": {
+    "build": "astro build && pagefind --source dist"
+  }
+}
+```
+
+`pagefind --source dist` 会扫描 `dist/` 目录下的 HTML，在 `dist/pagefind/` 生成搜索索引。
+
+### 2. ChatBot 组件
+
+核心是一个 React 组件，包含：
+- 浮动机器人按钮（固定在右下角）
+- 聊天面板（点击展开）
+- 三种响应模式：导航、搜索、AI 对话
+
+组件代码在 `src/components/ChatBot/ChatBot.tsx`，我把关键部分拆开讲。
+
+#### 导航命令
+
+预设关键词到页面路径的映射：
+
+```tsx
+const NAV_COMMANDS = [
+  { keywords: ['简历', 'resume', '关于', 'about'], label: '📄 简历', url: '/about' },
+  { keywords: ['博客', 'blog', '文章', 'posts'], label: '📝 博客', url: '/blog' },
+  { keywords: ['首页', 'home', '主页'], label: '🏠 首页', url: '/' },
+];
+```
+
+用户输入匹配到关键词，直接显示导航按钮。
+
+#### Pagefind 搜索
+
+动态加载 Pagefind 的 JS API，搜索博客内容：
+
+```tsx
+async function searchPagefind(query: string) {
+  const pagefind = await import('/pagefind/pagefind.js');
+  const result = await pagefind.search(query);
+  const items = await Promise.all(
+    result.results.slice(0, 6).map(r => r.data())
+  );
+  return items.map(d => ({
+    label: d.meta.title,
+    url: d.url,
+  }));
+}
+```
+
+#### Gemini API 调用
+
+```tsx
+async function askGemini(prompt: string, lang: string) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: `你是博客助手。用户问：${prompt}` }],
+        }],
+      }),
+    }
+  );
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text;
+}
+```
+
+#### 整体流程
+
+```
+用户发送消息
+  ├─ 匹配导航关键词 → 显示导航按钮
+  ├─ 搜索 Pagefind → 有结果 → 显示链接列表
+  │                   └ 无结果 → 提示未找到
+  └─ 有 API key → 请求 Gemini → 显示 AI 回答
+```
+
+### 3. 集成到 Astro
+
+在 `BaseLayout.astro` 中导入并使用 `client:load` 指令，确保组件在客户端渲染：
+
+```astro
+---
+import ChatBot from '../components/ChatBot/ChatBot';
+---
+<body>
+  <slot />
+  <ChatBot client:load />
+</body>
+```
+
+## 配置 Gemini API Key
+
+1. 打开 [Google AI Studio](https://aistudio.google.com/)
+2. 点击 **Get API key**，创建一个新项目的 API key
+3. 在 API key 设置中，**限制 HTTP Referrer** 为你的域名（如 `https://your-blog.com/*`）
+4. 在项目根目录创建 `.env` 文件：
+
+```bash
+PUBLIC_GEMINI_API_KEY=你的API_KEY
+```
+
+Astro 的 `PUBLIC_` 前缀会让这个变量在客户端代码中可用。
+
+> **安全说明**：限制了 HTTP Referrer 的 API key 暴露在客户端是安全的 —— 其他域名无法使用你的 key。
+
+## 零后端的原因
+
+这套方案没有后端，原因很简单：
+
+- **Pagefind** 是构建时生成的静态文件，托管在 CDN 上
+- **Gemini API** 直接从浏览器调用，不需要自己的服务器
+- **Astro** 构建产物就是静态 HTML + JS
+
+架构上看就是从"客户端 → 你的服务器 → AI API"变成了"客户端 → AI API"，省掉中间层。
+
+## 效果
+
+最终效果就是这个博客右下角的机器人按钮。点击后弹出聊天面板，可以搜文章、跳转页面、AI 回答。
+
+## 参考资料
+
+- [Pagefind 官方文档](https://pagefind.app/)
+- [Gemini API 免费层](https://ai.google.dev/pricing)
+- [Gemini API JavaScript SDK](https://ai.google.dev/gemini-api/docs/get-started/tutorial?lang=web)
+- [Astro React 集成](https://docs.astro.build/en/guides/framework-components/)
