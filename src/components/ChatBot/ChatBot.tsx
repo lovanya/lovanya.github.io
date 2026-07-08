@@ -217,10 +217,13 @@ export default function ChatBot() {
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
-  const [idlePhase, setIdlePhase] = useState<0 | 1 | 2>(0);
+  const [animState, setAnimState] = useState<'peeking' | 'out' | 'talking'>('peeking');
+  const [eyeDir, setEyeDir] = useState<'left' | 'center' | 'right'>('center');
   const [showTip, setShowTip] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
+  const [hovered, setHovered] = useState(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const eyeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const TIPS_ZH = ['需要帮助吗？', '试试问我技术问题～', '想找哪篇文章？', '我可以跳转页面哦', '今天写代码了吗？'];
@@ -281,29 +284,43 @@ export default function ChatBot() {
   useEffect(() => {
     const clearAll = () => {
       if (idleTimer.current) { clearTimeout(idleTimer.current); idleTimer.current = null; }
+      if (eyeTimer.current) { clearTimeout(eyeTimer.current); eyeTimer.current = null; }
       if (tipTimer.current) { clearTimeout(tipTimer.current); tipTimer.current = null; }
     };
-    if (open) {
+    if (open || hovered) {
       clearAll();
-      setIdlePhase(0);
+      setAnimState('out');
       setShowTip(false);
+      setEyeDir('center');
       return;
     }
     const rnd = (min: number, max: number) => min + Math.random() * (max - min);
     const cycle = () => {
+      // 1. 探出半边，眼睛好奇地看
+      setAnimState('peeking');
       setTipIndex(Math.floor(Math.random() * 5));
-      setIdlePhase(1);
-      tipTimer.current = setTimeout(() => setShowTip(true), 300);
+      setEyeDir('left');
+      eyeTimer.current = setTimeout(() => setEyeDir('right'), 600);
+      eyeTimer.current = setTimeout(() => setEyeDir('left'), 1200);
+      eyeTimer.current = setTimeout(() => setEyeDir('center'), 1700);
+      // 2. 完全出来 + 微笑
       idleTimer.current = setTimeout(() => {
-        setIdlePhase(2);
+        setAnimState('out');
+        // 3. 张嘴讲话 + 弹气泡
         idleTimer.current = setTimeout(() => {
-          setIdlePhase(0);
-          setShowTip(false);
-          idleTimer.current = setTimeout(cycle, rnd(5000, 9000));
-        }, rnd(1800, 2800));
-      }, rnd(600, 1000));
+          setAnimState('talking');
+          setShowTip(true);
+          // 4. 收回半边（不消失）
+          idleTimer.current = setTimeout(() => {
+            setShowTip(false);
+            setAnimState('peeking');
+            // 5. 等待后再次循环
+            idleTimer.current = setTimeout(cycle, rnd(8000, 15000));
+          }, rnd(3500, 5000));
+        }, 800);
+      }, 1800);
     };
-    idleTimer.current = setTimeout(cycle, rnd(4000, 7000));
+    idleTimer.current = setTimeout(cycle, rnd(2500, 4000));
     return clearAll;
   }, [open]);
 
@@ -398,8 +415,9 @@ export default function ChatBot() {
   const s: { [key: string]: React.CSSProperties } = {
     fab: {
       position: 'fixed',
-      bottom: '1.5rem',
+      top: '50%',
       right: '1.5rem',
+      transform: 'translateY(-50%)',
       width: '4rem',
       height: '4rem',
       borderRadius: '50%',
@@ -412,16 +430,17 @@ export default function ChatBot() {
       justifyContent: 'center',
       zIndex: 9999,
       boxShadow: '0 0 24px var(--color-accent-glow)',
-      transition: 'all 0.3s ease',
+      transition: 'right 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease, box-shadow 0.3s ease',
     },
     panel: {
       position: 'fixed',
-      bottom: '5.5rem',
-      right: '1.5rem',
+      top: '50%',
+      right: '6rem',
+      transform: 'translateY(-50%)',
       width: '360px',
-      maxWidth: 'calc(100vw - 2rem)',
+      maxWidth: 'calc(100vw - 7rem)',
       height: '520px',
-      maxHeight: 'calc(100vh - 8rem)',
+      maxHeight: 'calc(100vh - 4rem)',
       background: 'var(--color-bg-secondary)',
       border: '1px solid var(--color-border)',
       borderRadius: '12px',
@@ -542,7 +561,8 @@ export default function ChatBot() {
     },
     tip: {
       position: 'fixed',
-      bottom: '2rem',
+      top: '50%',
+      transform: 'translateY(-50%)',
       right: '5.5rem',
       zIndex: 9998,
       pointerEvents: 'none',
@@ -566,32 +586,50 @@ export default function ChatBot() {
     <>
       <button
         ref={fabRef}
-        style={s.fab}
+        style={{
+          ...s.fab,
+          right: hovered ? '1.5rem' : animState === 'peeking' ? '-2rem' : '1.5rem',
+        }}
         onClick={() => setOpen(v => !v)}
         aria-label={lang === 'zh' ? '打开助手' : 'Open assistant'}
         onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
+          setHovered(true);
+          (e.currentTarget as HTMLElement).style.transform = 'translateY(-50%) scale(1.1)';
           (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px var(--color-accent-glow)';
         }}
         onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 0 20px var(--color-accent-glow)';
+          setHovered(false);
+          (e.currentTarget as HTMLElement).style.transform = 'translateY(-50%) scale(1)';
+          (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px var(--color-accent-glow)';
         }}
       >
         <svg viewBox="0 0 100 100" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.5">
           <line x1="50" y1="12" x2="50" y2="26" strokeLinecap="round" />
           <circle cx="50" cy="9" r="5" fill="var(--color-accent)" stroke="none" />
           <rect x="16" y="26" width="68" height="54" rx="14" fill="var(--color-bg)" stroke="currentColor" />
-          <circle cx="36" cy="48" r="6" fill="var(--color-accent)" stroke="none" />
-          <circle cx="64" cy="48" r="6" fill="var(--color-accent)" stroke="none" />
-          {idlePhase === 0 && <path d="M 30 66 Q 50 76 70 66" strokeLinecap="round" fill="none" />}
-          {idlePhase === 1 && <path d="M 28 65 Q 50 80 72 65" strokeLinecap="round" fill="none" />}
-          {idlePhase === 2 && <ellipse cx="50" cy="70" rx="8" ry="6" fill="var(--color-accent)" stroke="none" />}
+          <circle
+            cx={36 + (eyeDir === 'left' ? -2 : eyeDir === 'right' ? 2 : 0)}
+            cy="48"
+            r="6"
+            fill="var(--color-accent)"
+            stroke="none"
+            style={{ transition: 'cx 0.3s ease' }}
+          />
+          <circle
+            cx={64 + (eyeDir === 'left' ? -2 : eyeDir === 'right' ? 2 : 0)}
+            cy="48"
+            r="6"
+            fill="var(--color-accent)"
+            stroke="none"
+            style={{ transition: 'cx 0.3s ease' }}
+          />
+          {animState !== 'talking' && <path d="M 30 66 Q 50 76 70 66" strokeLinecap="round" fill="none" />}
+          {animState === 'talking' && <ellipse cx="50" cy="70" rx="8" ry="6" fill="var(--color-accent)" stroke="none" />}
         </svg>
       </button>
 
       {showTip && !open && (
-        <div style={s.tip} key={tipIndex}>
+        <div style={{ ...s.tip, right: '5.5rem' }} key={tipIndex}>
           <div style={s.tipBubble}>
             {(lang === 'zh' ? TIPS_ZH : TIPS_EN)[tipIndex]}
           </div>
