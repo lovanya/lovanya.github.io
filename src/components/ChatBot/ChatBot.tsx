@@ -222,6 +222,7 @@ export default function ChatBot() {
   const [showTip, setShowTip] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
   const [hovered, setHovered] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eyeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -280,6 +281,14 @@ export default function ChatBot() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const clearAll = () => {
@@ -589,6 +598,7 @@ export default function ChatBot() {
         style={{
           ...s.fab,
           right: hovered ? '1.5rem' : animState === 'peeking' ? '-2rem' : '1.5rem',
+          ...(isMobile && open ? { display: 'none' } : {}),
         }}
         onClick={() => setOpen(v => !v)}
         aria-label={lang === 'zh' ? '打开助手' : 'Open assistant'}
@@ -637,7 +647,26 @@ export default function ChatBot() {
       )}
 
       {open && (
-        <div ref={panelRef} style={s.panel}>
+        <div
+          ref={panelRef}
+          style={isMobile ? {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+            maxWidth: '100vw',
+            maxHeight: '100dvh',
+            background: 'var(--color-bg-secondary)',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 10000,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            overflow: 'hidden',
+          } : s.panel}
+        >
           <div style={s.header}>
             <svg viewBox="0 0 100 100" width="24" height="24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5">
               <rect x="20" y="24" width="60" height="48" rx="10" fill="var(--color-accent-dim)" stroke="currentColor" />
@@ -651,7 +680,8 @@ export default function ChatBot() {
             {hasAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-neon)', background: 'var(--color-neon-dim)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>AI</span>}
             <button
               onClick={() => setOpen(false)}
-              style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: '1.2rem', lineHeight: 1 }}
+              style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: '0.25rem 0.5rem' }}
+              aria-label={lang === 'zh' ? '关闭' : 'Close'}
             >
               ✕
             </button>
