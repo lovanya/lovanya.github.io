@@ -306,7 +306,7 @@ export default function CursorTrail() {
 
         // Draw rocket body (small triangle pointing in direction of motion)
         const angle = Math.atan2(r.vy, r.vx);
-        const size = 8;
+        const size = 5.6;
         ctx.save();
         ctx.translate(r.x, r.y);
         ctx.rotate(angle + Math.PI / 2);
@@ -325,10 +325,10 @@ export default function CursorTrail() {
         // Flame at tail
         ctx.beginPath();
         ctx.moveTo(-size * 0.3, size * 0.5);
-        ctx.lineTo(0, size + 4);
+        ctx.lineTo(0, size + 3);
         ctx.lineTo(size * 0.3, size * 0.5);
         ctx.closePath();
-        const flameGrad = ctx.createLinearGradient(0, size * 0.5, 0, size + 4);
+        const flameGrad = ctx.createLinearGradient(0, size * 0.5, 0, size + 3);
         flameGrad.addColorStop(0, `rgba(0, 255, 136, ${r.life})`);
         flameGrad.addColorStop(1, 'rgba(0, 255, 136, 0)');
         ctx.fillStyle = flameGrad;
