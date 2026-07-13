@@ -1,0 +1,51 @@
+# 林健(紫牙)的技术博客
+
+> 林健(网名紫牙)的技术博客与简历。11 年前端架构经验，专注企业级中后台、微前端、跨端开发、性能优化与 AI 工程实践。
+> Personal tech blog and résumé of Jian Lin (Ziya) — 11 years of frontend architecture experience, focusing on enterprise web apps, micro-frontend, cross-platform dev, performance optimization, and LLM engineering.
+
+> 所有文章另有英文版（路径前缀 `/en/`），例如 `https://lovanya.github.io/blog/llm-fundamentals` 对应 `https://lovanya.github.io/en/blog/llm-fundamentals`。
+> Every post is also published in English (path prefix `/en/`).
+
+> 风格：实战经验总结与生产权衡分析，不是入门教程。每篇含代码示例、架构图（mermaid）、方案对比与可落地的结论。
+> Style: field notes from production work, not beginner tutorials. Each post includes code samples, architecture diagrams, and engineering trade-offs.
+
+## 站点入口
+
+- [首页](https://lovanya.github.io/): 个人介绍、最新文章、AI 助手入口
+- [关于我 / 简历](https://lovanya.github.io/about): 完整技术栈、工作经历、项目经历、能力雷达图
+- [博客列表](https://lovanya.github.io/blog): 全部文章，按标签筛选
+- [RSS 订阅](https://lovanya.github.io/rss.xml)
+
+## LLM 工程专题（核心系列）
+
+> 这一系列围绕 LLM 应用从 Demo 到 Production 的工程化全链路，写给既要懂前端又要带 LLM 项目的架构师。
+
+- [大模型入门：Transformer 与 LLM 是怎么工作的](https://lovanya.github.io/blog/llm-fundamentals): 写给前端架构师的 LLM 底层速通——Transformer、训练三阶段、推理机制，一次讲清楚 (2026-07-03)
+- [Token、Context Window 与 Prompt Engineering 核心模式](https://lovanya.github.io/blog/tokens-context-and-prompts): token 经济学、context 边界、5 个必会的 prompt 模式 (2026-07-03)
+- [闭源 vs 开源 LLM：架构师选型决策框架](https://lovanya.github.io/blog/llm-selection-framework): 5 个评估维度、3 套主流选型、API vs 自托管成本算账、混合路由策略 (2026-07-03)
+- [RAG 检索增强生成：从基础 RAG 到生产级架构](https://lovanya.github.io/blog/rag-from-naive-to-production): RAG 演进路线、advanced RAG 五大技法、生产架构工程陷阱 (2026-07-07)
+- [Embedding 模型与向量数据库选型实战](https://lovanya.github.io/blog/embedding-and-vector-db): BGE / OpenAI / Cohere / Voyage 怎么选？Pinecone / Milvus / pgvector / Qdrant / Weaviate 怎么挑？ (2026-07-07)
+- [Function Calling 与 Tool Use：从协议到工程实现](https://lovanya.github.io/blog/function-calling-and-tools): JSON schema 设计、tool 选择、错误处理、Zod 强校验、生产工程陷阱 (2026-07-07)
+- [Agent 架构：ReAct、Plan-and-Execute 与多 Agent 协作](https://lovanya.github.io/blog/agent-architecture-patterns): 三大主流架构与生产权衡 (2026-07-07)
+- [LLM 成本与性能优化：Caching、Streaming 与模型路由](https://lovanya.github.io/blog/llm-cost-and-performance): prompt cache、semantic cache、流式优化、模型路由、自动降级 5 大手段 (2026-07-07)
+- [LLM 应用的评估体系：Metrics、LLM-as-Judge 与 A/B 测试](https://lovanya.github.io/blog/llm-evaluation): 评估指标、LLM-as-Judge 实战、回归测试集、Braintrust / Ragas 实践 (2026-07-07)
+- [LLM 应用的 Guardrails：Prompt Injection 与输出安全](https://lovanya.github.io/blog/llm-guardrails): 5 道防线——prompt injection 防御、Guardrails AI 实战、输入输出校验、PII 检测、危险操作审批 (2026-07-07)
+- [LLM 应用的 Memory 系统设计](https://lovanya.github.io/blog/llm-memory-systems): 短期/长期/语义记忆的工程实现、Mem0 架构、上下文窗口管理与生产坑 (2026-07-07)
+- [LLM 可观测性：Tracing、Logging 与调试](https://lovanya.github.io/blog/llm-observability): Langfuse 架构、OpenTelemetry GenAI 语义、token 成本监控、生产排错实战 (2026-07-07)
+- [从 Demo 到 Production：LLM 应用的工程化与团队协作](https://lovanya.github.io/blog/llm-production-engineering): prompt 版本化、CI/CD、灰度发布、多模型切换、团队工作流 (2026-07-07)
+
+## AI × 前端
+
+- [AI 时代的新 UI：当下与近未来的界面应该长什么样](https://lovanya.github.io/blog/ai-ui-new-era): Generative UI、Agent 优先、对话即操作——AI 时代 UI 设计的范式转移、实战模式与近未来趋势 (2026-07-07)
+- [给静态博客加上 AI 助手：Pagefind + Gemini 纯前端方案](https://lovanya.github.io/blog/build-ai-chatbot-astro): 纯前端方案给你的 Astro 博客加一个 AI 聊天悬浮机器人，无需后端部署，支持站内搜索、页面导航和 AI 对话 (2026-07-08)
+
+## 前端工程与开发者工具
+
+- [Oh My Zsh 终极配置指南：从入门到高效开发](https://lovanya.github.io/blog/oh-my-zsh): macOS + Windows 安装、主题、插件、性能优化 (2018-12-22，更新于 2026)
+- [Starship 终端提示符安装与使用指南](https://lovanya.github.io/blog/starship-prompt): Rust 编写、毫秒级启动，macOS / Windows 安装与配置 (2026-07-07)
+- [Git 分支管理完全指南：从入门到团队协作](https://lovanya.github.io/blog/macos-git-branch): 核心命令、分支策略、冲突解决和团队协作最佳实践 (2018-11-12，更新于 2026)
+
+## Optional
+
+- [RSS Feed](https://lovanya.github.io/rss.xml): 全站文章订阅
+- [GitHub Profile](https://github.com/lovanya): 作者 GitHub

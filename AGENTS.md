@@ -43,6 +43,16 @@ Consult these guides before working on related tasks:
    - 字体：JetBrains Mono 用于代码和技术元素
    - 动效：Canvas 光标效果、滚动渐入、太空系统旋转
 
+4. **AI 友好性** (`public/llms.txt`)：遵循 [llmstxt.org](https://llmstxt.org) 规范维护站点 AI 索引。结构：
+   - `# 林健(紫牙)的技术博客` H1 标题
+   - 简短 blockquote 描述站点（中英双语）
+   - `## 站点入口`：首页/关于/博客列表/RSS
+   - `## LLM 工程专题（核心系列）`：14 篇 AI 工程文章
+   - `## AI × 前端`：跨领域文章
+   - `## 前端工程与开发者工具`：旧文（Oh My Zsh / Git / Starship）
+   - `## Optional`：次要链接（RSS、GitHub）
+   - 格式：`- [标题](URL): 描述 (YYYY-MM-DD)`，每篇只列中文版（顶部说明英文版通过 `/en/` 前缀访问）
+
 ## Update Convention
 
 更新规范：
@@ -52,6 +62,7 @@ Consult these guides before working on related tasks:
    - 在 `src/content/blog/en/` 下创建对应英文版
    - Frontmatter 格式：title, date, description, tags, heroImage (可选)
    - 发布前确认 `astro build` 通过
+   - **更新 `public/llms.txt`**：新增文章必须在对应分类下追加一行（`- [中文标题](https://lovanya.github.io/blog/slug): 描述 (YYYY-MM-DD)`），并把 `pubDate` 一并填上；如果是替换/删除文章，把对应行移除。LLM 索引漏更会导致外部 AI 读不到新内容。
 
 2. **组件修改**：
    - 修改 React 组件（.tsx）后确认 `client:load` 指令正确
