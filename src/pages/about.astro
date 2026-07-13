@@ -8,6 +8,7 @@ import SkillTree from '../components/Resume/SkillTree';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import Comments from '../components/Comments.astro';
 import { skills, experience, projects, techStack } from '../data/resume';
+import { getCollection } from 'astro:content';
 
 const title = '林健的简历 - 林健(紫牙) 11 年前端架构师 | 微前端 / 性能优化 / AI 工程';
 const description = '林健,网名紫牙,11 年前端架构经验,中南大学计算机科学毕业。本页是林健的简历,也是紫牙的简历,查看完整技术栈、项目经历与工作经验。';
@@ -17,11 +18,19 @@ const sections = [
   { id: 'experience', title: '工作经历' },
   { id: 'projects', title: '项目经历' },
   { id: 'techstack', title: '技术栈' },
+  { id: 'writing', title: '技术写作' },
 ];
 
 const breadcrumbs = [
   { label: '关于我', href: '/about' },
 ];
+
+// Featured posts: 4 most recent Chinese posts, surfaced from the about
+// page so the resume acts as an SEO hub for "林健" searches.
+const allPosts = (await getCollection('blog'))
+  .filter(p => !p.id.startsWith('en/'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const featuredPosts = allPosts.slice(0, 4);
 ---
 
 <BaseLayout
@@ -65,6 +74,43 @@ const breadcrumbs = [
         <SkillTree client:load techStack={techStack} lang="zh" />
       </section>
 
+      <section id="sec-writing" class="reveal flex flex-col items-center w-full">
+        <h2 class="section-title">技术写作</h2>
+        <p class="text-sm text-[var(--color-text-secondary)] font-mono opacity-70" style="margin-bottom: var(--space-4);">
+          林健(紫牙)在 LLM 工程 / 前端架构领域的实战文章
+        </p>
+        <ul class="grid grid-cols-1 md:grid-cols-2 w-full" style="gap: var(--space-3);">
+          {featuredPosts.map((p) => (
+            <li>
+              <a
+                href={`/blog/${p.id}/`}
+                class="block card hover:border-[var(--color-accent)]/40 transition-colors"
+                style="padding: var(--space-4);"
+              >
+                <div class="flex items-center text-xs text-[var(--color-text-secondary)] font-mono" style="gap: var(--space-2); margin-bottom: var(--space-2);">
+                  <time datetime={p.data.pubDate.toISOString()}>
+                    {p.data.pubDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </time>
+                </div>
+                <h3 class="text-base font-semibold text-[var(--color-text)]" style="line-height: 1.5;">
+                  {p.data.title}
+                </h3>
+                <p class="text-sm text-[var(--color-text-secondary)]" style="margin-top: var(--space-2); line-height: 1.6;">
+                  {p.data.description}
+                </p>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a
+          href="/blog"
+          class="btn btn-outline"
+          style="margin-top: var(--space-6);"
+        >
+          <span>查看全部 {allPosts.length} 篇文章 →</span>
+        </a>
+      </section>
+
       <div class="w-full" style="padding-top: var(--space-12); border-top: 1px solid var(--color-border);">
         <Comments lang="zh" />
       </div>
@@ -74,8 +120,8 @@ const breadcrumbs = [
 
 <script>
   (function() {
-    const sections = ['sec-competencies', 'sec-experience', 'sec-projects', 'sec-techstack'];
-    const labels = ['核心能力', '工作经历', '项目经历', '技术栈'];
+    const sections = ['sec-competencies', 'sec-experience', 'sec-projects', 'sec-techstack', 'sec-writing'];
+    const labels = ['核心能力', '工作经历', '项目经历', '技术栈', '技术写作'];
     const btn = document.getElementById('scroll-next-btn');
     const label = document.getElementById('scroll-arrow-label');
     const arrowContainer = document.getElementById('scroll-arrow');
