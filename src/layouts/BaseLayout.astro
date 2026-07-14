@@ -367,20 +367,23 @@ const websiteJsonLd = {
     </script>
     <ChatBot client:load />
 
-    <!-- GoatCounter visit_count widget -->
+    <!-- GoatCounter visit count -->
     <script>
       (function() {
         var t = setInterval(function() {
-          if (window.goatcounter && window.goatcounter.visit_count) {
+          if (window.goatcounter && window.goatcounter.get_data) {
             clearInterval(t);
-            document.querySelectorAll('#view-count').forEach(function() {
-              window.goatcounter.visit_count({
-                append: '#view-count',
-                type: 'html',
-                no_branding: true,
-                style: '#gcvc { border: none !important; background: transparent !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; } #gcvc-for { display: none !important; } #gcvc-views { font: inherit !important; color: var(--color-text-secondary) !important; font-size: inherit !important; } #gcvc-by { display: none !important; }'
-              });
+            var path = window.goatcounter.get_data()['p'];
+            var r = new XMLHttpRequest();
+            r.addEventListener('load', function() {
+              if (r.status === 200) {
+                var count = JSON.parse(r.responseText).count;
+                var el = document.getElementById('view-count-num');
+                if (el) el.textContent = count;
+              }
             });
+            r.open('GET', 'https://purpletooth.goatcounter.com/counter/' + encodeURIComponent(path) + '.json');
+            r.send();
           }
         }, 100);
       })();
