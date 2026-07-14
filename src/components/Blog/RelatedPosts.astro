@@ -8,11 +8,10 @@ interface Props {
   limit?: number;
 }
 
-const { currentPost, lang = 'zh', limit = 3 } = Astro.props;
+const { currentPost, lang = 'zh', limit = 5 } = Astro.props;
 const currentId = currentPost.id;
 const currentTags = currentPost.data.tags || [];
 
-// 获取同语言下的所有文章
 const allPosts = (await getCollection('blog'))
   .filter((post) => {
     if (lang === 'zh') return !post.id.startsWith('en/');
@@ -20,7 +19,6 @@ const allPosts = (await getCollection('blog'))
   })
   .filter((post) => post.id !== currentId);
 
-// 计算相关文章：按共享标签数 + 时间近度评分
 const scored = allPosts
   .map((post) => {
     const tags = post.data.tags || [];
@@ -28,11 +26,10 @@ const scored = allPosts
     const daysDiff =
       Math.abs(currentPost.data.pubDate.getTime() - post.data.pubDate.getTime()) /
       (1000 * 60 * 60 * 24);
-    // 标签权重高，时间权重低
     const score = sharedTags * 10 - Math.log(daysDiff + 1);
     return { post, score, sharedTags };
   })
-  .filter(({ sharedTags }) => sharedTags > 0) // 至少有一个共享标签
+  .filter(({ sharedTags }) => sharedTags > 0)
   .sort((a, b) => b.score - a.score)
   .slice(0, limit);
 
@@ -43,40 +40,30 @@ const noRelatedText = lang === 'zh' ? '暂无相关文章' : 'No related posts y
 
 {
   relatedPosts.length > 0 && (
-    <section
+    <nav
       class="flex flex-col w-full mt-12 pt-8 border-t border-[var(--color-border)]"
       aria-label={headingText}
     >
-      <h2 class="text-2xl font-bold text-[var(--color-accent)] font-mono" style="margin-bottom: var(--space-6);">
-        // {headingText}
+      <h2 class="text-lg font-bold text-[var(--color-text)] font-mono" style="margin-bottom: var(--space-4);">
+        {headingText}
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3" style="gap: var(--space-4);">
+      <ul class="flex flex-col" style="gap: var(--space-2);">
         {relatedPosts.map((post) => {
           const href = lang === 'en' ? `/en/blog/${post.id.replace('en/', '')}` : `/blog/${post.id}`;
           return (
-            <a
-              href={href}
-              class="group flex flex-col p-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)]/40 hover:bg-[var(--color-card-hover)] transition-all"
-              style="gap: var(--space-2);"
-            >
-              <div class="text-xs text-[var(--color-text-secondary)] font-mono">
-                {post.data.pubDate.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-              <h3 class="text-base font-semibold text-[var(--color-text)] group-hover:text-[var(--color-accent)] transition-colors leading-snug">
-                {post.data.title}
-              </h3>
-              <p class="text-xs text-[var(--color-text-secondary)] line-clamp-2 leading-relaxed">
-                {post.data.description}
-              </p>
-            </a>
+            <li>
+              <a
+                href={href}
+                class="inline-block text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] hover:underline transition-colors font-mono"
+                style="padding: var(--space-1) 0;"
+              >
+                → {post.data.title}
+              </a>
+            </li>
           );
         })}
-      </div>
-    </section>
+      </ul>
+    </nav>
   )
 }
 
