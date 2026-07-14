@@ -366,6 +366,26 @@ const websiteJsonLd = {
       })();
     </script>
     <ChatBot client:load />
+
+    <!-- GoatCounter visit_count widget -->
+    <script>
+      (function() {
+        var t = setInterval(function() {
+          if (window.goatcounter && window.goatcounter.visit_count) {
+            clearInterval(t);
+            var containers = document.querySelectorAll('#view-count');
+            containers.forEach(function(el) {
+              window.goatcounter.visit_count({
+                append: el,
+                type: 'html',
+                no_branding: true,
+                style: 'div { border: none; background: transparent; padding: 0; margin: 0; font: inherit; color: var(--color-text-secondary); }'
+              });
+            });
+          }
+        }, 100);
+      })();
+    </script>
   </body>
 </html>
 

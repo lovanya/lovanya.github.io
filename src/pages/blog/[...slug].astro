@@ -100,33 +100,7 @@ const blogPosting = {
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span id="view-count-text" class="text-[var(--color-text-secondary)]">—</span>
             </span>
-          </div>
-          <script>
-            (async () => {
-              const textEl = document.getElementById('view-count-text');
-              if (!textEl) return;
-              try {
-                const path = location.pathname.replace(/\/$/, '') || '/';
-                const url = new URL(`https://purpletooth.goatcounter.com/counter${path}.json`);
-                const res = await fetch(url.href);
-                // GoatCounter returns HTTP 404 with a valid {count: 0} body
-                // for paths that have no recorded hits. That's the expected
-                // "no data yet" signal, NOT an error.
-                if (res.status === 404) {
-                  textEl.textContent = '0';
-                  return;
-                }
-                if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-                const data = await res.json();
-                textEl.textContent = String(data.count || 0);
-              } catch (e) {
-                console.warn('[view-count] failed:', e);
-                textEl.textContent = '0';
-              }
-            })();
-          </script>
 
           {tags.length > 0 && (
             <div class="flex flex-wrap items-center" style="gap: var(--space-2);">

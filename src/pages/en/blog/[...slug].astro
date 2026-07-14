@@ -100,23 +100,7 @@ const blogPosting = {
                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <span id="view-count-text" class="text-[var(--color-text-secondary)]">—</span>
             </span>
-          </div>
-          <script>
-            (async () => {
-              const textEl = document.getElementById('view-count-text');
-              if (!textEl) return;
-              try {
-                const res = await fetch('https://purpletooth.goatcounter.com/counter' + location.pathname + '.json');
-                if (!res.ok) throw new Error(res.statusText);
-                const data = await res.json();
-                textEl.textContent = String(data.count || 0);
-              } catch {
-                textEl.textContent = '0';
-              }
-            })();
-          </script>
 
           {tags.length > 0 && (
             <div class="flex flex-wrap items-center" style="gap: var(--space-2);">
