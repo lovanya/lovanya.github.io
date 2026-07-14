@@ -95,7 +95,7 @@ let initialized = false;
 
 export function initCursorTrail() {
   if (typeof window === 'undefined') return;
-  if (window.innerWidth < 768) return;
+  if (window.innerWidth < 1024) return;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   if (initialized) return;
   if (document.getElementById('__cold_tech_cursor_canvas__')) {

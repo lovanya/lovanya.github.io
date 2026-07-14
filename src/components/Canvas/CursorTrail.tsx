@@ -48,7 +48,7 @@ export default function CursorTrail() {
     if (!ctx) return;
 
     // Skip on mobile or reduced motion
-    if (window.innerWidth < 768) return;
+    if (window.innerWidth < 1024) return;
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const resize = () => {
