@@ -108,12 +108,16 @@ const blogPosting = {
               const textEl = document.getElementById('view-count-text');
               if (!textEl) return;
               try {
-                // Strip trailing slash so '/blog/foo/' becomes '/blog/foo'
-                // (otherwise the URL gets '//' and browsers normalize to a
-                // bad path, returning 404).
                 const path = location.pathname.replace(/\/$/, '') || '/';
                 const url = new URL(`https://purpletooth.goatcounter.com/counter${path}.json`);
                 const res = await fetch(url.href);
+                // GoatCounter returns HTTP 404 with a valid {count: 0} body
+                // for paths that have no recorded hits. That's the expected
+                // "no data yet" signal, NOT an error.
+                if (res.status === 404) {
+                  textEl.textContent = '0';
+                  return;
+                }
                 if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
                 const data = await res.json();
                 textEl.textContent = String(data.count || 0);
