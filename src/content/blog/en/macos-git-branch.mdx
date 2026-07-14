@@ -12,16 +12,21 @@ import Mermaid from '../../../components/Blog/Mermaid';
 
 Git branching is one of Git's most powerful features and the core of team collaboration. But most tutorials only cover commands — this guide focuses on **practical branching**: when to create branches, which strategy to use, and how to resolve conflicts.
 
-<Mermaid client:load caption="Figure 1: Git branch workflow" chart={`flowchart LR
-  M[main] --> D[develop]
-  D --> F1[feature/login]
-  D --> F2[feature/payment]
-  F1 --> M
-  F2 --> M
-  M --> R[release/v1.0]
+<Mermaid client:load caption="Figure 1: Git Flow branching model" chart={`flowchart LR
+  subgraph main [main (production)]
+    M[main]
+  end
+  subgraph dev [develop (integration)]
+    D[develop]
+  end
+  F1[feature/login] --> D
+  F2[feature/payment] --> D
+  D --> R[release/v1.0]
   R --> M
+  R --> D
   M --> H[hotfix/bug-123]
-  H --> M`} />
+  H --> M
+  H --> D`} />
 
 ## 1. Basic Commands
 
