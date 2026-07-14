@@ -373,10 +373,9 @@ const websiteJsonLd = {
         var t = setInterval(function() {
           if (window.goatcounter && window.goatcounter.visit_count) {
             clearInterval(t);
-            var containers = document.querySelectorAll('#view-count');
-            containers.forEach(function(el) {
+            document.querySelectorAll('#view-count').forEach(function() {
               window.goatcounter.visit_count({
-                append: el,
+                append: '#view-count',
                 type: 'html',
                 no_branding: true,
                 style: 'div { border: none; background: transparent; padding: 0; margin: 0; font: inherit; color: var(--color-text-secondary); }'

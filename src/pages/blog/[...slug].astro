@@ -101,6 +101,7 @@ const blogPosting = {
                 <circle cx="12" cy="12" r="3"/>
               </svg>
             </span>
+          </div>
 
           {tags.length > 0 && (
             <div class="flex flex-wrap items-center" style="gap: var(--space-2);">
@@ -110,7 +111,7 @@ const blogPosting = {
                   href={`/blog?tag=${encodeURIComponent(tag)}`}
                   class="text-xs font-mono px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]/40 hover:text-[var(--color-accent)] transition-colors"
                 >
-                  #{tag}
+                  {tag}
                 </a>
               ))}
             </div>
