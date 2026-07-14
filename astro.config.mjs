@@ -8,6 +8,7 @@ import { defineConfig } from 'astro/config';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import Mermaid from './src/components/Blog/Mermaid.tsx';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -53,7 +54,11 @@ function lookupPost(pathname) {
 export default defineConfig({
   site: 'https://lovanya.github.io',
   integrations: [
-    mdx(),
+    mdx({
+      // Make <Mermaid client:load chart={...} /> work in every MDX file
+      // without an explicit import.
+      components: { Mermaid },
+    }),
     react(),
     sitemap({
       // Bilingual hreflang auto-generated from URL structure

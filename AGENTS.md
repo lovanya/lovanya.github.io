@@ -178,6 +178,18 @@ Consult these guides before working on related tasks:
 | 1.0 | 完全无排版 |
 | 0.0 | 无内容 |
 
+#### Mermaid 图表渲染（强制项，附加在第 4 项上）
+
+> 凡是用了 Mermaid 图表的文章，发布前必须人工目测一遍，**任何一项不通过都直接打回**：
+
+- ✅ **无 parse error** —— 浏览器无红色错误块；控制台无 `Mermaid render error`
+- ✅ **所有节点都画出来** —— 不会因为布局空间不够而消失或重叠
+- ✅ **所有边都画出来** —— LR/TB 图都不会丢边（这是 Mermaid 多源多汇图的常见坑）
+- ✅ **中文字符不炸** —— 节点 label 里的中文/特殊字符要显示正常，不出现 `□□□` 或乱码
+- ✅ **语法匹配当前 Mermaid 版本** —— v11 已废弃 `flowchart TB` 之外的某些语法，迁到 11 时全部检查一遍
+
+实现方式：所有 Mermaid 一律用 `<Mermaid client:load chart={...} />` 组件（已在 `src/components/Blog/Mermaid.tsx`），不要用 ```mermaid 围栏（围栏代码块在 MDX 里默认不渲染成图）。
+
 ### 5. 代码与示例质量
 
 | 分值 | 标准 |

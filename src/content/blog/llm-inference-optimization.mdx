@@ -24,13 +24,11 @@ import Mermaid from '../../components/Blog/Mermaid';
 
 很多人以为训练贵、推理便宜。**实际反过来**：
 
-```mermaid
-pie title LLM 全生命周期成本（典型企业）
+<Mermaid client:load caption="图 1：LLM 全生命周期成本" chart={`pie title LLM 全生命周期成本（典型企业）
   "推理 API 费用" : 75
   "训练 / 微调" : 10
   "工程 + 人力" : 12
-  "数据 + 存储" : 3
-```
+  "数据 + 存储" : 3`} />
 
 - 训练是一次性的，推理是**每天都在烧**
 - 一个 7B 模型在 A100 上自托管，1M tokens 输入 + 1M tokens 输出 ≈ $0.5
@@ -51,8 +49,7 @@ pie title LLM 全生命周期成本（典型企业）
 
 一个 token 从输入到输出，经历：
 
-```mermaid
-flowchart LR
+<Mermaid client:load caption="图 2：LLM 推理循环" chart={`flowchart LR
   A[输入 tokens] --> B[Embedding]
   B --> C[Prefill<br/>一次性处理所有 input]
   C --> D[KV Cache 写入]
@@ -60,8 +57,7 @@ flowchart LR
   E -->|每次 1 个 token| F[KV Cache 读取]
   F --> G{到达 max_tokens?}
   G -->|否| E
-  G -->|是| H[输出 tokens]
-```
+  G -->|是| H[输出 tokens]`} />
 
 **KV cache** 是关键——它把每个 token 的 K/V 矩阵缓存起来，避免 decode 时重复计算。但它**吃显存**：
 
@@ -86,13 +82,12 @@ flowchart LR
 
 PagedAttention 把 KV cache 切成**固定大小的 page**（类似 4KB page），按需分配：
 
-```mermaid
-flowchart TB
-  subgraph 请求1 [Request 1: 500 tokens]
+<Mermaid client:load caption="图 3：PagedAttention 分页映射" chart={`flowchart TB
+  subgraph requestOne["Request 1: 500 tokens"]
     P1[Page 1: 256 tokens]
     P2[Page 2: 244 tokens]
   end
-  subgraph 请求2 [Request 2: 1500 tokens]
+  subgraph requestTwo["Request 2: 1500 tokens"]
     P3[Page 3: 256 tokens]
     P4[Page 4: 256 tokens]
     P5[Page 5: 256 tokens]
@@ -100,9 +95,8 @@ flowchart TB
     P7[Page 7: 256 tokens]
     P8[Page 8: 220 tokens]
   end
-  P1 -.块表.-> T1[Block Table 1]
-  P3 -.块表.-> T2[Block Table 2]
-```
+  P1 -.block table.-> T1[Block Table 1]
+  P3 -.block table.-> T2[Block Table 2]`} />
 
 每个请求维护一个**块表（block table）**，记录逻辑 page → 物理 page 的映射。**碎片化降为 0**，显存利用率从 ~30% 提到 ~95%。
 
@@ -164,14 +158,12 @@ const { choices } = await res.json();
 
 **决策树**：
 
-```mermaid
-flowchart TD
+<Mermaid client:load caption="图 4：量化方案选型" chart={`flowchart TD
   Q1{部署在哪里?}
   Q1 -->|GPU 服务器| Q2{质量优先?}
   Q1 -->|Mac / CPU| GGUF[GGUF<br/>Q4_K_M 推荐]
   Q2 -->|是| AWQ[AWQ int4]
-  Q2 -->|否| GPTQ[GPTQ int4]
-```
+  Q2 -->|否| GPTQ[GPTQ int4]`} />
 
 ### 用 AWQ 量化一个模型
 
@@ -219,16 +211,14 @@ ollama pull llama3:70b-instruct-q4_K_M
 
 ### 原理
 
-```mermaid
-sequenceDiagram
+<Mermaid client:load caption="图 5：Speculative Decoding 时序" chart={`sequenceDiagram
   participant D as Draft Model<br/>(小, 1B)
   participant T as Target Model<br/>(大, 70B)
   Note over D: 生成 5 个候选 token<br/>(快, 1 次大模型调用能验证)
   D->>T: 5 个候选
   T->>T: 1 次前向传播验证所有 5 个
   T-->>D: 接受 4 个, 拒绝 1 个
-  Note over D,T: 净效果: 4 个 token 用 1 次大模型时间
-```
+  Note over D,T: 净效果: 4 个 token 用 1 次大模型时间`} />
 
 **关键洞察**：大模型验证 5 个 token **比生成 1 个 token 快**（因为是并行 forward）。如果接受率高，你白赚 5x 速度；如果接受率低，至少不亏（fallback 到普通 decode）。
 
@@ -259,8 +249,7 @@ vllm serve meta-llama/Llama-3-70B-Instruct \
 
 ## 六、生产部署选型决策
 
-```mermaid
-flowchart TD
+<Mermaid client:load caption="图 6：生产部署选型" chart={`flowchart TD
   Q1{每天 token 量?}
   Q1 -->|< 1M| API[直接 API<br/>GPT-4o-mini / Claude Haiku]
   Q1 -->|1M - 100M| Q2{需要微调?}
@@ -268,8 +257,7 @@ flowchart TD
   Q2 -->|否| API2[继续 API<br/>加上 prompt cache]
   Q2 -->|是| SELF1[vLLM 自托管<br/>7B/8B 单卡 A100/H100]
   Q3 -->|充足| SELF2[vLLM + 量化<br/>70B 多卡]
-  Q3 -->|紧张| EDGE[GGUF + 量化<br/>CPU 推理]
-```
+  Q3 -->|紧张| EDGE[GGUF + 量化<br/>CPU 推理]`} />
 
 ## 七、踩坑实录
 

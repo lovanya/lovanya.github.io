@@ -14,25 +14,7 @@ const { lang } = Astro.props;
     {lang === 'zh' ? '评论' : 'Comments'}
   </h3>
 
-  <div id="giscus-container">
-    <script
-      src="https://giscus.app/client.js"
-      data-repo="lovanya/lovanya.github.io"
-      data-repo-id="MDEwOlJlcG9zaXRvcnkxMDA2OTc1ODg="
-      data-category="Announcements"
-      data-category-id="DIC_kwDOBgCF9M4DAZ67"
-      data-mapping="pathname"
-      data-strict="0"
-      data-reactions-enabled="1"
-      data-emit-metadata="0"
-      data-input-position="top"
-      data-theme="preferred_color_scheme"
-      data-lang={lang === 'zh' ? 'zh-CN' : 'en'}
-      data-loading="lazy"
-      crossorigin="anonymous"
-      async
-    ></script>
-  </div>
+  <div id="giscus-container"></div>
 
   <noscript>
     <p class="text-[var(--color-text-secondary)]">
@@ -43,35 +25,75 @@ const { lang } = Astro.props;
   </noscript>
 </div>
 
-<script>
-  // Handle theme changes for Giscus
+<script is:inline>
+  // Build the Giscus <script> element with the current page theme
+  // (not the OS preference — pages have a manual dark/light toggle).
+  function mountGiscus() {
+    const container = document.getElementById('giscus-container');
+    if (!container || container.querySelector('script')) return;
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.setAttribute('data-repo', 'lovanya/lovanya.github.io');
+    s.setAttribute('data-repo-id', 'MDEwOlJlcG9zaXRvcnkxMDA2OTc1ODg=');
+    s.setAttribute('data-category', 'Announcements');
+    s.setAttribute('data-category-id', 'DIC_kwDOBgCF9M4DAZ67');
+    s.setAttribute('data-mapping', 'pathname');
+    s.setAttribute('data-strict', '0');
+    s.setAttribute('data-reactions-enabled', '1');
+    s.setAttribute('data-emit-metadata', '0');
+    s.setAttribute('data-input-position', 'top');
+    s.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    s.setAttribute('data-lang', document.documentElement.lang === 'zh' ? 'zh-CN' : 'en');
+    s.setAttribute('data-loading', 'lazy');
+    container.appendChild(s);
+  }
+
+  // Push theme updates into the Giscus iframe after it's loaded
   function updateGiscusTheme() {
     const isDark = document.documentElement.classList.contains('dark');
-    const giscusFrame = document.querySelector('iframe.giscus-frame') as HTMLIFrameElement;
-    
-    if (giscusFrame) {
-      giscusFrame.contentWindow?.postMessage(
+    const frame = document.querySelector('iframe.giscus-frame');
+    if (frame) {
+      frame.contentWindow?.postMessage(
         { giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } },
         'https://giscus.app'
       );
     }
   }
 
-  // Listen for theme changes
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.attributeName === 'class') {
+  // Re-mount on language switch (Giscus caches per page in the iframe;
+  // re-rendering requires a fresh script tag)
+  function maybeRemount() {
+    const container = document.getElementById('giscus-container');
+    if (!container) return;
+    const lang = document.documentElement.lang === 'zh' ? 'zh-CN' : 'en';
+    if (container.dataset.lang && container.dataset.lang !== lang) {
+      container.innerHTML = '';
+      delete container.dataset.lang;
+      mountGiscus();
+    }
+    if (!container.dataset.lang) container.dataset.lang = lang;
+  }
+
+  // Mount on first paint
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountGiscus);
+  } else {
+    mountGiscus();
+  }
+
+  // React to theme toggles
+  new MutationObserver((muts) => {
+    for (const m of muts) {
+      if (m.attributeName === 'class') {
         updateGiscusTheme();
+        maybeRemount();
       }
-    });
-  });
-
-  observer.observe(document.documentElement, { attributes: true });
-
-  // Initial update
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(updateGiscusTheme, 1000);
-  });
+    }
+  }).observe(document.documentElement, { attributes: true });
 </script>
 
 <style>

@@ -24,13 +24,11 @@ Then vLLM, PagedAttention, quantization, and speculative decoding are **the four
 
 Most people assume training is expensive and inference is cheap. **It's the other way around**:
 
-```mermaid
-pie title Typical Enterprise LLM Cost Breakdown
+<Mermaid client:load caption="Figure 1: LLM lifecycle cost breakdown" chart={`pie title Typical Enterprise LLM Cost Breakdown
   "Inference API fees" : 75
   "Training / fine-tuning" : 10
   "Engineering + headcount" : 12
-  "Data + storage" : 3
-```
+  "Data + storage" : 3`} />
 
 - Training is one-time; inference burns every day
 - Self-hosting a 7B model on A100: 1M input + 1M output tokens ≈ $0.50
@@ -51,8 +49,7 @@ Latency splits into two distinct kinds:
 
 One prompt to response, end-to-end:
 
-```mermaid
-flowchart LR
+<Mermaid client:load caption="Figure 2: LLM inference loop" chart={`flowchart LR
   A[Input tokens] --> B[Embedding]
   B --> C[Prefill<br/>process all input at once]
   C --> D[KV cache write]
@@ -60,8 +57,7 @@ flowchart LR
   E -->|one token per step| F[KV cache read]
   F --> G{Reached max_tokens?}
   G -->|no| E
-  G -->|yes| H[Output tokens]
-```
+  G -->|yes| H[Output tokens]`} />
 
 **KV cache** is the centerpiece — it caches each token's K/V matrices so decode doesn't recompute. But it **eats VRAM**:
 
@@ -85,13 +81,12 @@ Traditional inference engines (HuggingFace Transformers, early TGI versions) **p
 
 PagedAttention chops KV cache into **fixed-size pages** (think 4KB OS pages), allocating on demand:
 
-```mermaid
-flowchart TB
-  subgraph R1 [Request 1: 500 tokens]
+<Mermaid client:load caption="Figure 3: PagedAttention page mapping" chart={`flowchart TB
+  subgraph requestOne["Request 1: 500 tokens"]
     P1[Page 1: 256 tokens]
     P2[Page 2: 244 tokens]
   end
-  subgraph R2 [Request 2: 1500 tokens]
+  subgraph requestTwo["Request 2: 1500 tokens"]
     P3[Page 3: 256 tokens]
     P4[Page 4: 256 tokens]
     P5[Page 5: 256 tokens]
@@ -100,8 +95,7 @@ flowchart TB
     P8[Page 8: 220 tokens]
   end
   P1 -.block table.-> T1[Block Table 1]
-  P3 -.block table.-> T2[Block Table 2]
-```
+  P3 -.block table.-> T2[Block Table 2]`} />
 
 Each request keeps a **block table** mapping logical pages to physical pages. Fragmentation drops to ~0; VRAM utilization goes from ~30% to ~95%.
 
@@ -163,14 +157,12 @@ Quantization's core idea: **store weights in fewer bits**, trading a tiny bit of
 
 **Decision tree**:
 
-```mermaid
-flowchart TD
+<Mermaid client:load caption="Figure 4: Quantization method selection" chart={`flowchart TD
   Q1{Where are you deploying?}
   Q1 -->|GPU server| Q2{Quality priority?}
   Q1 -->|Mac / CPU| GGUF[GGUF<br/>Q4_K_M recommended]
   Q2 -->|yes| AWQ[AWQ int4]
-  Q2 -->|no| GPTQ[GPTQ int4]
-```
+  Q2 -->|no| GPTQ[GPTQ int4]`} />
 
 ### Quantize a model with AWQ
 
@@ -217,16 +209,14 @@ The most elegant technique: **let a small model generate candidates, let the big
 
 ### How it works
 
-```mermaid
-sequenceDiagram
+<Mermaid client:load caption="Figure 5: Speculative decoding sequence" chart={`sequenceDiagram
   participant D as Draft Model<br/>(small, 1B)
   participant T as Target Model<br/>(large, 70B)
   Note over D: Generate 5 candidate tokens<br/>(cheap)
   D->>T: 5 candidates in parallel
   T->>T: One forward pass verifies all 5
   T-->>D: Accept 4, reject 1
-  Note over D,T: Net: 4 tokens for the price of 1 big-model forward
-```
+  Note over D,T: Net: 4 tokens for the price of 1 big-model forward`} />
 
 **Key insight**: a large model *verifying* 5 tokens in parallel is faster than *generating* 1 token sequentially. If acceptance is high, you win 5x; if low, you fall back to normal decode with no loss.
 
@@ -257,8 +247,7 @@ Benchmark:
 
 ## 6. Production Decision Tree
 
-```mermaid
-flowchart TD
+<Mermaid client:load caption="Figure 6: Production deployment selection" chart={`flowchart TD
   Q1{Daily token volume?}
   Q1 -->|< 1M| API[Just use the API<br/>GPT-4o-mini / Claude Haiku]
   Q1 -->|1M - 100M| Q2{Need fine-tuning?}
@@ -266,8 +255,7 @@ flowchart TD
   Q2 -->|no| API2[Stay on API<br/>add prompt caching]
   Q2 -->|yes| SELF1[vLLM self-host<br/>7B/8B on single A100/H100]
   Q3 -->|generous| SELF2[vLLM + quantization<br/>70B multi-GPU]
-  Q3 -->|tight| EDGE[GGUF + quantization<br/>CPU inference]
-```
+  Q3 -->|tight| EDGE[GGUF + quantization<br/>CPU inference]`} />
 
 ## 7. Real Production War Stories
 
