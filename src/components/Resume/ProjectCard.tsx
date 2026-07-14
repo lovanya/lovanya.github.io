@@ -66,7 +66,7 @@ export default function ProjectCard({ projects, lang }: ProjectCardProps) {
               <div className="project-card-face project-card-back" style={{ padding: 'var(--card-padding)' }}>
                 <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
                   <h4 className="text-sm font-bold text-[var(--color-accent)] font-mono">
-                    {'// '}{lang === 'zh' ? '项目亮点' : 'Key Highlights'}
+                    {lang === 'zh' ? '项目亮点' : 'Key Highlights'}
                   </h4>
                   <span className="text-xs text-[var(--color-text-secondary)] font-mono opacity-50">{lang === 'zh' ? '← 返回' : '← Back'}</span>
                 </div>

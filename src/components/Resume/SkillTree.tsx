@@ -318,7 +318,7 @@ export default function SkillTree({ techStack, lang }: SkillTreeProps) {
               fill="var(--color-text-secondary)"
               opacity="0.6"
             >
-              {lang === 'zh' ? '// 太阳系' : '// SOLAR SYSTEM'}
+              {lang === 'zh' ? '太阳系' : 'SOLAR SYSTEM'}
             </text>
             <text
               x="0" y="16"
