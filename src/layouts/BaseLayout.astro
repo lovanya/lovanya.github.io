@@ -382,7 +382,7 @@ const websiteJsonLd = {
                 if (el) el.textContent = count;
               }
             });
-            r.open('GET', 'https://purpletooth.goatcounter.com/counter/' + encodeURIComponent(path) + '.json');
+            r.open('GET', 'https://purpletooth.goatcounter.com/counter' + path + '.json');
             r.send();
           }
         }, 100);
