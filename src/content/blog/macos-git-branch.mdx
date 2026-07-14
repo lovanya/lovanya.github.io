@@ -12,13 +12,14 @@ import Mermaid from '../../components/Blog/Mermaid';
 
 Git 分支是 Git 最强大的功能，也是团队协作的核心。但大多数教程只停留在命令层面，本文从**实战角度**讲分支管理：什么时候创建分支、用什么策略、怎么处理冲突。
 
-<Mermaid client:load caption="图 1：分支工作流" chart={`flowchart TB
-  subgraph mainBranch["main (主干)"]
+<Mermaid client:load caption="图 1：分支工作流" chart={`flowchart LR
+  subgraph trunk["main 主干"]
     M[main]
   end
-  subgraph devBranch["develop (集成)"]
+  subgraph integration["develop 集成"]
     D[develop]
   end
+  M --> D
   M --> F1[feature/login]
   M --> F2[feature/payment]
   M --> H[hotfix/bug-123]
