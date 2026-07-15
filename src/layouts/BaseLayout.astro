@@ -381,8 +381,11 @@ const websiteJsonLd = {
               // (count: 0). Parse both regardless of status code.
               try {
                 var data = JSON.parse(r.responseText);
-                var el = document.getElementById('view-count-num');
-                if (el && data) el.textContent = data.count;
+                if (data) {
+                  document.querySelectorAll('[data-view-count]').forEach(function(el) {
+                    el.textContent = data.count;
+                  });
+                }
               } catch (e) {}
             });
             r.open('GET', 'https://purpletooth.goatcounter.com/counter' + path + '.json');

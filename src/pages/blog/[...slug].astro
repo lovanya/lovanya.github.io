@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import Comments from '../../components/Comments.astro';
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import RelatedPosts from '../../components/Blog/RelatedPosts.astro';
+import ViewCount from '../../components/Blog/ViewCount.astro';
 import { getCollection, render } from 'astro:content';
 import { SITE_URL } from '../../consts';
 
@@ -95,13 +96,7 @@ const blogPosting = {
                 })}
               </span>
             )}
-            <span id="view-count" class="inline-flex items-center opacity-70" style="gap: var(--space-1);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-accent);" aria-hidden="true">
-                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <span id="view-count-num" style="color: var(--color-accent);"></span>
-            </span>
+            <ViewCount />
           </div>
 
           {tags.length > 0 && (
