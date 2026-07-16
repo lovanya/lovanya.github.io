@@ -68,10 +68,10 @@ LLM 的核心矛盾是：**它输出流畅、自信、结构完整，但内容�
 <Mermaid client:load caption="图 2：幻觉的三大根因" chart={`flowchart LR
   P[概率生成本质] --> H[幻觉]
   subgraph R1[根因 1：参数化记忆]
-    A1[训练数据里的错误/偏见<br/>被"平滑"成高概率输出]
+    A1[训练数据里的错误/偏见<br/>被平滑成高概率输出]
   end
   subgraph R2[根因 2：知识缺失]
-    A2[被问到 cutoff 后<br/>或私有知识<br/>模型用"最像的猜测"填空]
+    A2[被问到 cutoff 后<br/>或私有知识<br/>模型用最像的猜测填空]
   end
   subgraph R3[根因 3：上下文失真]
     A3[长 context 注意力稀释<br/>instruction 与 context 冲突<br/>过度服从 prompt 模式]
