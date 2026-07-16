@@ -375,10 +375,12 @@ const websiteJsonLd = {
             clearInterval(t);
             var path = window.goatcounter.get_data()['p'];
             var r = new XMLHttpRequest();
-            r.addEventListener('load', function() {
+            r.onreadystatechange = function() {
+              if (r.readyState !== 4) return;
               // GoatCounter returns 200 for paths with hits and 404 for paths
               // without, but the 404 body still contains a valid count JSON
-              // (count: 0). Parse both regardless of status code.
+              // (count: 0). Parse on any readyState 4, since Safari/WebKit
+              // may not fire the 'load' event for non-2xx responses.
               try {
                 var data = JSON.parse(r.responseText);
                 if (data) {
@@ -387,7 +389,7 @@ const websiteJsonLd = {
                   });
                 }
               } catch (e) {}
-            });
+            };
             r.open('GET', 'https://purpletooth.goatcounter.com/counter' + path + '.json');
             r.send();
           }
