@@ -25,3 +25,4 @@ pnpm-debug.log*
 
 # playwright mcp browser artifacts
 .playwright-mcp/
+src/data/view-counts.json
