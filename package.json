@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/fetch-view-counts.mjs",
     "build": "astro build && pagefind --site dist",
     "postbuild": "node scripts/ping-indexnow.mjs",
     "preview": "astro preview",

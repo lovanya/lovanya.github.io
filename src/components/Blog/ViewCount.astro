@@ -1,10 +1,15 @@
 ---
+import counts from '../../data/view-counts.json';
+
 interface Props {
-  /** Optional class for the outer wrapper */
+  slug: string;
+  lang?: 'zh' | 'en';
   class?: string;
 }
 
-const { class: className = '' } = Astro.props;
+const { slug, lang = 'zh', class: className = '' } = Astro.props;
+const entry = counts[slug as keyof typeof counts];
+const count = entry ? entry[lang] : '0';
 ---
 
 <span
@@ -28,7 +33,6 @@ const { class: className = '' } = Astro.props;
     <circle cx="12" cy="12" r="3"></circle>
   </svg>
   <span
-    data-view-count
     style="color: var(--color-accent); font-variant-numeric: tabular-nums;"
-  >0</span>
+  >{count}</span>
 </span>

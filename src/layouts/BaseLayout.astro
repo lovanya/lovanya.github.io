@@ -367,35 +367,7 @@ const websiteJsonLd = {
     </script>
     <ChatBot client:load />
 
-    <!-- GoatCounter visit count -->
-    <script>
-      (function() {
-        var t = setInterval(function() {
-          if (window.goatcounter && window.goatcounter.get_data) {
-            clearInterval(t);
-            var path = window.goatcounter.get_data()['p'];
-            var r = new XMLHttpRequest();
-            r.onreadystatechange = function() {
-              if (r.readyState !== 4) return;
-              // GoatCounter returns 200 for paths with hits and 404 for paths
-              // without, but the 404 body still contains a valid count JSON
-              // (count: 0). Parse on any readyState 4, since Safari/WebKit
-              // may not fire the 'load' event for non-2xx responses.
-              try {
-                var data = JSON.parse(r.responseText);
-                if (data) {
-                  document.querySelectorAll('[data-view-count]').forEach(function(el) {
-                    el.textContent = data.count;
-                  });
-                }
-              } catch (e) {}
-            };
-            r.open('GET', 'https://purpletooth.goatcounter.com/counter' + path + '.json');
-            r.send();
-          }
-        }, 100);
-      })();
-    </script>
+    <!-- View counts are now built in at build time via scripts/fetch-view-counts.mjs -->
   </body>
 </html>
 

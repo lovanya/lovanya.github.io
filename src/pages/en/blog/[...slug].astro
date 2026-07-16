@@ -96,7 +96,7 @@ const blogPosting = {
                 })}
               </span>
             )}
-            <ViewCount />
+            <ViewCount slug={post.id.replace('en/', '')} lang="en" />
           </div>
 
           {tags.length > 0 && (

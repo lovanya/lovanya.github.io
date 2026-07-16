@@ -1,0 +1,82 @@
+{
+  "agent-architecture-patterns": {
+    "zh": "5",
+    "en": "0"
+  },
+  "ai-ui-new-era": {
+    "zh": "1",
+    "en": "0"
+  },
+  "build-ai-chatbot-astro": {
+    "zh": "5",
+    "en": "0"
+  },
+  "embedding-and-vector-db": {
+    "zh": "0",
+    "en": "0"
+  },
+  "function-calling-and-tools": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-capability-boundary": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-cost-and-performance": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-evaluation": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-fundamentals": {
+    "zh": "10",
+    "en": "3"
+  },
+  "llm-guardrails": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-inference-optimization": {
+    "zh": "10",
+    "en": "0"
+  },
+  "llm-memory-systems": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-observability": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-production-engineering": {
+    "zh": "0",
+    "en": "0"
+  },
+  "llm-selection-framework": {
+    "zh": "0",
+    "en": "0"
+  },
+  "macos-git-branch": {
+    "zh": "4",
+    "en": "0"
+  },
+  "oh-my-zsh": {
+    "zh": "1",
+    "en": "0"
+  },
+  "rag-from-naive-to-production": {
+    "zh": "0",
+    "en": "0"
+  },
+  "starship-prompt": {
+    "zh": "2",
+    "en": "0"
+  },
+  "tokens-context-and-prompts": {
+    "zh": "0",
+    "en": "0"
+  }
+}
