@@ -4,7 +4,12 @@
 declare global {
   interface Window {
     goatcounter?: {
-      visit_count: (options: { append: string; style: string }) => void
+      visit_count: (options: {
+        append: string
+        style?: string
+        no_branding?: boolean
+        type?: string
+      }) => void
     }
   }
 }
@@ -15,7 +20,7 @@ interface Props {
   class?: string
 }
 
-const className = (Astro.props as Props).class ?? ''
+// const className = (Astro.props as Props).class ?? ''
 // const entry = counts[slug as keyof typeof counts];
 // const count = entry ? entry[lang] : '0';
 ---
@@ -23,8 +28,16 @@ const className = (Astro.props as Props).class ?? ''
 <div>
   <script>
     window?.goatcounter?.visit_count({
-      append: '#view-count',
-      style: 'color: var(--color-accent); font-variant-numeric: tabular-nums;',
+      append: '.view-count',
+      no_branding: true,
+      type: 'svg',
+      style: `
+        #gcvc-border { fill: transparent; stroke: #transparent; }
+        #gcvc-views { fill: var(--color-accent); }
+        #gcvc-for { display: none; }
+        #gcvc-by { display: none; }
+        #gcvc        { background: transparent; }
+      `,
     })
   </script>
   <span
@@ -48,6 +61,6 @@ const className = (Astro.props as Props).class ?? ''
       <circle cx="12" cy="12" r="3"></circle>
     </svg>
     <span class="view-count" style="color: var(--color-accent); font-variant-numeric: tabular-nums;"
-    >0</span>
+    ></span>
   </span>
 </div>
