@@ -1,19 +1,6 @@
 ---
 // import counts from '../../data/view-counts.json';
 
-declare global {
-  interface Window {
-    goatcounter?: {
-      visit_count: (options: {
-        append: string
-        style?: string
-        no_branding?: boolean
-        type?: string
-      }) => void
-    }
-  }
-}
-
 interface Props {
   slug: string
   lang?: 'zh' | 'en'
@@ -25,42 +12,50 @@ interface Props {
 // const count = entry ? entry[lang] : '0';
 ---
 
-<div>
-  <script>
-    window?.goatcounter?.visit_count({
-      append: '.view-count',
-      no_branding: true,
-      type: 'svg',
-      style: `
-        #gcvc-border { fill: transparent; stroke: #transparent; }
-        #gcvc-views { fill: var(--color-accent); }
-        #gcvc-for { display: none; }
-        #gcvc-by { display: none; }
-        #gcvc        { background: transparent; }
-      `,
-    })
-  </script>
-  <span
-    class={`inline-flex items-center opacity-70 ${(Astro.props as Props).class ?? ''}`}
-    style="gap: var(--space-1);"
+<span
+  class={`inline-flex items-center opacity-70 ${(Astro.props as Props).class ?? ''}`}
+  style="gap: var(--space-1);"
+>
+  <!-- 浏览次数 -->
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    style="color: var(--color-accent);"
+    aria-hidden="true"
   >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      style="color: var(--color-accent);"
-      aria-hidden="true"
-    >
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-      <circle cx="12" cy="12" r="3"></circle>
-    </svg>
-    <span class="view-count" style="color: var(--color-accent); font-variant-numeric: tabular-nums;"
-    ></span>
-  </span>
-</div>
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+  <span class="view-count" style="color: var(--color-accent); font-variant-numeric: tabular-nums;"
+    >0</span
+  >
+  <span style="margin: 0 2px;"></span>
+  
+  <!-- 浏览人数 -->
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    style="color: var(--color-accent);"
+    aria-hidden="true"
+  >
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+  <span class="user-count" style="color: var(--color-accent); font-variant-numeric: tabular-nums;"
+    >0</span
+  >
+</span>
