@@ -34,6 +34,7 @@
 - [LLM 可观测性：Tracing、Logging 与调试](https://lovanya.github.io/blog/llm-observability): Langfuse 架构、OpenTelemetry GenAI 语义、token 成本监控、生产排错实战 (2026-07-07)
 - [从 Demo 到 Production：LLM 应用的工程化与团队协作](https://lovanya.github.io/blog/llm-production-engineering): prompt 版本化、CI/CD、灰度发布、多模型切换、团队工作流 (2026-07-07)
 - [LLM 推理优化实战：vLLM、PagedAttention、量化与 Speculative Decoding](https://lovanya.github.io/blog/llm-inference-optimization): 推理引擎深潜——KV cache 瓶颈、PagedAttention 省显存、4 种量化方案对比、Speculative Decoding 2-3x 提速 (2026-07-13)
+- [大模型的能力边界与幻觉控制：从根因到工程化治理](https://lovanya.github.io/blog/llm-capability-boundary): 能力边界地图、幻觉三大根因、RAG 约束/引用溯源/自我一致性/置信度拒答/结构化校验 5 大治理手段与生产流水线 (2026-07-16)
 
 ## AI × 前端
 

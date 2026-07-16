@@ -63,6 +63,7 @@ Consult these guides before working on related tasks:
    - Frontmatter 格式：title, date, description, tags, heroImage (可选)
    - 发布前确认 `astro build` 通过
    - **更新 `public/llms.txt`**：新增文章必须在对应分类下追加一行（`- [中文标题](https://lovanya.github.io/blog/slug): 描述 (YYYY-MM-DD)`），并把 `pubDate` 一并填上；如果是替换/删除文章，把对应行移除。LLM 索引漏更会导致外部 AI 读不到新内容。
+   - **浏览次数集成检查（强制）**：每篇博客（zh + en）必须通过 `<ViewCount />` 组件渲染浏览次数，且部署后实测生效。检查清单：① 模板 `src/pages/blog/[...slug].astro` 与 `src/pages/en/blog/[...slug].astro` 已 `<ViewCount />`（不要重复实现，直接复用 `src/components/Blog/ViewCount.astro`）；② Frontmatter 的 `description` 不得含未转义的 `:`（会破坏 YAML 解析）；③ 部署后必须用 Playwright/浏览器实测 `[data-view-count]` 元素存在且数字被 GoatCounter 回填（非恒为 0）。漏做此项 → 打回。`<ViewCount />` 的底层脚本在 `BaseLayout.astro`，靠 `window.goatcounter.get_data()['p']` + `counter{PATH}.json` 回填，改模板时不要动这块逻辑。
 
 2. **组件修改**：
    - 修改 React 组件（.tsx）后确认 `client:load` 指令正确
@@ -282,7 +283,8 @@ Consult these guides before working on related tasks:
 
 | 分值 | 标准 |
 |------|------|
-| 10.0 | `astro build` 通过；0 个 TypeScript 错误；0 个死链接；meta 标签完整；所有图片正常加载 |
+| 10.0 | `astro build` 通过；0 个 TypeScript 错误；0 个死链接；meta 标签完整；所有图片正常加载；每篇博客 zh+en 均含 `[data-view-count]` 且部署后实测被 GoatCounter 回填（非恒为 0） |
+| 9.5 | 构建通过；无 TS error；meta 标签基本完整；但某篇博客漏接 `<ViewCount />` 或部署后实测 `[data-view-count]` 恒为 0（浏览次数未生效） |
 | 9.9 | 以上但有 1 个无伤大雅的 TS 类型警告（非 error） |
 | 9.8 | 以上但有 1 个 meta 标签缺失（如缺少 og:image） |
 | 9.7 | 构建通过；无 TS error；但有 1 个外部链接返回 301 |
