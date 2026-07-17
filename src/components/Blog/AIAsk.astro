@@ -1,0 +1,107 @@
+---
+/**
+ * AIAsk 按钮 —— 放在每道面试题末尾，点击后派发 ai:open 事件，
+ * AIPanel 会就地撑开并把题面带到 Gemini。
+ *
+ * 用法：
+ *   <AIAsk question="什么是闭包？" />
+ *   <AIAsk question="Explain React Fiber" lang="en" />
+ */
+interface Props {
+  question: string;
+  lang?: 'zh' | 'en';
+  /** 自定义 tooltip / aria-label（默认 AI 解析 / AI Analyze） */
+  label?: string;
+}
+
+const { question, lang, label } = Astro.props;
+const isZh = lang ? lang === 'zh' : true;
+const ariaLabel = label ?? (isZh ? 'AI 解析此题' : 'AI analyze this question');
+---
+
+<button
+  type="button"
+  class="ai-ask-btn"
+  data-ai-template="interview"
+  data-ai-payload={question}
+  data-ai-lang={isZh ? 'zh' : 'en'}
+  aria-label={ariaLabel}
+  title={ariaLabel}
+>
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <line x1="50" y1="12" x2="50" y2="26" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+    <circle cx="50" cy="9" r="5" fill="currentColor" stroke="none" />
+    <rect x="16" y="26" width="68" height="54" rx="14" fill="none" stroke="currentColor" stroke-width="4" />
+    <circle class="eye eye-left" cx="36" cy="48" r="6" fill="currentColor" stroke="none" />
+    <circle class="eye eye-right" cx="64" cy="48" r="6" fill="currentColor" stroke="none" />
+    <path class="mouth mouth-smile" d="M 30 66 Q 50 76 70 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+    <ellipse class="mouth mouth-open" cx="50" cy="68" rx="10" ry="7" fill="currentColor" opacity="0" />
+  </svg>
+</button>
+
+<style>
+  .ai-ask-btn .eye {
+    transition: cx 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .ai-ask-btn .mouth {
+    transition: opacity 0.2s ease;
+  }
+  .ai-ask-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0 0 0 6px;
+    vertical-align: middle;
+    border: none;
+    background: transparent;
+    color: var(--color-accent);
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.15s, filter 0.2s;
+  }
+  .ai-ask-btn svg {
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+  .ai-ask-btn:hover {
+    opacity: 1;
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 8px var(--color-accent-glow));
+  }
+  .ai-ask-btn:active {
+    transform: scale(0.98);
+  }
+  .ai-ask-btn:focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.ai-ask-btn').forEach(btn => {
+    const leftEye = btn.querySelector('.eye-left');
+    const rightEye = btn.querySelector('.eye-right');
+    const smile = btn.querySelector('.mouth-smile');
+    const mouthOpen = btn.querySelector('.mouth-open');
+    if (!leftEye || !rightEye) return;
+
+    btn.addEventListener('mouseenter', () => {
+      leftEye.setAttribute('cx', '38');
+      rightEye.setAttribute('cx', '62');
+      if (smile) smile.setAttribute('opacity', '0');
+      if (mouthOpen) mouthOpen.setAttribute('opacity', '1');
+    });
+
+    btn.addEventListener('mouseleave', () => {
+      leftEye.setAttribute('cx', '36');
+      rightEye.setAttribute('cx', '64');
+      if (smile) smile.setAttribute('opacity', '1');
+      if (mouthOpen) mouthOpen.setAttribute('opacity', '0');
+    });
+  });
+</script>

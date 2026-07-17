@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import ChatBot from '../components/ChatBot/ChatBot';
+import AIPanel from '../components/AI/AIPanel.tsx';
+import SelectionToolbar from '../components/AI/SelectionToolbar.tsx';
 import { SITE_TITLE, SITE_DESCRIPTION, SITE_KEYWORDS, SITE_URL, AUTHOR } from '../consts';
 
 interface Props {
@@ -366,6 +368,159 @@ const websiteJsonLd = {
       })();
     </script>
     <ChatBot client:load />
+
+    <!-- AI Workbench: 就地展开面板 + 全局选区工具条（复用 ChatBot 的 Gemini 配置） -->
+    <AIPanel client:load />
+    <SelectionToolbar client:load />
+    <script>
+      // 文章内容装饰：绑定 [data-ai-*] 按钮 + 给 <pre> 注入 CodeAsk 按钮
+      (function () {
+        if (typeof window === 'undefined') return;
+        const dispatchAiOpen = (detail) => {
+          window.dispatchEvent(new CustomEvent('ai:open', { detail }));
+        };
+        const bindAiAskButtons = () => {
+          document.querySelectorAll('.ai-ask-btn[data-ai-template][data-ai-payload]').forEach((btn) => {
+            if (btn.dataset.bound === '1') return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const rect = btn.getBoundingClientRect();
+              const template = btn.dataset.aiTemplate;
+              const payload = btn.dataset.aiPayload || '';
+              if (!payload) return;
+              dispatchAiOpen({
+                template,
+                payload,
+                anchor: { x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY },
+              });
+            });
+          });
+        };
+        const decorateCodeBlocks = () => {
+          document.querySelectorAll('article pre, .prose pre, .post-content pre').forEach((pre) => {
+            if (pre.dataset.aiDecorated === '1') return;
+            pre.dataset.aiDecorated = '1';
+            const cs = window.getComputedStyle(pre);
+            if (cs.position === 'static') pre.style.position = 'relative';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ai-code-ask-btn';
+            btn.setAttribute('aria-label', '让 AI 解析这段代码');
+            btn.title = '让 AI 解析这段代码';
+            btn.innerHTML = '<svg viewBox="0 0 100 100" aria-hidden="true" style="width:24px;height:24px;display:block"><line x1="50" y1="12" x2="50" y2="26" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><circle cx="50" cy="9" r="5" fill="currentColor" stroke="none"/><rect x="16" y="26" width="68" height="54" rx="14" fill="none" stroke="currentColor" stroke-width="4"/><circle class="ai-eye-left" cx="36" cy="48" r="6" fill="currentColor" stroke="none"/><circle class="ai-eye-right" cx="64" cy="48" r="6" fill="currentColor" stroke="none"/><path class="ai-mouth-smile" d="M 30 66 Q 50 76 70 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><ellipse class="ai-mouth-open" cx="50" cy="68" rx="10" ry="7" fill="currentColor" opacity="0"/></svg>';
+            btn.dataset.bound = '1';
+            btn.addEventListener('mouseenter', () => {
+              const svg = btn.querySelector('svg');
+              if (!svg) return;
+              const le = svg.querySelector('.ai-eye-left');
+              const re = svg.querySelector('.ai-eye-right');
+              const ms = svg.querySelector('.ai-mouth-smile');
+              const mo = svg.querySelector('.ai-mouth-open');
+              if (le) le.setAttribute('cx', '38');
+              if (re) re.setAttribute('cx', '62');
+              if (ms) ms.setAttribute('opacity', '0');
+              if (mo) mo.setAttribute('opacity', '1');
+            });
+            btn.addEventListener('mouseleave', () => {
+              const svg = btn.querySelector('svg');
+              if (!svg) return;
+              const le = svg.querySelector('.ai-eye-left');
+              const re = svg.querySelector('.ai-eye-right');
+              const ms = svg.querySelector('.ai-mouth-smile');
+              const mo = svg.querySelector('.ai-mouth-open');
+              if (le) le.setAttribute('cx', '36');
+              if (re) re.setAttribute('cx', '64');
+              if (ms) ms.setAttribute('opacity', '1');
+              if (mo) mo.setAttribute('opacity', '0');
+            });
+            btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const code = pre.querySelector('code')?.textContent || pre.textContent || '';
+              const truncated = code.length > 8000 ? code.slice(0, 8000) + '\n…（截断）' : code;
+              const rect = pre.getBoundingClientRect();
+              dispatchAiOpen({
+                template: 'codeExplain',
+                payload: truncated,
+                anchor: { x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY },
+              });
+            });
+            pre.appendChild(btn);
+          });
+        };
+        const decorateAll = () => {
+          bindAiAskButtons();
+          decorateCodeBlocks();
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', decorateAll);
+        } else {
+          decorateAll();
+        }
+        window.addEventListener('astro:page-load', decorateAll);
+        if (typeof MutationObserver !== 'undefined') {
+          const obs = new MutationObserver(() => decorateAll());
+          obs.observe(document.body, { childList: true, subtree: true });
+        }
+      })();
+    </script>
+    <style is:global>
+      @keyframes aipanel-dot {
+        0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+        40% { transform: scale(1); opacity: 1; }
+      }
+      @keyframes aipanel-blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+      @keyframes selection-toolbar-in {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .ai-code-ask-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: var(--color-accent);
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s, transform 0.15s, filter 0.2s;
+        z-index: 10;
+      }
+      .ai-code-ask-btn .ai-eye-left,
+      .ai-code-ask-btn .ai-eye-right {
+        transition: cx 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .ai-code-ask-btn .ai-mouth-smile,
+      .ai-code-ask-btn .ai-mouth-open {
+        transition: opacity 0.2s ease;
+      }
+      pre:hover .ai-code-ask-btn,
+      .ai-code-ask-btn:focus-visible {
+        opacity: 0.85;
+      }
+      .ai-code-ask-btn:hover {
+        opacity: 1 !important;
+        transform: scale(1.12);
+        filter: drop-shadow(0 0 8px var(--color-accent-glow));
+      }
+      .ai-mermaid-ask-btn:hover {
+        opacity: 1 !important;
+        transform: scale(1.12);
+        filter: drop-shadow(0 0 8px var(--color-accent-glow));
+        background: var(--color-accent-dim) !important;
+      }
+    </style>
 
     <!-- GoatCounter visit count -->
     <script>

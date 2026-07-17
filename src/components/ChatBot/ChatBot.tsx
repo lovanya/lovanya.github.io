@@ -80,15 +80,16 @@ You can:
 • Ask me to navigate to a page (e.g., "open my resume")
 • Ask me technical questions`;
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+import { WORKER_URL, workerHeaders } from '../../lib/ai-config';
+
+const isProd = () =>
+  typeof location !== 'undefined' && /(^|\.)lovanya\.github\.io$/.test(location.hostname);
+
+const GEMINI_PROXY_URL = `${WORKER_URL}/api/answer`;
+const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const STORAGE_KEY = 'chatbot-history';
 const MAX_HISTORY = 50;
-
-function getApiKey(): string {
-  if (typeof import.meta === 'undefined') return '';
-  return (import.meta as any).env?.PUBLIC_GEMINI_API_KEY || '';
-}
 
 function loadHistory(): Message[] {
   if (typeof localStorage === 'undefined') return [];
@@ -124,11 +125,6 @@ interface AiDecision {
 }
 
 async function askAiToDecide(userInput: string, lang: 'zh' | 'en'): Promise<AiDecision> {
-  const key = getApiKey();
-  if (!key) {
-    return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 未配置' : '⚠️ AI not configured' };
-  }
-
   const posts = lang === 'zh' ? POSTS_ZH : POSTS_EN;
   const pageList = PAGES.map(p => `- ${p.path} → ${lang === 'zh' ? p.labelZh : p.labelEn}`).join('\n');
   const postList = posts.map(p => `- [${p.date}] /blog/${p.slug} → ${p.title}`).join('\n');
@@ -171,33 +167,62 @@ Decision rules:
 - User wants to go to a page → navigate
 - Chat or tech question → answer`;
 
+  const prompt = `${systemPrompt}\n\nUser: ${userInput}`;
+
+  // 路由：生产 → Worker proxy；本地 dev → 直连 Gemini
+  if (isProd()) {
+    if (!WORKER_URL) {
+      return { action: 'answer', answer: lang === 'zh' ? '⚠️ Worker URL 未配置' : '⚠️ Worker URL not configured' };
+    }
+    try {
+      const res = await fetch(GEMINI_PROXY_URL, {
+        method: 'POST',
+        headers: workerHeaders(),
+        body: JSON.stringify({ prompt, lang }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        const msg = String(data?.error || `HTTP ${res.status}`);
+        if (msg.toLowerCase().includes('quota')) {
+          return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 配额已用完' : '⚠️ AI quota exhausted.' };
+        }
+        return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 暂时不可用' : '⚠️ AI unavailable' };
+      }
+      const text = data?.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if (jsonMatch) {
+        try { return JSON.parse(jsonMatch[0]); }
+        catch { return { action: 'answer', answer: text }; }
+      }
+      return { action: 'answer', answer: text };
+    } catch {
+      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 连接失败' : '⚠️ AI connection failed' };
+    }
+  }
+
+  // 本地 dev：直连 Gemini
+  const key = (import.meta as any).env?.PUBLIC_GEMINI_API_KEY || '';
+  if (!key) {
+    return { action: 'answer', answer: lang === 'zh' ? '⚠️ 本地未配置 PUBLIC_GEMINI_API_KEY' : '⚠️ PUBLIC_GEMINI_API_KEY not set locally' };
+  }
   try {
-    const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+    const res = await fetch(`${GEMINI_DIRECT}?key=${key}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `${systemPrompt}\n\nUser: ${userInput}` }],
-        }],
-      }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
     });
     const data = await res.json();
-
     if (data?.error?.status === 'RESOURCE_EXHAUSTED') {
-      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 配额已用完，请稍后再试。' : '⚠️ AI quota exhausted.' };
+      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 配额已用完' : '⚠️ AI quota exhausted.' };
     }
-    if (data?.error?.message) {
-      return { action: 'answer', answer: lang === 'zh' ? `⚠️ AI 暂时不可用` : `⚠️ AI unavailable` };
+    if (!res.ok) {
+      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 暂时不可用' : '⚠️ AI unavailable' };
     }
-
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
-      try {
-        return JSON.parse(jsonMatch[0]);
-      } catch {
-        return { action: 'answer', answer: text };
-      }
+      try { return JSON.parse(jsonMatch[0]); }
+      catch { return { action: 'answer', answer: text }; }
     }
     return { action: 'answer', answer: text };
   } catch {
@@ -212,7 +237,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>(() => loadHistory());
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [hasAi, setHasAi] = useState(() => !!getApiKey());
+  const [hasAi, setHasAi] = useState(() => !!WORKER_URL);
   const msgsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -251,7 +276,7 @@ export default function ChatBot() {
 
   useEffect(() => {
     if (!open) return;
-    setHasAi(!!getApiKey());
+    setHasAi(!!WORKER_URL);
     if (messages.length === 0) {
       addBotMsg(lang === 'zh' ? WELCOME_MSG : WELCOME_MSG_EN);
     }
@@ -431,14 +456,15 @@ export default function ChatBot() {
       height: '4rem',
       borderRadius: '50%',
       border: 'none',
-      background: 'var(--color-bg-secondary)',
+      // background: 'var(--color-bg-secondary)',
       color: 'var(--color-accent)',
       cursor: 'pointer',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 9999,
-      boxShadow: '0 0 24px var(--color-accent-glow)',
+      // boxShadow: '0 0 24px var(--color-accent-glow)',
+      filter: 'drop-shadow(var(--color-accent) 0 0 8px)',
       transition: 'right 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease, box-shadow 0.3s ease',
     },
     panel: {
@@ -605,12 +631,12 @@ export default function ChatBot() {
         onMouseEnter={e => {
           setHovered(true);
           (e.currentTarget as HTMLElement).style.transform = 'translateY(-50%) scale(1.1)';
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px var(--color-accent-glow)';
+          // (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px var(--color-accent-glow)';
         }}
         onMouseLeave={e => {
           setHovered(false);
           (e.currentTarget as HTMLElement).style.transform = 'translateY(-50%) scale(1)';
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px var(--color-accent-glow)';
+          // (e.currentTarget as HTMLElement).style.boxShadow = '0 0 24px var(--color-accent-glow)';
         }}
       >
         <svg viewBox="0 0 100 100" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="2.5">

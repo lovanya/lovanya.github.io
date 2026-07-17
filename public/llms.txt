@@ -36,6 +36,30 @@
 - [LLM 推理优化实战：vLLM、PagedAttention、量化与 Speculative Decoding](https://lovanya.github.io/blog/llm-inference-optimization): 推理引擎深潜——KV cache 瓶颈、PagedAttention 省显存、4 种量化方案对比、Speculative Decoding 2-3x 提速 (2026-07-13)
 - [大模型的能力边界与幻觉控制：从根因到工程化治理](https://lovanya.github.io/blog/llm-capability-boundary): 能力边界地图、幻觉三大根因、RAG 约束/引用溯源/自我一致性/置信度拒答/结构化校验 5 大治理手段与生产流水线 (2026-07-16)
 
+## 前端架构修仙路（核心系列）
+
+> 11 年架构师自我复盘 + 写给同行的前端进阶地图。5 大境界（练气 · 筑基 · 金丹 · 元婴 · 化神）30 篇连续编号修真体系，由浅入深覆盖前端工程师成长全路径。
+> Same series in English at `https://lovanya.github.io/en/blog/frontend-architecture-cultivation-path`.
+
+- [前端架构修仙路 —— 总纲导论（序章）](https://lovanya.github.io/blog/frontend-architecture-cultivation-path): 系列导论 + 修仙境界隐喻 + 5 大阶梯导览 + 3 种阅读路径 + 简历技术栈 vs 全系列对照表 + 5 道面试问题方向 (2026-07-18)
+
+### 练气期 · 基础功法（6 篇）
+入门修士根基。看不懂底层，框架学再多也是空中楼阁。#1–#6（浏览器 / CSS·HTML5 / JS 底层 / HTTP / 安全 / TS）
+
+### 筑基期 · 框架与适配（5 篇）
+精通至少一套主流框架 + 能为不同端做适配。#7–#11
+
+### 金丹期 · 工程化大成（5 篇）
+简历里 12min→3min 构建 / 4.2s→1.8s 首屏优化真实数据源。#12–#16
+
+### 元婴期 · 跨界大成（8 篇）
+跨端 + 跨边界 + 跨框架 + 跨系统——所有"跨 X" 的大成者。#17–#24
+
+### 化神期 · 架构师境界（5 篇）
+技术决策者、跨团队领导者、AI 时代掌舵人。#25–#29
+
+> 🔜 下一篇：[练气期 #1 · 浏览器如何渲染出一个网页](https://lovanya.github.io/blog/browser-rendering-pipeline)（预计 2026-07-25 前发布）
+
 ## AI × 前端
 
 - [AI 时代的新 UI：当下与近未来的界面应该长什么样](https://lovanya.github.io/blog/ai-ui-new-era): Generative UI、Agent 优先、对话即操作——AI 时代 UI 设计的范式转移、实战模式与近未来趋势 (2026-07-07)

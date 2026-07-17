@@ -61,6 +61,7 @@ export default function Mermaid({ chart, config, caption }: Props) {
   const [renderedSvg, setRenderedSvg] = useState<string | null>(null);
   // Increments on theme change so the render effect re-runs.
   const [themeToken, setThemeToken] = useState(0);
+  const [mermaidHover, setMermaidHover] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,16 +171,74 @@ export default function Mermaid({ chart, config, caption }: Props) {
   return (
     <figure className="my-6">
       <div
-        ref={containerRef}
-        className="mermaid-container flex justify-center overflow-x-auto rounded border p-4"
         style={{
-          borderColor: 'var(--color-border)',
-          background: 'var(--color-bg-secondary)',
+          position: 'relative',
         }}
-        // Mermaid-generated SVG is trusted; injecting via innerHTML keeps the
-        // call site simple and avoids re-implementing the renderer.
-        dangerouslySetInnerHTML={{ __html: renderedSvg ?? '' }}
-      />
+      >
+        <div
+          ref={containerRef}
+          className="mermaid-container flex justify-center overflow-x-auto rounded border p-4"
+          data-chart={chart}
+          style={{
+            borderColor: 'var(--color-border)',
+            background: 'var(--color-bg-secondary)',
+          }}
+          // Mermaid-generated SVG is trusted; injecting via innerHTML keeps the
+          // call site simple and avoids re-implementing the renderer.
+          dangerouslySetInnerHTML={{ __html: renderedSvg ?? '' }}
+        />
+        {!error && renderedSvg ? (
+          <button
+            type="button"
+            className="ai-mermaid-ask-btn"
+            title="让 AI 解析这个图表"
+            aria-label="AI analyze diagram"
+            onMouseEnter={() => setMermaidHover(true)}
+            onMouseLeave={() => setMermaidHover(false)}
+            style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              width: '36px',
+              height: '36px',
+              padding: 0,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: 'none',
+              background: 'transparent',
+              color: 'var(--color-accent)',
+              cursor: 'pointer',
+              opacity: 0.75,
+              transition: 'opacity 0.2s, transform 0.15s, filter 0.2s',
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              window.dispatchEvent(
+                new CustomEvent('ai:open', {
+                  detail: {
+                    template: 'mermaidExplain',
+                    payload: chart,
+                    anchor: { x: rect.left + rect.width / 2, y: rect.bottom },
+                  },
+                }),
+              );
+            }}
+          >
+            <svg viewBox="0 0 100 100" aria-hidden="true" style={{ width: '28px', height: '28px', display: 'block' }}>
+              <line x1="50" y1="12" x2="50" y2="26" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="50" cy="9" r="5" fill="currentColor" stroke="none" />
+              <rect x="16" y="26" width="68" height="54" rx="14" fill="none" stroke="currentColor" strokeWidth="4" />
+              <circle cx={mermaidHover ? 38 : 36} cy="48" r="6" fill="currentColor" stroke="none" style={{ transition: 'cx 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+              <circle cx={mermaidHover ? 62 : 64} cy="48" r="6" fill="currentColor" stroke="none" style={{ transition: 'cx 0.25s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+              <path d="M 30 66 Q 50 76 70 66" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" style={{ opacity: mermaidHover ? 0 : 1, transition: 'opacity 0.2s ease' }} />
+              <ellipse cx="50" cy="68" rx="10" ry="7" fill="currentColor" style={{ opacity: mermaidHover ? 1 : 0, transition: 'opacity 0.2s ease' }} />
+            </svg>
+          </button>
+        ) : null}
+      </div>
       {caption ? (
         <figcaption
           className="mt-2 text-center text-xs"

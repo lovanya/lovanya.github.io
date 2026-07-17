@@ -32,7 +32,9 @@ jobs:
 
       - name: Build Astro site
         env:
-          PUBLIC_GEMINI_API_KEY: ${{ secrets.PUBLIC_GEMINI_API_KEY }}
+          PUBLIC_WORKER_URL: ${{ secrets.PUBLIC_WORKER_URL }}
+          # PUBLIC_GEMINI_API_KEY is intentionally not set in production CI.
+          # Production deploys must call Gemini only through the Worker proxy.
         run: npm run build
       
       - name: Upload artifact

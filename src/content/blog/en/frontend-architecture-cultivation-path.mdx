@@ -1,0 +1,212 @@
+---
+title: "Frontend Architecture Cultivation Path — Series Overview"
+description: A senior frontend architect's self-review + a growth map for peers. From browser fundamentals to the "Transformation God" stage — 5 stages, 29 articles covering the entire frontend engineer growth path.
+pubDate: 2026-07-18
+tags: ['Frontend Architecture Cultivation Path', 'frontend architecture', 'advanced', 'growth path']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Preface: Why This Series
+
+After 11 years as a frontend engineer — from jQuery to leading an ERP rebuild, from solo contributor to managing a 5-person contractor team, from PC OA systems to Electron desktop apps + micro-frontend + 800-page enterprise admin — I have never found a single resource that systematically walks from **junior to architect**, **shallow to deep**, in a **field-tested** way.
+
+What exists out there:
+- **Beginner tutorials**: abundant, but after chapter 5 they show `npm install`; I know how to build a Todo in React but not *why* it's designed this way
+- **Source code deep-dives**: extremely deep, but read like a textbook to anyone under 3 years experience
+- **Architecture blogs**: scattered, single-topic, but explain *why this choice* — the most valuable kind, just not systematic
+- **Interview question dumps**: useful for rote memorization but don't help you truly understand
+
+This series aims to:
+
+1. **Shallow to deep**: from "how a browser renders a page" all the way to "Transformation God stage" — 5 stages, 29 articles. Each readable independently; together they form a growth curve
+2. **Field-tested**: anchored to my own production projects — Module Federation micro-frontend, 4.2s → 1.8s first-paint optimization, SSO unified permission, FinUI component library, Electron dual-canvas sync, etc.
+3. **No question banks**: every article ends with **5 high-priority interview question directions**, but only the first question has a concise answer. The remaining 4 are yours to think about. Each question has an AI helper button right behind it — one click gets you a detailed answer.
+4. **Selection clarity**: every article with comparisons includes a **technology selection cheat sheet** — one line per candidate with biggest advantage / biggest disadvantage
+
+## I. Why "Cultivation Realms" as a Metaphor
+
+Not a gimmick. Three real reasons:
+
+1. **Stage thresholds** — In cultivation, "Foundation Building → Golden Core" is a qualitative leap requiring 1–2 years of grinding. Frontend is the same: from "writing components" to "independently making tech selections", from "building features" to "designing observability systems", every leap requires long accumulation
+2. **Risk and tribulation** — "Tribulation" isn't decorative. An architect's biggest risk is **tech decisions**: wrong framework, wrong bundler, wrong monitoring stack → 6 months later, scrap it all. Cultivation literature takes "decision-and-try-error" seriously and names it "劫 (tribulation)"
+3. **Resonance** — 80% of Chinese engineers have read xianxia novels. Calling "today I studied V8 bytecode" as "I comprehended one more layer" is 10× more readable than "path-dependency inversion"
+
+<Mermaid client:load caption="Fig 1: 5 Cultivation Stages" chart={`flowchart LR
+  L1["Qi Refining"] -->|Foundation| L2["Foundation Building"]
+  L2 -->|Frameworks| L3["Golden Core"]
+  L3 -->|Engineering| L4["Nascent Soul"]
+  L4 -->|Cross-platform| L5["Transformation God"]
+  L1 -.- N1["1-2 yrs<br/>the mountain is a mountain"]
+  L2 -.- N2["2-4 yrs<br/>the mountain is not a mountain"]
+  L3 -.- N3["5-7 yrs<br/>the mountain is still a mountain"]
+  L4 -.- N4["7-9 yrs<br/>independent ops"]
+  L5 -.- N5["9+ yrs<br/>architect realm"]`} />
+
+## II. Full Series Overview — 29 Articles
+
+| Stage | Cultivation Subtitle | Articles | Topics |
+|---|---|---|---|
+| **Prologue** | Overview | 1 | Series intro + reading paths + resume mapping |
+| **Qi Refining** | Foundation Cultivation | 6 | Browser / CSS·HTML5 / JS / Network / Security / TS |
+| **Foundation Building** | Frameworks & Adaptation | 5 | Framework evolution / React / Vue / Angular / Responsive |
+| **Golden Core** | Engineering Mastery | 5 | Bundlers / Packages / Engineering / First-paint / Runtime perf |
+| **Nascent Soul** | Cross-Boundary Mastery | 8 | Electron / Hybrid / iframe / WC / Monitoring / Testing / UI lib / Admin |
+| **Transformation God** | Architect's Realm | 5 | Micro-frontend / Low-code / RBAC / AI future / Role transition |
+
+**Total 30 articles**, ~8 months at 1 article/week.
+
+### Qi Refining · Foundation Cultivation (6 articles)
+
+| # | Title | Anchor |
+|---|---|---|
+| 1 | How Browsers Render a Web Page | Theory behind 4.2s → 1.8s optimization |
+| 2 | CSS / HTML5 Advanced: Box Model / Flex / Grid / Container Queries | Visual layer foundation — admin & mobile |
+| 3 | JavaScript Under the Hood: V8 / GC / Event Loop | Foundation of perf tuning and async |
+| 4 | HTTP / HTTPS / HTTP2 / HTTP3 and Caching | Network-layer foundation |
+| 5 | Frontend Security: XSS / CSRF / CSP / SRI | Security design source for SSO project |
+| 6 | TypeScript Advanced: Type Gymnastics | TS practice in ERP / FinUI / Electron |
+
+### Foundation Building · Frameworks & Adaptation (5 articles)
+
+Mastering at least one mainstream framework + adapting to multiple device classes.
+
+| # | Title | Anchor |
+|---|---|---|
+| 7 | Framework Evolution and MVVM | Cross-era tech stack synthesis |
+| 8 | React Deep Dive: Fiber / Hooks / Concurrent | FinUI's cross-stack reuse |
+| 9 | Vue Deep Dive: Reactivity / Diff / Composition | ERP financial system main stack |
+| 10 | Angular and Enterprise Frameworks | Ionic + Angular in practice |
+| 11 | Responsive and Mobile Adaptation | Admin mobile scenarios |
+
+### Golden Core · Engineering Mastery (5 articles)
+
+The real source of the resume's 12min → 3min build and 4.2s → 1.8s first-paint numbers.
+
+| # | Title | Anchor |
+|---|---|---|
+| 12 | Build Tools: Webpack → Vite → Rspack | Build 12min → 3min |
+| 13 | Package Management: pnpm / Changesets | ERP Monorepo |
+| 14 | Engineering System: CI/CD / Standards / Review | ESLint + Husky rules |
+| 15 | First-Paint Performance 4.2s → 1.8s Case Study | SF Express ERP rebuild |
+| 16 | Runtime Performance: Virtual Scroll / Web Vitals | FinUI large table perf |
+
+### Nascent Soul · Cross-Boundary Mastery (8 articles)
+
+Cross-end, cross-domain, cross-framework, cross-system — master of every "cross-X".
+
+| # | Title | Anchor |
+|---|---|---|
+| 17 | Electron In Practice: Main / Renderer / USB Bridge | Rouyu Note PC project |
+| 18 | Hybrid Framework Comparison: Taro / Uni-app / Ionic | Sundray / Lianyou hybrid practice |
+| 19 | iframe Isolation + postMessage Communication | FinSpread 30% license cost reduction |
+| 20 | Web Components for Cross-Framework Reuse | 8 components across Vue/React |
+| 21 | Frontend Monitoring: Errors / Performance / Behavior | Two-stage monitoring practice |
+| 22 | Testing System: Unit / E2E / Visual Regression | Architect's silent skill |
+| 23 | Enterprise UI Component Library Design | iView + FinUI experience |
+| 24 | Enterprise Admin Patterns: Forms / Tables / ECharts | 800+ page ERP accumulated |
+
+### Transformation God · Architect's Realm (5 articles)
+
+Tech decision-maker, cross-team leader, helmsman in the AI era.
+
+| # | Title | Anchor |
+|---|---|---|
+| 25 | Micro-Frontend Architecture: Module Federation | ERP rebuild, build 12min → 3min |
+| 26 | Low-Code Platform Design | ERP semi-low-code, delivery cycle -60% |
+| 27 | RBAC Permission System: Dynamic Routes / OAuth 2.0 / JWT | SSO unified permission project |
+| 28 | On-device AI and the Future of Frontend Architecture | Frontend's new play in the AI era |
+| 29 | Senior to Architect: Role Transition | 3-5 person team management + review |
+
+## III. Reading Paths: 3 Modes
+
+### Mode A: By Experience (Recommended)
+
+Start from your current stage and read upward:
+- **1-2 year junior** → start from Qi Refining #1
+- **3-4 year mid-level** → skip browser basics, start from TS or HTTP
+- **5-7 year senior** → start from Foundation Building framework comparisons, focus on Golden Core
+- **8+ year architect** → jump to Nascent Soul + Transformation God, treat earlier as reference
+
+### Mode B: By Topic (Project-Driven)
+
+Working on something specific? Jump directly:
+- **Micro-frontend** → #25
+- **Performance** → #15 + #16
+- **Permissions** → #27
+- **Electron** → #17
+- **Hybrid App** → #18
+- **Monitoring** → #21
+- **UI Component Library** → #23
+- **Enterprise Admin Patterns** → #24
+- **iframe / WC cross-domain** → #19 + #20
+
+### Mode C: By Interview (Job-Hunting)
+
+Highest-frequency interview topics first:
+- Framework comparisons → #7 / #8 / #9 / #10
+- Performance → #15 / #16
+- Micro-frontend → #25
+- Browser internals → #1
+- JS fundamentals → #3
+- Network & Security → #4 / #5
+
+## IV. Fixed Article Structure
+
+Every article follows the same skeleton:
+
+1. **Core concepts (what)** — minimal definition
+2. **Field-test anchor (how I did it)** — my biggest differentiator: real production numbers
+3. **Comparison + selection cheat sheet (when & why)** — one line per candidate with biggest advantage / biggest disadvantage
+4. **Pitfalls (what not to do)** — scars included
+5. **5 high-priority interview questions** — **only Q1 has a concise answer**, the other 4 are yours to think through
+
+Each interview question has an AI helper button right behind it — one click gets you a detailed answer based on this article's context.
+
+## V. Resume Tech Stack vs Series Coverage
+
+| Resume Skill | Covered In |
+|---|---|
+| Vue 3 / Vue 2 / Pinia | #9 (Vue) + #24 (Admin patterns) |
+| React 18 / Lit | #8 (React) + #20 (Web Components) |
+| Angular + TypeScript | #10 (Angular) + #6 (TS Advanced) |
+| Vite 4 / Webpack / Rspack | #12 (Bundlers) + #13 (Packages) |
+| Module Federation | #25 (Micro-frontend) |
+| Web Components | #20 (Cross-Framework) |
+| Electron | #17 (Electron) |
+| Taro / Cordova / Ionic | #18 (Hybrid Frameworks) |
+| Sentry + Custom SDK | #21 (Monitoring) |
+| RBAC + Dynamic Routes | #27 (RBAC Permission) |
+| iView / FinUI / Component Lib | #23 (UI Library Design) |
+| Monorepo + Husky + Changesets | #14 (Engineering) |
+| postMessage / iframe | #19 (iframe + postMessage) |
+| SpreadJS / ECharts / Rich Text | #24 (Admin Patterns) |
+| Node.js / RESTful API | #10 (Angular collaboration) + #27 (OAuth + JWT) |
+
+> Left column shows what's on the resume; right column shows where to deepen. **Beyond the resume** — this series also covers resume-absent-but-essential fundamentals (V8 / browser / security / TS) and architect-view soft skills (#29).
+
+## VI. 5 High-Priority Interview Question Directions
+
+> **Q1 (with answer)**: What are the core mental models of React / Vue / Angular?
+>
+> **A**: **React** is "**View = fn(state)**" — unidirectional data flow, functional thinking, manual perf control via `memo / useMemo`. **Vue** is "**reactive data proxy**" — `Proxy`-based auto-dependency tracking, most natural authoring. **Angular** is "**dependency injection + Zone.js dirty checking**" — enterprise convention-over-configuration, long-term maintainability. **Interview depth**: frame them as 3 different *philosophies of handling UI-state relations*, not "which is better". True depth: you can articulate Angular's DI tree / React Fiber's double-buffered reconciliation / Vue 3's `effect` scheduler.<AIAsk question="What are the core mental models of React / Vue / Angular?" lang="en" />
+>
+> **Q2 (think)**: What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?<AIAsk question="What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?" lang="en" />
+>
+> **Q3 (think)**: In production, 80% of RAG-retrieved documents are irrelevant — how do you do query rewrite + rerank?<AIAsk question="In production, 80% of RAG-retrieved documents are irrelevant — how do you do query rewrite + rerank?" lang="en" />
+>
+> **Q4 (think)**: How does Module Federation handle dependency sharing between host and remote apps? What about version conflicts?<AIAsk question="How does Module Federation handle dependency sharing between host and remote apps? What about version conflicts?" lang="en" />
+>
+> **Q5 (think)**: Design a frontend monitoring SDK supporting 5000 concurrent users — what are the 3 most critical architectural decisions?<AIAsk question="Design a frontend monitoring SDK supporting 5000 concurrent users — what are the 3 most critical architectural decisions?" lang="en" />
+
+> 💡 Each question has an AI helper button right behind it — one click gets a detailed answer.
+
+## VII. Next Steps
+
+Next article → **[Qi Refining #1 · How Browsers Render a Web Page](/en/blog/browser-rendering-pipeline)** — start the cultivation journey from the lowest foundation.
+
+---
+
+> **About the author**: Jian Lin (Ziya) — 11-year senior frontend architect, led ERP full-stack rebuild, micro-frontend adoption, SSO unified permission, FinSpread internal tooling, and more.
+> **GitHub**: [lovanya/lovanya.github.io](https://github.com/lovanya)
