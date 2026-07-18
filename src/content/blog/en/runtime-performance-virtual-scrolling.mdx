@@ -1,0 +1,236 @@
+---
+title: "Runtime Performance: Virtual Scrolling / Web Vitals Long-Tail Optimization"
+description: A frontend architect's runtime performance deep dive — virtual scrolling principles, Web Vitals long-tail optimization, virtualized list memory and rendering tuning, with FinSpread large spreadsheet case
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'runtime-performance', 'virtual-scrolling', 'web-vitals']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand runtime performance? My answer is **yes** — not to memorize Web Vitals thresholds, but to build the engineering judgment of "10000-row list without lag". Three reasons:
+
+1. **The FinUI large spreadsheet optimization on resume is real.** 300 columns × 500 rows, **virtual scrolling before / after gap 800ms → 50ms (16×)**.
+2. **Runtime performance is "invisible bugs".** Excellent LCP doesn't mean excellent INP, **must watch all three Web Vitals**.
+3. **Architects must select virtualization solutions.** react-window / vue-virtual-scroller / TanStack Virtual / self-implemented, **decision directly impacts 80% of long-list scenarios**.
+
+This is post #16 of the *Frontend Architecture Cultivation Path* series. We skip specific library APIs (no react-window usage details), use architecture diagrams + real performance data + selection tables to make virtual scrolling principles / Web Vitals long-tail / large spreadsheet tuning concrete. The next post deep-dives into Electron practice.
+
+## 1. Virtual Scrolling: Long-List Killer
+
+### 1.1 The Problem
+
+**10000 rows of DOM = browser rendering disaster**:
+
+- Each DOM node needs layout / paint / compositing
+- 10000 rows × 80px high = **800000px document height**
+- Main thread blocked by layout, **scroll drops below 5fps**
+
+### 1.2 Virtual Scrolling Principles
+
+<Mermaid client:load caption="Figure 1: Virtual scrolling viewport mechanism" chart={`flowchart LR
+  L[Original list 10000 rows<br/>total 800000px] --> V[Virtual Scrolling]
+  V --> SP[Visible Viewport<br/>Scroll Container<br/>height 600px]
+  V --> SP2[Spacer Placeholder<br/>top + bottom for total height]
+  SP --> R[Render only current visible rows<br/>e.g., 8 DOM rows]
+  SP2 --> Maintain scrollbar proportional ratio
+  R -->|scroll event| S[Calculate visible range]
+  S -->|render offset| R`} />
+
+**Core three-piece set**:
+
+1. **Visible viewport window**: fixed-height scroll container
+2. **Total height to fill scrollbar**: padding-top / padding-bottom simulate "10000 rows total height"
+3. **Only render currently visible DOM**: scroll event → calculate visible range → render that range's data
+
+### 1.3 Real Performance
+
+```
+10000-row table:
+  Regular render:  8s first-paint + 5fps scroll
+  Virtual scroll:  50ms first-paint + 60fps scroll
+```
+
+**SF Express ERP FinSpread table**: 300 columns × 500 rows, native `<table>` renders **800ms**, with virtual scroll **50ms (16× speedup)**.
+
+## 2. Virtual Scrolling Library Selection
+
+| Library | Size | Features | Use case |
+|---|---|---|---|
+| **react-window** | 6KB | Classic, simple API | General lists / grids |
+| **react-virtuoso** | 30KB | Auto-resize / dynamic heights | Content with non-fixed heights |
+| **TanStack Virtual** | 15KB | Framework-agnostic, TS-friendly | React / Vue / Solid |
+| **@tanstack/react-virtual** | Same | React-specific | Large spreadsheet scenarios |
+| **vue-virtual-scroller** | 14KB | Vue 1.x era virtual scrolling | Vue 2 / Vue 3 |
+| **@vueuse/core** | Built-in useVirtualList | Vue 3 composable | Vue 3 + TS |
+
+**Architect's decision**:
+
+- **Fixed-height list**: react-window (lightweight, sufficient)
+- **Dynamic heights (chat / social)**: react-virtuoso (auto-handles)
+- **Framework-agnostic**: TanStack Virtual
+- **Large data table**: TanStack Table + Virtual (combination)
+
+## 3. Web Vitals Long-Tail Optimization: Three Beyond LCP
+
+### 3.1 LCP / INP / CLS Trio
+
+```javascript
+// web-vitals reports all three metrics
+import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
+
+onLCP(metric => sendToAnalytics({ name: 'LCP', value: metric.value }));
+onINP(metric => sendToAnalytics({ name: 'INP', value: metric.value }));
+onCLS(metric => sendToAnalytics({ name: 'CLS', value: metric.value }));
+```
+
+### 3.2 INP Optimization: Interaction Response Latency
+
+**INP (Interaction to Next Paint)** = time from user interaction to next frame paint.
+
+```javascript
+// ❌ Anti-pattern: synchronous computation blocks main thread
+button.onclick = () => {
+  heavyCalculation(10000);  // blocks 200ms
+};
+
+// ✅ Recommended: requestIdleCallback + Web Worker
+button.onclick = () => {
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => heavyCalculation(10000));
+  } else {
+    setTimeout(() => heavyCalculation(10000), 0);
+  }
+};
+```
+
+**Production case**: FinUI table header sort uses requestIdleCallback, **INP from 180ms to 50ms (3.6×)**.
+
+### 3.3 CLS Optimization: Avoid Layout Shift
+
+```css
+/* ❌ Sin: async-loaded image without size → page shifts after load */
+img { width: auto; height: auto; }
+
+/* ✅ Fix: always declare dimensions */
+img {
+  width: 100%;
+  height: 300px;  /* reserve space */
+  object-fit: cover;
+}
+
+/* Font loading: font-display: swap to prevent FOIT shift */
+@font-face { font-display: swap; }
+
+/* Async DOM insertion uses contain to isolate */
+.ad {
+  contain: layout;  /* tell browser: ad area is independent */
+}
+```
+
+**Production case**: news list with `aspect-ratio: 16/9` for image container, **CLS from 0.18 to 0.02**.
+
+## 4. Large Spreadsheet (FinUI) Practical Tuning
+
+### 4.1 Rendering Bottleneck Analysis
+
+```
+FinUI table 300 columns × 500 rows = 150000 cells:
+  - DOM nodes: 150000 (1MB+ HTML)
+  - First-paint layout: 800ms
+  - Scroll: 5fps
+  - Memory: 250MB
+```
+
+### 4.2 Five-Layer Optimization
+
+```javascript
+// 1. Virtual scrolling (biggest gain)
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+// 2. Column virtualization (300 columns only render visible)
+import { useDynamicRowVirtualizer, useDynamicColumnVirtualizer } from '@tanstack/react-virtual';
+
+// 3. Cell memo to avoid unrelated re-renders
+const Cell = React.memo(({ row, column }) => {
+  return <td>{row[column.key]}</td>;
+}, (prev, next) => prev.row.id === next.row.id && prev.column === next.column);
+
+// 4. Horizontal scroll synchronization
+const [scrollLeft, setScrollLeft] = useState(0);
+// Fixed columns + horizontal scroll sync to header
+
+// 5. Data chunked loading (500 rows split into 5 requests)
+const { data, fetchMore } = useInfiniteScroll({
+  totalCount: 100000,
+  loadMore: (offset) => api.getRows(offset, 100),
+});
+```
+
+### 4.3 Before vs After Optimization
+
+```
+FinUI table:
+  Before:  first-paint 800ms / scroll 5fps / memory 250MB
+  After:   first-paint 50ms / scroll 60fps / memory 80MB
+  Speedup: 16× / 12× / 3×
+```
+
+## 5. Other Solutions for Long-List Scenarios
+
+| Solution | Use case | Performance |
+|---|---|---|
+| **Virtual scrolling** | 1000+ scrollable rows | ⭐⭐⭐⭐⭐ |
+| **Pagination** | Non-continuous data display | ⭐⭐⭐ |
+| **Infinite scroll** | Social feeds | ⭐⭐⭐⭐ |
+| **Windowing** | Table + Grid | ⭐⭐⭐⭐⭐ |
+| **requestIdleCallback** | Background data preprocessing | ⭐⭐⭐ |
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't wrap virtual scrolling with extra listeners.** Each scroll event triggers re-render, framework-additional listener = **double calculation**.
+2. **Don't use index as key.** `<Cell key={i}>` reuses wrong DOM on sort / delete rows, INP spikes.
+3. **Don't ignore scrollbar edge cases.** macOS hidden scrollbar vs Windows shown scrollbar, **viewport height differs by 17px**, layout shifts.
+4. **Don't mix virtual scrolling + complex headers.** Fixed columns + horizontal scroll + complex header = **state management disaster**, use mature solutions like TanStack Table.
+5. **Don't forget SEO long-lists.** Search engines only crawl first-screen content, **10000 rows of virtual scrolling may only index first 20 rows** — key content with SSR rendering initial HTML.
+
+## Summary
+
+Five key facts that thread runtime performance together:
+
+- **Virtual scrolling**: visible viewport + total height to fill scrollbar + only render visible DOM, **10000 rows from 800ms to 50ms**.
+- **Library selection**: fixed-height react-window / dynamic-height react-virtuoso / framework-agnostic TanStack Virtual.
+- **Web Vitals trio**: LCP + INP + CLS all need monitoring, **INP use requestIdleCallback, CLS use aspect-ratio reservation**.
+- **FinUI large spreadsheet**: virtual scrolling + column virtualization + Cell memo + data chunking, **16× speedup**.
+- **Solution combination**: virtual scrolling + pagination + infinite scroll + windowing each has its use case, **architects pick by data volume**.
+
+**Next post**: Electron practice — main process / renderer process / USB Bridge / Rouyu PC client project practical experience.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the core principle of virtual scrolling? How can a 10000-row list achieve 60fps scroll?
+>
+> **A**: Virtual scrolling's three components: ① **Visible viewport window** — fixed-height scroll container; ② **Total height to fill scrollbar** — padding-top / padding-bottom simulate "10000 rows total height"; ③ **Only render currently visible DOM** — scroll event → calculate visible range → render that range's data. **10000 rows from 800ms to 50ms key**: DOM nodes from 100000+ down to ≈ 20, layout / paint / composite workload is O(visible) not O(all). **Interview tip**: "Virtual scrolling doesn't save rendering, it's **deferred rendering + DOM pool reuse**".<AIAsk question="What's the core principle of virtual scrolling? How can a 10000-row list achieve 60fps scroll?" lang="en" />
+>
+> **Q2 (Think)**: How to choose between react-window / react-virtuoso / TanStack Virtual — the three virtual scrolling libraries?<AIAsk question="How to choose between react-window / react-virtuoso / TanStack Virtual — the three virtual scrolling libraries?" lang="en" />
+>
+> **Q3 (Think)**: What are INP and CLS? How to optimize each?<AIAsk question="What are INP and CLS? How to optimize each?" lang="en" />
+>
+> **Q4 (Think)**: How to optimize a 300-column × 500-row enterprise-grade table? What specific layers did you do?<AIAsk question="How to optimize a 300-column × 500-row enterprise-grade table? What specific layers did you do?" lang="en" />
+>
+> **Q5 (Think)**: In production, how did you locate 'scroll lag' issues? Which metrics do you check in Chrome DevTools Performance?<AIAsk question="In production, how did you locate 'scroll lag' issues? Which metrics do you check in Chrome DevTools Performance?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [web.dev: Optimize INP (Google Developers)](https://web.dev/articles/inp) — INP optimization official guide
+- [web.dev: Optimize CLS](https://web.dev/articles/cls) — CLS optimization official guide
+- [TanStack Virtual (GitHub)](https://github.com/TanStack/virtual) — TanStack Virtual virtual scrolling
+- [react-window (GitHub)](https://github.com/bvaughn/react-window) — react-window classic virtual scrolling
+- [Chrome DevTools Rendering Performance (Google Developers)](https://developer.chrome.com/docs/devtools/performance) — runtime performance analysis
+- [Web Vitals (GitHub)](https://github.com/GoogleChrome/web-vitals) — official Web Vitals library

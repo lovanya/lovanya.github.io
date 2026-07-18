@@ -1,0 +1,226 @@
+---
+title: "Micro-frontend Module Federation Practice: 12min → 3min Build Optimization"
+description: A frontend architect's micro-frontend deep dive — Webpack Module Federation principles, qiankun / micro-app / wujie / Module Federation three solutions comparison, runtime isolation, cross-framework practice
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'micro-frontend', 'module-federation', 'qiankun']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand micro-frontend? My answer is **yes** — not to use qiankun / Module Federation, but to build the engineering judgment of "why split a single repo into multiple repos". Three reasons:
+
+1. **The "12min → 3min build optimization" on resume is Module Federation practice.** Giant single-repo monorepos use MF to split sub-apps, **build time decreases by orders of magnitude**.
+2. **Micro-frontend is not "split for the sake of splitting".** **Only consider micro-frontend with 50+ developers / 5+ sub-teams**, **small projects just need monorepo + route lazy loading**.
+3. **Three solutions are all iframe + JS sandbox underneath.** qiankun / micro-app / wujie all share the same philosophy, **selection decision matters more than writing code**.
+
+This is post #25 of the *Frontend Architecture Cultivation Path* series. We skip specific APIs (no `ModuleFederationPlugin` config), use architecture diagrams + three-solution comparison + real cases to make micro-frontend principles + selection decisions concrete. The next post deep-dives into low-code platform design.
+
+## 1. Why Need Micro-frontend
+
+```
+Traditional single-repo monorepo:
+  ✓ Simple (one repo, one build, one deploy)
+  ✗ 50+ developers = merge conflict hell
+  ✗ Giant bundle = 12min build
+  ✗ One release = whole app goes online (business teams not synchronized)
+  ✗ Cross-framework difficult (Vue / React hard to mix)
+
+Micro-frontend:
+  ✓ Independent deployment (business A / B / C release independently)
+  ✓ Independent build (each sub-app < 2min)
+  ✓ Cross-framework (main Vue / sub React both work)
+  ✗ Runtime isolation (iframe performance cost)
+  ✗ Debugging complex
+```
+
+**Architect's mantra**: **Don't use micro-frontend with fewer than 50 developers / 5 sub-teams**. **Small projects just need monorepo + route lazy loading**.
+
+## 2. Three Solutions Comparison
+
+| Solution | Base | Cross-framework | Performance | Use case |
+|---|---|---|---|---|
+| **qiankun** | iframe + JS sandbox | ✅ | Larger loss | Multi-team / cross-framework / strong isolation |
+| **micro-app** | iframe + Web Components | ✅ | Medium | JD.com scenarios |
+| **wujie** | iframe + Web Components | ✅ | Better | Tencent scenarios |
+| **Module Federation** | JS shared | ⚠️ Same framework | **Best** | Same framework + shared runtime |
+
+**Architect's decision**:
+- **Cross-framework + strong isolation** → qiankun / wujie (iframe sandbox)
+- **Same framework + shared runtime** → Module Federation (Webpack 5 / Vite)
+- **JD.com ecosystem** → micro-app
+
+## 3. qiankun Practice
+
+```javascript
+// Main app
+import { registerMicroApps, start } from 'qiankun';
+
+registerMicroApps([
+  {
+    name: 'finance',
+    entry: '//finance.example.com',
+    container: '#subapp-container',
+    activeRule: '/finance',
+  },
+  {
+    name: 'hr',
+    entry: '//hr.example.com',
+    container: '#subapp-container',
+    activeRule: '/hr',
+  },
+]);
+
+start();
+
+// Sub app (finance)
+export async function bootstrap() { /* startup hook */ }
+export async function mount(props) { /* mount to #subapp-container */ }
+export async function unmount() { /* unmount */ }
+```
+
+**Core mechanisms**: iframe + `proxy` sandbox + `import-html-entry` parse sub-app HTML.
+- **JS sandbox**: Proxy intercepts global variables on window
+- **Style isolation**: dynamic `<style>` tag injection + scoped CSS
+- **Communication**: based on props + CustomEvent / `initGlobalState`
+
+## 4. Module Federation Practice (SF Express ERP)
+
+The resume line **"ERP refactor 12min → 3min"** — core transformation is using Webpack 5 Module Federation.
+
+### 4.1 Before Refactor
+
+```
+erp-app (monorepo)
+  ├── apps/admin/      # main app (800+ pages)
+  ├── packages/ui/     # FinUI component library
+  ├── packages/utils/   # utility functions
+  ├── packages/sdk/     # data SDK
+  └── ...
+  
+pnpm -r build:    12min
+```
+
+**Pain points**:
+- `apps/admin` change 1 line → **12min full build**
+- **Cannot parallel build** (shared chunks depend on each other)
+- **Atomic deployment** (admin change forces utils deploy)
+
+### 4.2 After Refactor (Module Federation)
+
+```
+erp-app
+  ├── apps/admin/      # Shell (only 100KB, instant open)
+  ├── apps/finance/    # independent sub-app (deploy: 1.5min)
+  ├── apps/hr/         # independent sub-app (deploy: 1.2min)
+  ├── apps/crm/        # independent sub-app (deploy: 1.8min)
+  └── packages/shared/ # shared dependencies (React / Antd / utils)
+```
+
+**Shell config**:
+```javascript
+new ModuleFederationPlugin({
+  name: 'admin',
+  remotes: {
+    finance: 'finance@//finance.example.com/remoteEntry.js',
+    hr: 'hr@//hr.example.com/remoteEntry.js',
+  },
+  shared: {
+    react: { singleton: true },
+    'react-dom': { singleton: true },
+    antd: { singleton: true },
+  },
+});
+
+// Shell references sub-app
+const FinanceApp = React.lazy(() => import('finance/App'));
+```
+
+**Benefits**:
+- Shell build **30s** (only compiles admin itself)
+- Sub-app independent build **1.5min** (only compiles finance)
+- **Parallel build**: admin / finance / hr / crm run simultaneously = 1.5min total
+- Shared React / antd = **each sub-app bundle reduces 200KB**
+
+### 4.3 Real Data Comparison
+
+| Metric | Before | After |
+|---|---|---|
+| Full build | 12min | **1.5min (parallel)** |
+| Build after admin change | 12min | 30s |
+| Build after finance change | 12min | 1.5min |
+| Bundle size (main app) | 800KB | 100KB |
+| Independent deployment | ❌ | ✅ |
+| Cross-team parallel | ❌ | ✅ |
+
+## 5. Runtime Isolation: iframe vs JS Sandbox
+
+| Dimension | iframe sandbox | JS sandbox (with-sandbox) |
+|---|---|---|
+| JS isolation | **100%** (independent window) | ⚠️ 99% (Proxy intercept) |
+| CSS isolation | **100%** (independent document) | ⚠️ 90% (scoped / namespace) |
+| Global variable pollution | **None** | **Yes** (needs cleanup) |
+| Performance loss | 5-15% (iframe) | < 1% |
+| Cross sub-app communication | Complex (postMessage) | Simple (globalState) |
+
+**Architect's decision**:
+- **Strong isolation + cross-framework** → iframe sandbox (qiankun / wujie)
+- **Same framework + shared runtime** → JS sandbox (Module Federation / Vite Module Graph)
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't use micro-frontend for small projects.** **10 pages / 5 developers** with micro-frontend = killing a chicken with a sledgehammer. **monorepo + route lazy loading is enough**.
+2. **Don't use JS sandbox for cross-framework.** qiankun's Proxy sandbox **isn't friendly to React** — React 18+ concurrent mode + Proxy interception compatibility issues. **Cross-framework must use iframe sandbox**.
+3. **Don't make sub-apps too large.** Each sub-app with 200+ pages = micro-frontend is meaningless (should split again). **Single sub-app 50-100 pages is the sweet spot**.
+4. **Don't share too much in micro-frontend.** MF sharing React / Vue is fine, **sharing business utils = re-coupling**. **Sharing = base runtime, business utils each package independent**.
+5. **Don't ignore deployment complexity.** Micro-frontend = **N sub-app deployments**. **CI / CDN / gray release / rollback** complexity × N. **Architects must design ahead**.
+
+## Summary
+
+Six key facts that thread micro-frontend together:
+
+- **Don't use micro-frontend with fewer than 50 developers / 5 sub-teams** — single-repo monorepo + route lazy loading is enough.
+- **Three solutions**: qiankun (iframe + cross-framework) / micro-app (JD ecosystem) / wujie (Tencent ecosystem) / Module Federation (same framework sharing).
+- **Module Federation practice**: Shell + sub-apps, Shell 30s, sub-app 1.5min, full parallel 1.5min total.
+- **Runtime isolation**: iframe 100% isolation (performance 5-15%) / JS sandbox 99% isolation (performance < 1%).
+- **Cross-framework + strong isolation** → iframe; **same framework + shared runtime** → MF.
+- **Production case**: SF Express ERP 12min → 1.5min speedup 8×, bundle reduced 87%.
+
+**Next post**: Low-code platform design — code generation for forms / flows / reports, ERP semi-low-code project practice.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What scenarios must use micro-frontend? Why not use it with fewer than 50 developers?
+>
+> **A**: **Must-use micro-frontend scenarios**: ① **50+ developers + 5 sub-teams** maintaining one product simultaneously; ② **Different business lines release independently** (finance / HR / customer with different cadences); ③ **Cross-framework** (main Vue sub React, need to coexist); ④ **Giant build slow** (single repo 12min+). **Don't use with fewer than 50 developers**: **10 pages / 5 developers** with micro-frontend = killing a chicken with a sledgehammer, **monorepo + route lazy loading is enough**, micro-frontend 5-15% performance loss + complex debugging + deployment × N, **small projects can't afford it**. **Architect's mantra**: **micro-frontend is a technical solution to organizational problems, not a technical solution to technical problems**.<AIAsk question="What scenarios must use micro-frontend? Why not use it with fewer than 50 developers?" lang="en" />
+>
+> **Q2 (Think)**: How to choose between qiankun / micro-app / wujie / Module Federation?
+>
+> **A**: **Selection decision**: ① **Cross-framework + strong isolation** → **qiankun / wujie** (iframe sandbox); ② **Same framework + shared runtime** → **Module Federation** (Webpack 5 / Vite); ③ **JD.com ecosystem project** → **micro-app**; ④ **Tencent ecosystem project** → **wujie**. **Core decision point**: **Cross-framework must iframe** (qiankun/wujie), **same framework use MF** (5× performance, shared runtime). **Production case**: SF Express ERP 5 business domains, Vue 3 unified, **uses Module Federation**; a ToB SaaS Vue / React mix, **uses qiankun iframe**.<AIAsk question="How to choose between qiankun / micro-app / wujie / Module Federation?" lang="en" />
+>
+> **Q3 (Think)**: How does Module Federation achieve "shared runtime, independent build"? What's the build config for Shell + sub-app?
+>
+> **A**: **Core principle**: Webpack / Rspack at compile time marks shared dependencies (React / Antd) as **singleton** (load only once), Shell at startup **asynchronously loads sub-app's remoteEntry.js**, **on-demand dynamic import**. **Shell config**: `new ModuleFederationPlugin({ name: 'admin', remotes: { finance: '...' }, shared: { react: { singleton: true } } })`; **sub-app config**: `new ModuleFederationPlugin({ name: 'finance', filename: 'remoteEntry.js', exposes: { './App': './src/App' } })`. **Production data**: Shell bundle 800KB → 100KB (shared dependencies download once), sub-apps deploy independently, **Shell 30s, sub-app 1.5min, full parallel 1.5min total**.<AIAsk question="How does Module Federation achieve 'shared runtime, independent build'? What's the build config for Shell + sub-app?" lang="en" />
+>
+> **Q4 (Think)**: qiankun's iframe sandbox vs Module Federation's JS sandbox, how to weigh performance / isolation?
+>
+> **A**: **iframe sandbox**: 100% JS / CSS isolation (independent window/document), **performance loss 5-15%** (iframe creation + postMessage communication); **JS sandbox (MF)**: 99% isolation (Proxy intercept + scoped CSS), **performance loss < 1%** (shared runtime + zero serialization). **Selection**: **strong isolation + cross-framework** use iframe, **same framework + shared runtime** use JS sandbox. **Production data**: qiankun multi-sub-app + cross-framework, first-paint **1500ms**; MF same framework, first-paint **800ms**.<AIAsk question="qiankun's iframe sandbox vs Module Federation's JS sandbox, how to weigh performance / isolation?" lang="en" />
+>
+> **Q5 (Think)**: In your SF Express ERP project, how did you migrate from single-repo monorepo to Module Federation? What pitfalls?
+>
+> **A**: **Migration three steps**: ① **Identify business boundaries** — finance / HR / customer / main app, **determine sub-app division**; ② **Extract shared dependencies** — React / Antd / utils / SDK to `packages/shared`, **singleton config**; ③ **Shell + sub-app split** — main app becomes Shell only hanging routes, business pages split to sub-apps, exposes expose entry. **Pitfalls**: ① **shared config** too aggressive caused version conflicts, changed to **precise to subset**; ② **CSS isolation** use `data-app` attribute + scoped, not css-modules (too heavy); ③ **Deployment pipeline** rewritten, each sub-app **independent CI** + **independent CDN** path; ④ **Gray release** use Shell route + sub-app version number, Shell decides which version to call.<AIAsk question="In your SF Express ERP project, how did you migrate from single-repo monorepo to Module Federation? What pitfalls?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [Module Federation Documentation (Webpack)](https://webpack.js.org/concepts/module-federation/) — Module Federation official documentation
+- [qiankun (GitHub)](https://github.com/umijs/qiankun) — qiankun official repository
+- [micro-app (GitHub)](https://github.com/jd-opensource/micro-app) — micro-app JD
+- [wujie (GitHub)](https://github.com/Tencent/wujie) — wujie Tencent
+- [Module Federation Examples (Module Federation GitHub)](https://github.com/module-federation/module-federation-examples) — Module Federation examples
+- [Vite Module Federation (GitHub)](https://github.com/originjs/vite-plugin-federation) — Vite Module Federation plugin

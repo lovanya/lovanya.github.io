@@ -1,0 +1,202 @@
+---
+title: "Low-Code Platform Design: Code Generation for Forms / Flows / Reports"
+description: A frontend architect's low-code platform design — Schema-driven form generation, JSON Logic visual flows, drag-and-drop report config, semi-low-code vs zero-code engineering trade-offs, with ERP semi-low-code project practice
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'low-code', 'visualization', 'schema-driven']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand low-code? My answer is **yes** — not to implement a low-code platform, but to build the engineering judgment of "what are low-code's boundaries". Three reasons:
+
+1. **The "ERP semi-low-code project" on resume is scarce experience.** **Low-code is not replacing development**, **it's an engineering pattern of 80% generic business + 20% custom development**.
+2. **Low-code is not silver bullet.** **Over-abstraction = flexibility loss** — **all requirements wanting configuration = business-side configuration hell**.
+3. **Schema-driven is low-code's underlying logic.** JSON Schema + JSON Logic + AST editor = low-code's three pillars, understanding the principle is more important than knowing how to use jinja / amis.
+
+This is post #26 of the *Frontend Architecture Cultivation Path* series. We skip specific low-code platforms (no jinja / amis usage), use architecture diagrams + design philosophy + real cases to make form generation / flow orchestration / report config concrete. The next post deep-dives into RBAC permission system.
+
+## 1. Low-Code Three-Layer Abstraction
+
+<Mermaid client:load caption="Figure 1: Low-code three-layer abstraction" chart={`flowchart LR
+  S[Schema Layer<br/>JSON Schema<br/>describe data + UI] --> E[Engine Layer<br/>Schema renderer<br/>JSON Logic execution]
+  E --> C[Business Layer<br/>permissions / flow / integration] --> U[Business-side config UI]`} />
+
+**Three layers**:
+1. **Schema layer**: JSON Schema describes **what it looks like** (fields / types / validation)
+2. **Engine layer**: Schema renderer executes **how it behaves** (JSON Logic expressions)
+3. **Business layer**: permissions / flow / integration = **seam with business**
+
+**Architect's mantra**: **Schema-driven is the foundation, business layer is the platform's core moat**. **Only Schema + engine = generic low-code, doesn't create business value**.
+
+## 2. Schema-Driven Form Generation
+
+```javascript
+// JSON Schema describes form
+const userFormSchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', title: 'Name', minLength: 2, maxLength: 20 },
+    email: { type: 'string', format: 'email', title: 'Email' },
+    age: { type: 'number', title: 'Age', minimum: 0, maximum: 150 },
+    role: { type: 'string', enum: ['admin', 'user'], title: 'Role' },
+  },
+  required: ['name', 'email'],
+};
+
+// Generic renderer
+function FormRenderer({ schema, onSubmit }) {
+  const [values, setValues] = useState({});
+  
+  return (
+    <form onSubmit={() => onSubmit(values)}>
+      {Object.entries(schema.properties).map(([key, prop]) => (
+        <FieldRenderer
+          key={key}
+          prop={prop}
+          value={values[key]}
+          onChange={v => setValues({ ...values, [key]: v })}
+        />
+      ))}
+    </form>
+  );
+}
+```
+
+**Advantages**: **Business-side changes schema changes UI**, **no frontend dev intervention**.
+
+## 3. JSON Logic: Visual Expression of Business Rules
+
+```javascript
+// JSON Logic expresses "if a > 10 then b = a * 2"
+const rule = {
+  if: [{ '>': [{ var: 'a' }, 10] }, { '*': [{ var: 'a' }, 2] }, { var: 'b' }],
+};
+
+// Generic executor
+function evaluate(rule, data) {
+  if (rule.if) {
+    const [cond, then, else_] = rule.if;
+    return evaluate(cond, data) ? evaluate(then, data) : evaluate(else_, data);
+  }
+  if (rule['>']) return evaluate(rule['>'][0], data) > evaluate(rule['>'][1], data);
+  if (rule['*']) return evaluate(rule['*'][0], data) * evaluate(rule['*'][1], data);
+  if (rule.var) return data[rule.var];
+  return rule;
+}
+```
+
+**Production case**: An ERP reimbursement rule "amount > 5000 needs department director approval" — **business side drag-configures JSON Logic**, **frontend dev zero intervention**.
+
+## 4. Flow Orchestration: Visual BPMN
+
+```javascript
+// Process definition (simplified BPMN style)
+const processDefinition = {
+  id: 'leave-approval',
+  nodes: [
+    { id: 'start', type: 'start' },
+    { id: 'submit', type: 'userTask', assignee: 'employee' },
+    { id: 'manager-review', type: 'userTask', assignee: 'manager' },
+    { id: 'end', type: 'end' },
+  ],
+  edges: [
+    { from: 'start', to: 'submit' },
+    { from: 'submit', to: 'manager-review', condition: 'days <= 3' },
+    { from: 'manager-review', to: 'end' },
+  ],
+};
+
+// Generic executor: state machine advancement
+async function executeProcess(processDef, currentNode, context) {
+  const next = processDef.edges.find(e => e.from === currentNode);
+  if (!next) return;
+  if (next.condition && !evaluate(next.condition, context)) return;
+  await executeNode(processDef.nodes.find(n => n.id === next.to), context);
+  return executeProcess(processDef, next.to, context);
+}
+```
+
+**Architect's mantra**: **Flow engine = state machine + JSON Logic** — **business-side drag-and-drop = configure schema and condition**, **frontend dev only writes UI nodes**.
+
+## 5. Report Drag-and-Drop Configuration
+
+```javascript
+// Report config
+const reportConfig = {
+  dataSource: {
+    type: 'api',
+    url: '/api/sales',
+  },
+  dimensions: ['region', 'product'],
+  measures: [{ field: 'amount', agg: 'sum' }],
+  chartType: 'bar',
+  // ...
+};
+
+// Generic renderer
+function ReportRenderer({ config }) {
+  // call ECharts / Recharts
+  // apply generic styles
+  return <Chart options={buildEChartsOption(config)} />;
+}
+```
+
+**Production case**: ERP semi-low-code project, **business-side drag-configures 200+ reports**, **frontend only does generic renderer** — **saves 80% report dev effort**.
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't try to make low-code cover 100% of requirements.** **20% complex requirements** always need "escape hatch" — support business-side writing custom code rather than limiting to only configuration.
+2. **Don't design schema too flexibly.** **More flexible schema = harder to debug**. **Limit schema fields / types / validation** = business side less error-prone.
+3. **Don't do permission control in low-code.** **Permissions are business layer** — low-code does UI generation, permissions use independent RBAC system.
+4. **Don't ignore low-code platform performance.** **Rendering 100 schema fields** vs hardcoded React components, **former may be 10× slower**. **Virtual scrolling / lazy loading** must be considered.
+5. **Don't make "big and complete" low-code platform.** **80% business uses schema + JSON Logic**, **20% writes custom code** — **architect's job is to design boundaries**.
+
+## Summary
+
+Five key facts that thread low-code platform together:
+
+- **Three-layer abstraction**: Schema layer (JSON Schema) + Engine layer (JSON Logic) + Business layer (permissions / flow / integration).
+- **Schema-driven forms**: business-side changes schema changes UI, **frontend dev zero intervention**.
+- **JSON Logic business rules**: visual drag-config "when X then Y", **rules as data**.
+- **Flow orchestration**: BPMN-style flow chart + state machine execution, **business-side designs flow**.
+- **Report config**: drag-and-drop dimensions / measures / chartType, **generic renderer**.
+
+**Next post**: RBAC permission system — dynamic routes / OAuth 2.0 / JWT, SSO unified permission project practice.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What are the core abstraction layers of a low-code platform? Why is schema-driven the key?
+>
+> **A**: **Three-layer abstraction**: ① **Schema layer** — JSON Schema describes "what it looks like" (fields / types / validation); ② **Engine layer** — renderer + JSON Logic executes "how it behaves"; ③ **Business layer** — permissions / flow / integration = business seam. **Why schema-driven is key**: **business-side changes schema changes UI / flow / reports**, **frontend dev zero intervention** — 80% generic business is configured by business-side themselves, 20% custom requirements are written by frontend. **Not replacing development, but reducing repeated development**.<AIAsk question="What are the core abstraction layers of a low-code platform? Why is schema-driven the key?" lang="en" />
+>
+> **Q2 (Think)**: What is JSON Logic? Why use JSON Logic for business rules instead of writing JS code?
+>
+> **A**: **JSON Logic** is a data-driven business rule expression format, using JSON objects to express rules like "if a > 10 then b = a * 2". **Why use JSON Logic**: ① **Visual drag-and-drop** — business side drag-configures JSON nodes, no JS knowledge needed; ② **Serializable** — rules stored in DB, versioned / gray-released; ③ **Generic executor** — write evaluate function once, applies to all rules; ④ **Business-side can modify** — changing JSON doesn't need release. **Counter-example**: A team wrote rules in JS, **business side every requirement change required frontend release**, very inefficient.<AIAsk question="What is JSON Logic? Why use JSON Logic for business rules instead of writing JS code?" lang="en" />
+>
+> **Q3 (Think)**: Where is the boundary between low-code platform and traditional development? What requirements must use code not configuration?
+>
+> **A**: **80/20 boundary**: **80% generic business** (forms / lists / flows / reports) → low-code configuration; **20% complex requirements** (complex interaction / custom animation / performance sensitive / deep business logic) → write code. **Must-use-code scenarios**: ① complex interaction (e.g., FinSpread table cell editing); ② performance sensitive (e.g., large table virtual scrolling); ③ deep business logic (e.g., multi-step business orchestration); ④ complex integration (connect hardware / legacy systems); ⑤ extreme experience (animation / 3D). **Architect's job**: **design escape hatches** — low-code platform leaves "custom code" areas, business-side can freely switch between low-code and writing code.<AIAsk question="Where is the boundary between low-code platform and traditional development? What requirements must use code not configuration?" lang="en" />
+>
+> **Q4 (Think)**: What are the performance bottlenecks of low-code platforms? How does schema rendering avoid lag?
+>
+> **A**: **Three performance bottlenecks**: ① **Schema parsing slow** — 100-field schema parsing 200ms, need **stream parsing**; ② **Many fields rendered** — 100 React component mounts slow, need **virtual scrolling / lazy loading**; ③ **JSON Logic complex rules** — deeply nested if/else runs 100ms, need **compile to AST once + reuse**. **Production case**: A 200-field form, first render 1.5s, optimized (field grouping + lazy load + precompile rule) → 200ms.<AIAsk question="What are the performance bottlenecks of low-code platforms? How does schema rendering avoid lag?" lang="en" />
+>
+> **Q5 (Think)**: In your ERP semi-low-code project, how did you balance "low-code coverage" and "code flexibility"? What's the business-side vs development collaboration model?
+>
+> **A**: **Semi-low-code 80/20 principle**: **80% generic business** (forms / lists / approvals / reports) → business-side low-code config; **20% custom requirements** → write code. **Collaboration model**: ① **Business-side has schema config rights** — form fields / list columns / approval flows / reports all self-config; ② **Development has code seams** — `/src/custom/` directory where business-side can hook custom React components; ③ **Gray release** — schema changes have versions, business-side picks version and rolls back; ④ **Training** — give business-side 3 days low-code training, can change schema without knowing code. **Effect**: 200+ reports 80% business-side configured, frontend only does 20% complex reports, **saves 60% report dev effort**, requirement delivery cycle -60%.<AIAsk question="In your ERP semi-low-code project, how did you balance 'low-code coverage' and 'code flexibility'? What's the business-side vs development collaboration model?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [JSON Schema (Official)](https://json-schema.org/) — JSON Schema official spec
+- [JSON Logic (GitHub)](https://github.com/jiangyunhui0/json-logic-js) — JSON Logic rule engine
+- [amis (GitHub)](https://github.com/baidu/amis) — Baidu amis low-code framework
+- [formily (GitHub)](https://github.com/alibaba/formily) — Alibaba Formily form solution
+- [bpmn.io](https://bpmn.io/) — BPMN.io flow modeling tool
+- [Low-Code Engine (GitHub)](https://github.com/alibaba/lowcode-engine) — Alibaba low-code engine

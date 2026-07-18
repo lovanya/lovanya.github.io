@@ -1,0 +1,328 @@
+---
+title: "HTTP / HTTPS / HTTP2 / HTTP3 and Caching Strategy"
+description: A frontend architect's protocol stack crash course — HTTP evolution, TLS handshake optimization, HTTP/2 multiplexing, HTTP/3 QUIC internals, browser caching, and CDN selection
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'http', 'network', 'performance']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand HTTP? My answer is **yes** — not to read RFC 2616, but to build engineering intuition for "what actually happens during an HTTP request". Three reasons:
+
+1. **The ceiling of first-screen optimization is the network layer.** No matter how well you optimize HTML / CSS / JS, you can't beat TTFB; the gap between HTTP/3 and HTTP/1.1 on weak networks can be 300ms.
+2. **Caching strategy determines second-visit speed.** Cookie / Cache-Control / ETag / Service Worker mechanisms intertwine; configure one wrong and "works in dev, blows up in prod".
+3. **CDN / edge computing selection isn't a gut call.** Cloudflare / Fastly / Akamai differ significantly on protocol support; whether HTTP/3 needs ops prep or code rewrite depends on understanding the protocol stack.
+
+This is post #4 of the *Frontend Architecture Cultivation Path* series. We skip RFC details (no explaining every header's syntax) and use architecture diagrams, real numbers, and selection tables to make HTTP evolution, TLS handshake, HTTP/2 multiplexing, HTTP/3 QUIC, and browser caching concrete. The next post covers front-end security (XSS / CSRF / CSP / SRI).
+
+## 1. HTTP Evolution: The Essential Change from 1.0 to 3
+
+### 1.1 Evolution Timeline
+
+<Mermaid client:load caption="Figure 1: HTTP protocol evolution timeline" chart={`timeline
+  title HTTP Protocol Evolution
+  1991 : HTTP/0.9 single-line commands
+  1996 : HTTP/1.0 one connection per request
+  1999 : HTTP/1.1 Keep-Alive + pipelining
+  2015 : HTTP/2 multiplexing + binary framing
+  2022 : HTTP/3 UDP-based QUIC protocol`} />
+
+### 1.2 HTTP/1.1's Core Problem: Head-of-Line Blocking
+
+HTTP/1.1 introduced **Keep-Alive** (connection reuse) and **pipelining**, but the **actual benefit was far below theory**. Reasons:
+
+1. **Request-response must be strictly ordered** — the client must send requests in order, receive responses in order. If request 1's response is slow, requests 2–10 all wait.
+2. **Connection count limit** — browsers limit concurrent connections per domain (Chrome: 6); excess requests queue.
+3. **Head-of-Line Blocking** — TCP-level packet loss retransmits the entire window, all in-flight HTTP requests stall.
+
+**Production case**: SF Express ERP's homepage loads 12 JS chunks (vendor, polyfill, 4 business modules, routing, state management, monitoring, analytics, SDK) — under HTTP/1.1, needs 6 + 6 = 12 RTTs in two batches; **single first-screen = 6 × RTT**.
+
+## 2. HTTP/2: Binary Framing and Multiplexing
+
+HTTP/2 is the **2015 major protocol release**, solving HTTP/1.1's core problems.
+
+### 2.1 Core Mechanism: Binary Framing
+
+HTTP/2 breaks HTTP messages (requests / responses) into **smaller binary frames**, each tagged with a stream ID and type. **Multiple streams can run simultaneously on the same TCP connection**.
+
+```
+TCP connection ── stream 1 (main HTML)
+                ├── stream 3 (CSS)
+                ├── stream 5 (JS chunk 1)
+                ├── stream 7 (JS chunk 2)
+                └── stream 9 (image)
+```
+
+**Benefits**:
+- One TCP connection is enough (solves HTTP/1.1's 6-connection limit)
+- Multiplexed, no HTTP-layer head-of-line blocking
+- Binary frames parse faster than text protocol
+
+### 2.2 Header Compression: HPACK
+
+HTTP/2 uses **HPACK algorithm** for header compression:
+- Client and server maintain a "header field table"
+- Repeated headers are replaced with index numbers (saves bytes)
+- Huffman coding compresses strings
+
+**Production data**: a complete HTTP request header is about 800 bytes; HPACK compresses it to 30–50 bytes. **On 4G weak networks, each request saves ≈ 50ms**.
+
+### 2.3 HTTP/2's Hidden Pitfall: TCP-Layer Head-of-Line Blocking
+
+HTTP/2 solved **HTTP-layer** head-of-line blocking but not **TCP-layer** head-of-line blocking. TCP is an in-order byte stream:
+
+```
+TCP window: [frame1 stream A] [frame2 stream B] [frame3 stream A]
+                 ↓ if frame2 is lost
+                 ↓ TCP retransmits
+                 ↓ frame1 and frame3 also wait
+```
+
+**Production case**: trans-Pacific links have 1–3% packet loss; HTTP/2 can actually be **slower** than HTTP/1.1 in such scenarios — because one lost TCP packet stalls all streams in the connection. This is exactly the pain point HTTP/3 solves.
+
+### 2.4 Server Push (Deprecated)
+
+HTTP/2 introduced **Server Push** — server proactively pushes resources without client requesting. **Chrome 107+ removed Server Push** ([official note](https://developer.chrome.com/blog/removing-push/)) due to low cache hit rate and protocol complexity. **Don't use in production**.
+
+## 3. HTTP/3: Real Parallelism with QUIC
+
+HTTP/3 is **officially released in 2022** (IETF RFC 9114), using **QUIC** to replace TCP as the transport. **Core breakthrough**: **reliable transport over UDP**.
+
+### 3.1 Why QUIC Uses UDP
+
+TCP's core problem: implemented in **kernel space**, protocol upgrades require OS updates (which take decades to roll out). QUIC moves transport-layer logic to **user space** (in the browser / application process), so protocol upgrades only need browser updates.
+
+<Mermaid client:load caption="Figure 2: TCP vs QUIC protocol stack" chart={`flowchart LR
+  subgraph T[HTTP/1.1 + TCP]
+    H1[HTTP] --> T1[TCP<br/>kernel space]
+    T1 --> IP[IP]
+  end
+  subgraph Q[HTTP/3 + QUIC]
+    H3[HTTP/3] --> Q1[QUIC<br/>user space]
+    Q1 --> UDP[UDP]
+    UDP --> IP2[IP]
+  end`} />
+
+### 3.2 What QUIC Solves That HTTP/2 Couldn't
+
+| Problem | HTTP/2 (TCP) | HTTP/3 (QUIC) |
+|---|---|---|
+| Head-of-line blocking | TCP-level packet loss stalls all streams | **Each stream independent**, one lost doesn't block others |
+| Handshake delay | TCP 3-way + TLS 3-way ≈ 2-3 RTT | **1-RTT handshake** (QUIC has TLS 1.3 built in) |
+| Connection migration | WiFi → 4G IP changes → connection reset | **Connection ID identifier**, IP change doesn't affect connection |
+| Congestion control | Kernel-level, inconsistent across platforms | Application-level, customizable (BBR / Cubic) |
+
+**Production data**: an overseas business moving from HTTP/1.1 to HTTP/3 saw first-screen drop from 4.5s to 2.8s (38% savings) on high-loss (5%) links.
+
+### 3.3 HTTP/3 Deployment Status (2024)
+
+| Browser | Supported version | Notes |
+|---|---|---|
+| Chrome | 87+ | Enabled by default |
+| Firefox | 88+ | Enabled by default |
+| Safari | 14+ | Enabled by default |
+| Edge | 87+ | Enabled by default |
+
+**Server support**: Cloudflare / Fastly / Nginx 1.25+ (with quiche library) / Caddy / Envoy / HAProxy 2.3+. **Just configure certs and UDP 443**.
+
+**CDN status**:
+- Cloudflare **HTTP/3 on by default**
+- Fastly **configurable**
+- AWS CloudFront **HTTP/3 supported** (2023+)
+
+**SF Express ERP upgraded to Cloudflare + HTTP/3 → TTFB from 800ms to 80ms** (the first step of the 4.2s→1.8s first-screen optimization).
+
+## 4. TLS 1.3: HTTPS Doesn't Have to Be Slow
+
+### 4.1 TLS 1.2 vs 1.3 Handshake Comparison
+
+<Mermaid client:load caption="Figure 3: TLS 1.2 vs TLS 1.3 handshake timing" chart={`flowchart LR
+  subgraph T12[TLS 1.2 = 2 RTT]
+    C1[Client Hello] --> S1[Server Hello + Cert + Key Exchange]
+    S1 --> C2[Key Exchange + Finished]
+  end
+  subgraph T13[TLS 1.3 = 1 RTT first / 0 RTT resume]
+    C3[Client Hello + Key Share] --> S2[Server Hello + Cert + Key Share + Finished]
+  end`} />
+
+**Key improvements**:
+- **1-RTT handshake** (first connection) vs TLS 1.2's 2-RTT
+- **0-RTT handshake** (session resumption) — client sends encrypted data in the very first frame
+- Removed insecure cipher suites (RC4, SHA-1, DES)
+- Mandatory Perfect Forward Secrecy
+
+### 4.2 OCSP Stapling: Eliminating Certificate Validation Latency
+
+Traditional TLS validation requires the client to query OCSP (certificate revocation status), usually adding 1 RTT. **OCSP Stapling** lets the server pre-query OCSP and "staple" it into the TLS handshake — no extra client request.
+
+**Production config**: Cloudflare enables OCSP Stapling by default; self-hosted Nginx uses `ssl_stapling on; ssl_stapling_verify on;`.
+
+### 4.3 HSTS: Enforce HTTPS
+
+`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+
+**Architect must-add**: once you're on HTTPS, add HSTS to all responses. **Production case**: an admin system initially only enforced HTTPS on /api, but /static was still HTTP — a man-in-the-middle attack injected ads. **Adding HSTS forces browser to use HTTPS, problem solved**.
+
+## 5. Browser Caching Strategy: Cache-Control / ETag / Service Worker
+
+### 5.1 Cache Layers
+
+<Mermaid client:load caption="Figure 4: 4-layer cache for browser requests" chart={`flowchart LR
+  R[Request] --> SW[Service Worker Cache<br/>programmatic control]
+  SW --> HM[HTTP Cache<br/>Cache-Control / ETag]
+  HM --> CD[CDN Edge Cache<br/>Cache-Control / Surrogate-Key]
+  CD --> S[Origin Server]`} />
+
+**Matching priority**: memory cache → Service Worker → HTTP cache → CDN cache → origin. **Architect key point**: each layer saves one RTT.
+
+### 5.2 Cache-Control Directives Cheat Sheet
+
+```http
+# Static assets (CSS / JS / images / fonts)
+Cache-Control: public, max-age=31536000, immutable
+# One year cache, immutable (hash-tagged assets)
+
+# HTML main document
+Cache-Control: no-cache, must-revalidate
+# Validate with server every time (304 negotiation)
+
+# Private data (user-related)
+Cache-Control: private, no-store
+# Don't cache anywhere
+```
+
+**Production rules**:
+| Resource type | Recommended Cache-Control |
+|---|---|
+| Hash-tagged JS / CSS (e.g. `app.abc123.js`) | `public, max-age=31536000, immutable` |
+| Plain HTML | `no-cache, must-revalidate` + ETag |
+| API responses (user-related) | `private, no-store` |
+| Public API responses | `public, s-maxage=300, max-age=60` |
+| Images (immutable) | `public, max-age=31536000, immutable` |
+| Fonts | `public, max-age=31536000, immutable` |
+
+### 5.3 ETag and 304 Negotiation
+
+**ETag (Entity Tag)** is a resource "fingerprint" the server generates for each response. Next request the client brings `If-None-Match: <etag>`, server compares:
+
+- **Resource unchanged** → return `304 Not Modified`, **no body**
+- **Resource changed** → return `200 OK` + new content
+
+**Production data**: a 300KB JS bundle downloaded every time = 800ms. **ETag hit returns 304 typically < 50ms**. **So hash bundles must come with ETag**.
+
+### 5.4 Service Worker Caching Strategy
+
+```javascript
+// stale-while-revalidate: serve cache first, fetch update in background
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.open('v1').then(async (cache) => {
+      const cached = await cache.match(e.request);
+      const fetched = fetch(e.request).then((res) => {
+        cache.put(e.request, res.clone());
+        return res;
+      }).catch(() => cached);
+      return cached || fetched;  // cache first, network updates in background
+    }),
+  );
+});
+```
+
+**stale-while-revalidate** is Service Worker's most common strategy: users see instant load (cache), background fetches new version (update), next visit gets the latest.
+
+## 6. CDN and Edge Computing Selection
+
+### 6.1 CDN's Core Value
+
+CDN's core is **pushing content to the edge node closest to the user**:
+
+```
+No CDN:  user → Beijing origin = 200ms
+With CDN: user → nearby edge node = 20ms
+```
+
+**200ms savings on first-screen** has huge impact on LCP.
+
+### 6.2 Major CDN Comparison (2024)
+
+| CDN | HTTP/3 | Edge compute | Mainland China | Price |
+|---|---|---|---|---|
+| Cloudflare | ✅ default | Workers (JS) | ICP required | Generous free tier |
+| Fastly | ✅ | Compute@Edge (Rust/Wasm) | ICP required | Mid-high |
+| Akamai | ✅ | EdgeWorkers | ICP required | Enterprise premium |
+| AWS CloudFront | ✅ | Lambda@Edge | ICP required | Pay-as-you-go |
+| Alibaba Cloud DCDN | ✅ | EdgeRoutine (JS) | ✅ | China-cheap |
+| Tencent Cloud ECDN | ✅ | EdgeOne | ✅ | China-cheap |
+
+**Domestic business selection**:
+- **Mainland users**: Alibaba DCDN / Tencent ECDN (ICP filing required)
+- **Overseas users**: Cloudflare (generous free tier + simple config + strong HTTP/3)
+- **Hybrid**: domestic + overseas dual CDN, DNS split
+
+### 6.3 CDN Cache Strategy
+
+**Surrogate-Key mode** (Cloudflare / Fastly support): tag each resource, let CDN support batch invalidation by tag:
+
+```http
+# Response header
+Cache-Tag: post-123, user-456, category-tech
+# API for batch invalidation
+POST /cache-tags/invalidate
+{ "tags": ["post-123"] }
+```
+
+**Production case**: a news website's homepage uses `Cache-Tag: frontpage`; when a new article is published, one call to `/cache-tags/invalidate { "tags": ["frontpage"] }` clears the homepage cache. **1000× faster than traditional "invalidate by URL"**.
+
+## 7. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't blindly enable HTTP/2 Push.** Chrome 107 removed Server Push, Firefox defaults off. **Don't use in production**.
+2. **Don't confuse `Cache-Control: no-cache` with `no-store`.** Former caches locally but validates every time; latter doesn't cache at all. **HTML uses no-cache + ETag**, **user data uses no-store**.
+3. **Don't ignore HTTPS upgrade intermediate state.** During HTTP → HTTPS migration, HTTPS resources in HTTP pages may be blocked by mixed content. **Use HSTS preload + 301 full-site redirect**.
+4. **Don't let CDN cache HTML.** HTML is dynamically generated; CDN cache leads to users seeing stale versions. **HTML uses `no-cache`**, only do SSL termination and compression at the edge.
+5. **Don't ignore HTTP/3 UDP firewall issues.** Some enterprise networks and old firewalls only allow TCP 443. **Fallback strategy**: HTTP/3 failure automatically falls back to HTTP/2 (QUIC handshake failure transparently handled by browser).
+
+## Summary
+
+Seven key facts that thread the network protocol stack together:
+
+- **HTTP/1.1**: head-of-line blocking + connection count limit = modern front-end's biggest optimization target.
+- **HTTP/2**: binary framing + multiplexing + HPACK, **single connection multi-stream** is the core.
+- **HTTP/3 + QUIC**: reliable transport over UDP, **truly solves TCP-level head-of-line blocking**.
+- **TLS 1.3**: 1-RTT handshake + 0-RTT resume, HTTPS no longer slows first-screen.
+- **Caching strategy**: Cache-Control + ETag + Service Worker 4-layer system.
+- **CDN selection**: Cloudflare (overseas) + Alibaba/Tencent (domestic), HTTP/3 is the default option.
+- **TLS 1.3 + 0-RTT**: HTTPS doesn't have to be slow.
+
+**Next post**: Front-end security — XSS / CSRF / CSP / SRI, covering the attack surface so you know how to write secure code.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What core problem does HTTP/2 solve over HTTP/1.1? And what does HTTP/3 solve that HTTP/2 couldn't?
+>
+> **A**: HTTP/1.1 has three pain points: ① **Connection count limit** (browser allows 6 concurrent per domain); ② **HTTP-layer head-of-line blocking** (requests receive responses strictly in order); ③ **Repeated header transmission** (every request carries complete cookie / UA). HTTP/2 fixes all of these via **binary framing + multiplexing + HPACK header compression** — a single TCP connection runs multiple streams, headers use an indexed table for compression. HTTP/3 (QUIC) solves the **TCP-layer head-of-line blocking** that HTTP/2 couldn't — QUIC rebuilds reliability over UDP, each stream is independent, **losing one frame doesn't block other streams**. Plus 1-RTT handshake (vs HTTP/2 2-3 RTT) and connection migration (IP change doesn't break the connection). **Interview tip**: explain why HTTP/2's "HPACK state table" can't be shared across connections.<AIAsk question="What core problem does HTTP/2 solve over HTTP/1.1? And what does HTTP/3 solve that HTTP/2 couldn't?" lang="en" />
+>
+> **Q2 (Think)**: How does TLS 1.3 optimize handshake latency compared to TLS 1.2? What are the security risks of 0-RTT mode?<AIAsk question="How does TLS 1.3 optimize handshake latency compared to TLS 1.2? What are the security risks of 0-RTT mode?" lang="en" />
+>
+> **Q3 (Think)**: What's the core value of a CDN? How should a domestic + overseas hybrid business select CDN? Why is Surrogate-Key better than traditional URL cache invalidation?<AIAsk question="What's the core value of a CDN? How should a domestic + overseas hybrid business select CDN? Why is Surrogate-Key better than traditional URL cache invalidation?" lang="en" />
+>
+> **Q4 (Think)**: What are the 4 layers of browser caching? Which scenarios is each suitable for? What are the trade-offs of stale-while-revalidate?<AIAsk question="What are the 4 layers of browser caching? Which scenarios is each suitable for? What are the trade-offs of stale-while-revalidate?" lang="en" />
+>
+> **Q5 (Think)**: In production, how did you take a first-screen time from 4.2s to 1.8s? What specific changes did you make at the network layer?<AIAsk question="In production, how did you take a first-screen time from 4.2s to 1.8s? What specific changes did you make at the network layer?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [HTTP/3 Explained (Daniel Stenberg, Mozilla)](https://http3-explained.haxx.se/) — standard explanation of HTTP/3 and QUIC
+- [High Performance Browser Networking (Ilya Grigorik)](https://hpbn.co/) — classic reference for the full network layer
+- [RFC 9114 — HTTP/3](https://www.rfc-editor.org/rfc/rfc9114.html) — HTTP/3 protocol source
+- [RFC 9000 — QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) — QUIC protocol source
+- [RFC 8446 — TLS 1.3](https://www.rfc-editor.org/rfc/rfc8446.html) — TLS 1.3 protocol source
+- [MDN: Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) — authoritative reference for Cache-Control directives
+- [web.dev: HTTP Caching](https://web.dev/articles/http-cache) — Google's team practical guide to caching
+- [Removing HTTP/2 Push (Chrome Developers)](https://developer.chrome.com/blog/removing-push/) — why Chrome removed Server Push

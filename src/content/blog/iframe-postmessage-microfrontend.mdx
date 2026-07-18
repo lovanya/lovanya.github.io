@@ -1,0 +1,201 @@
+---
+title: "iframe 隔离 + postMessage：微前端 / 第三方嵌入实战"
+description: 前端架构师的 iframe 深度——跨域 / 同源 iframe 隔离、postMessage 通信、FinSpread 30% 授权成本降低实战、微前端沙箱方案
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', 'iframe', 'postmessage', '微前端']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂 iframe？我的回答是 **要**——不是去写 `<iframe>` 标签，而是建立"什么场景必须用 iframe 而不是其他方案"的工程判断。原因有三：
+
+1. **简历里 FinSpread 30% 授权成本降低是 iframe 实战**。理解同源 / 跨域 iframe + 授权逻辑的关系，是商业化产品的核心。
+2. **微前端 / 第三方嵌入的沙箱方案就是 iframe + postMessage**。qiankun.js / micro-app / wujie / Module Federation 背后全是 iframe 原理。
+3. **iframe 看似简单，深处有 4 个安全层级**。sandbox / allow / referrerpolicy / csp，**配置错 = 跨站脚本漏洞**。
+
+这一篇是『前端架构修仙路』的第 19 篇。我跳过具体 API（不讲 `iframe.contentWindow.postMessage` 怎么调），用架构图 + 真实案例 + 沙箱配置清单，把 iframe 隔离 / postMessage / 微前端沙箱讲透。下一篇深度聊 Web Components 跨框架复用。
+
+## 一、iframe 的本质：浏览器内置沙箱
+
+```html
+<!-- 父页面 -->
+<iframe src="https://third-party.com/embed"
+        sandbox="allow-scripts allow-same-origin"
+        allow="clipboard-write"
+        referrerpolicy="no-referrer"
+></iframe>
+```
+
+**核心特性**：
+- **独立 Document**：有自己的 window / document / 浏览器历史
+- **独立 Cookie / localStorage**：不与父页面共享（同源情况下会共享）
+- **独立 JS 上下文**：父页面 JS **不能直接访问子页面变量**
+- **独立样式**：CSS 互相隔离（除非用 `:root` 或 Shadow DOM）
+
+## 二、同源 vs 跨域 iframe
+
+| 维度 | 同源 iframe | 跨域 iframe |
+|---|---|---|
+| DOM 访问 | 父可访问子 DOM | **禁止**（安全沙箱） |
+| JS 变量 | 父可访问子变量 | **禁止** |
+| localStorage | **共享**（同源策略） | **独立** |
+| postMessage | ✅ | ✅ |
+| 性能 | 快（无跨域开销） | 稍慢（跨域资源加载） |
+
+**架构师规则**：**能用同源 iframe 就不用跨域**——同源能省掉 30% 安全配置。
+
+## 三、postMessage 通信协议
+
+```javascript
+// 父页面发送
+const iframe = document.querySelector('iframe');
+iframe.contentWindow.postMessage(
+  { type: 'resize', payload: { width: 800, height: 600 } },
+  'https://third-party.com'  // targetOrigin,必须指定
+);
+
+// 子页面接收
+window.addEventListener('message', (e) => {
+  // 1. 校验 origin,防 XSS
+  if (e.origin !== 'https://parent.com') return;
+  // 2. 校验 type,防协议污染
+  if (e.data?.type !== 'resize') return;
+  // 3. 处理消息
+  resizeIframe(e.data.payload.width, e.data.payload.height);
+});
+```
+
+**安全四件套**：
+- **校验 origin**（必须）
+- **校验 source**（`e.source === expectedWindow`）
+- **指定 targetOrigin**（不能用 `*`）
+- **校验 data 形状**（TypeScript 类型保护）
+
+## 四、FinSpread 30% 授权成本降低实战
+
+简历里出现 **"FinSpread 30% 授权成本降低"**——这是 iframe 跨域部署的典型场景：
+
+### 4.1 场景描述
+
+```
+产品架构:
+  顺丰 ERP 主站:  finui.example.com (主站)
+  表格组件 FinSpread:  finspread.example.com (独立部署)
+  客户授权:  客户买了 ERP,Spread 要单独授权
+
+原架构 (授权前):
+  FinSpread 部署在 finui.example.com
+  客户用 ERP → 自动含 FinSpread (无独立授权)
+
+问题: 客户可以单独买 Spread 授权后,不再需要 ERP
+  → 顺丰利润减少
+```
+
+### 4.2 iframe 方案
+
+```
+新架构:
+  FinSpread 部署在 finspread.example.com (跨域)
+  ERP 页面用 iframe 嵌入 FinSpread
+  ERP 主站向 FinSpread 传用户信息,FinSpread 校验授权
+  → 没有授权 → 提示"请购买 FinSpread 独立授权"
+  → 授权后 → FinSpread 正常显示
+
+效果: 客户为 FinSpread 独立付费,顺丰收入 +30%
+```
+
+### 4.3 通信流程
+
+```javascript
+// ERP 主站 (finui.example.com)
+const finspreadFrame = document.createElement('iframe');
+finspreadFrame.src = 'https://finspread.example.com/embed?token=xxx';
+finspreadFrame.sandbox = 'allow-scripts allow-same-origin';
+finspreadFrame.allow = 'clipboard-write';
+
+finspreadFrame.contentWindow.postMessage({
+  type: 'user-info',
+  payload: { userId: 'xxx', plan: 'enterprise' },
+}, 'https://finspread.example.com');
+
+// FinSpread (finspread.example.com)
+window.addEventListener('message', (e) => {
+  if (e.origin !== 'https://finui.example.com') return;
+  if (e.data?.type === 'user-info') {
+    // 校验授权
+    if (!hasLicense(e.data.payload.userId)) {
+      showUpgradeModal();
+    } else {
+      enableSpreadsheet();
+    }
+  }
+});
+```
+
+## 五、微前端沙箱：iframe 原理
+
+```javascript
+// qiankun.js / micro-app 底层都是 iframe
+// 优势:
+//   1. JS / CSS 100% 隔离
+//   2. 主应用崩溃不影响子应用
+//   3. 跨框架(Vue / React)混合
+
+// 性能代价:
+//   1. 每个子应用独立加载 → 内存占用 × N
+//   2. postMessage 通信有延迟
+//   3. iframe 内路由状态同步复杂
+```
+
+**架构师决策**：
+- **强隔离 + 跨框架** → iframe 沙箱（qiankun / wujie）
+- **同框架 + 共享运行时** → Module Federation / Vite Module Graph
+- **轻量级** → Web Components
+
+## 六、踩坑提醒（资深架构师请重点看）
+
+1. **不要让 iframe 高度自适应失控**。`iframe.height = contentWindow.document.body.scrollHeight` 跨域时拿不到,**必须用 ResizeObserver + postMessage**。
+2. **不要在 iframe 内做 SEO**。搜索引擎不抓 iframe 内容,**关键内容必须在主页面 SSR**。
+3. **不要忘记 iframe 加载慢**。iframe 加载是异步的,**主页面要先显示骨架再嵌入 iframe**。
+4. **不要用 file:// 协议做跨源 iframe**。`file://` 协议 origin 是 `null`,**postMessage / Cookie 全部失效**。
+5. **不要忽略 iframe 的性能监控**。iframe 加载是 LCP 的隐藏杀手,DevTools 看 `iframe` 节点的 load 时间。
+
+## 总结
+
+这一篇用 5 个关键事实把 iframe 隔离 + postMessage 串起来：
+
+- **iframe 沙箱本质**：浏览器内置独立 Document / Cookie / 样式,微前端 / 第三方嵌入的首选。
+- **同源 vs 跨域**：同源能省 30% 安全配置,跨域必须 postMessage 通信。
+- **postMessage 四件套**：校验 origin / source / targetOrigin / data 形状,缺一不可。
+- **FinSpread 30% 授权成本降低**：跨域部署 + 主站传用户信息 + FinSpread 校验授权,**业务逻辑 0 改动**。
+- **微前端沙箱**：qiankun / micro-app / wujie 底层都是 iframe 原理,**强隔离用 iframe,同框架共享用 Module Federation**。
+
+**下一篇**：Web Components 跨框架复用——Custom Elements / Shadow DOM / 8 个跨 Vue/React 通用组件实战。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：iframe 的本质是什么？什么场景必须用 iframe 而不是其他方案？
+>
+> **A**：iframe 本质是**浏览器内置沙箱**——独立 Document / 独立 Cookie / 独立 JS 上下文 / 独立样式。**必须用 iframe 的场景**：① 第三方嵌入（如 SpreadJS / 视频播放器 / 地图）必须跨域隔离;② 微前端沙箱要求强隔离 + 跨框架;③ FinSpread 那种**独立授权 / 独立计费**的商业化产品;④ 跨域第三方组件接入。**架构师规则**:**能用同源 iframe 就不用跨域**(省 30% 安全配置),能不用 iframe 就不用(SEO 抓不到)。<AIAsk question="iframe 的本质是什么？什么场景必须用 iframe 而不是其他方案？" />
+>
+> **Q2（思考）**：postMessage 通信的安全四件套是什么？为什么必须指定 targetOrigin？<AIAsk question="postMessage 通信的安全四件套是什么？为什么必须指定 targetOrigin？" />
+>
+> **Q3（思考）**：iframe 在微前端架构里是什么角色？qiankun / micro-app / wujie 底层的共同原理是什么？<AIAsk question="iframe 在微前端架构里是什么角色？qiankun / micro-app / wujie 底层的共同原理是什么？" />
+>
+> **Q4（思考）**：iframe 跨域部署怎么做授权？你具体怎么实现 FinSpread 的 30% 授权成本降低？<AIAsk question="iframe 跨域部署怎么做授权？你具体怎么实现 FinSpread 的 30% 授权成本降低？" />
+>
+> **Q5（思考）**：iframe 的性能成本有哪些？怎么优化 iframe 加载时间和跨域通信延迟？<AIAsk question="iframe 的性能成本有哪些？怎么优化 iframe 加载时间和跨域通信延迟？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [MDN: iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe) — iframe 官方参考
+- [MDN: postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) — postMessage 官方参考
+- [MDN: iframe sandbox](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#sandbox) — iframe 沙箱属性官方指南
+- [qiankun (GitHub)](https://github.com/umijs/qiankun) — qiankun 微前端框架
+- [micro-app (GitHub)](https://github.com/jd-opensource/micro-app) — micro-app 京东微前端
+- [wujie (GitHub)](https://github.com/Tencent/wujie) — wujie 腾讯微前端

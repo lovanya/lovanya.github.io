@@ -1,0 +1,203 @@
+---
+title: "iframe Isolation + postMessage: Micro-frontend / Third-Party Embedding Practice"
+description: A frontend architect's iframe deep dive — cross-origin / same-origin iframe isolation, postMessage communication, FinSpread's 30% authorization cost reduction case, micro-frontend sandbox solutions
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'iframe', 'postmessage', 'micro-frontend']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand iframe? My answer is **yes** — not to write `<iframe>` tags, but to build the engineering judgment of "when iframe is the only choice over other solutions". Three reasons:
+
+1. **The FinSpread 30% authorization cost reduction on resume is iframe practice.** Understanding same-origin / cross-origin iframe + authorization logic relationship is core to commercialized products.
+2. **Micro-frontend / third-party embedding sandbox solutions are iframe + postMessage.** qiankun.js / micro-app / wujie / Module Federation — all iframe underneath.
+3. **iframe looks simple, has 4 security layers deep.** sandbox / allow / referrerpolicy / csp, **wrong config = XSS vulnerability**.
+
+This is post #19 of the *Frontend Architecture Cultivation Path* series. We skip specific APIs (no `iframe.contentWindow.postMessage` details), use architecture diagrams + real cases + sandbox config checklist to make iframe isolation / postMessage / micro-frontend sandbox concrete. The next post deep-dives into Web Components cross-framework reuse.
+
+## 1. iframe Essence: Browser-Native Sandbox
+
+```html
+<!-- Parent page -->
+<iframe src="https://third-party.com/embed"
+        sandbox="allow-scripts allow-same-origin"
+        allow="clipboard-write"
+        referrerpolicy="no-referrer"
+></iframe>
+```
+
+**Core features**:
+- **Independent Document**: has its own window / document / browser history
+- **Independent Cookie / localStorage**: not shared with parent (same-origin shares)
+- **Independent JS context**: parent's JS **cannot directly access child's variables**
+- **Independent styles**: CSS isolated from each other (unless using `:root` or Shadow DOM)
+
+## 2. Same-Origin vs Cross-Origin iframe
+
+| Dimension | Same-origin iframe | Cross-origin iframe |
+|---|---|---|
+| DOM access | Parent can access child DOM | **Forbidden** (security sandbox) |
+| JS variables | Parent can access child variables | **Forbidden** |
+| localStorage | **Shared** (same-origin policy) | **Independent** |
+| postMessage | ✅ | ✅ |
+| Performance | Fast (no cross-origin overhead) | Slightly slower (cross-origin resource loading) |
+
+**Architect's rule**: **use same-origin iframe when possible** — saves 30% security config.
+
+## 3. postMessage Communication Protocol
+
+```javascript
+// Parent sends
+const iframe = document.querySelector('iframe');
+iframe.contentWindow.postMessage(
+  { type: 'resize', payload: { width: 800, height: 600 } },
+  'https://third-party.com'  // targetOrigin, must specify
+);
+
+// Child receives
+window.addEventListener('message', (e) => {
+  // 1. Validate origin, prevent XSS
+  if (e.origin !== 'https://parent.com') return;
+  // 2. Validate type, prevent protocol pollution
+  if (e.data?.type !== 'resize') return;
+  // 3. Handle message
+  resizeIframe(e.data.payload.width, e.data.payload.height);
+});
+```
+
+**Security four-piece set**:
+- **Validate origin** (required)
+- **Validate source** (`e.source === expectedWindow`)
+- **Specify targetOrigin** (don't use `*`)
+- **Validate data shape** (TypeScript type guard)
+
+## 4. FinSpread 30% Authorization Cost Reduction Practice
+
+The resume line **"FinSpread 30% authorization cost reduction"** — this is a typical iframe cross-domain deployment scenario:
+
+### 4.1 Scenario Description
+
+```
+Product architecture:
+  SF Express ERP main:  finui.example.com (main site)
+  Table component FinSpread:  finspread.example.com (separate deployment)
+  Customer authorization:  Customer buys ERP, Spread needs separate authorization
+
+Before authorization:
+  FinSpread deployed at finui.example.com
+  Customer uses ERP → automatically includes FinSpread (no separate auth)
+
+Problem: customer can buy Spread authorization separately, no longer needs ERP
+  → SF Express profit decreases
+```
+
+### 4.2 iframe Solution
+
+```
+New architecture:
+  FinSpread deployed at finspread.example.com (cross-domain)
+  ERP page embeds FinSpread via iframe
+  ERP main passes user info to FinSpread, FinSpread validates authorization
+  → No authorization → Prompt "Please buy FinSpread independent license"
+  → Authorized → FinSpread displays normally
+
+Effect: customer pays for FinSpread independently, SF Express revenue +30%
+```
+
+### 4.3 Communication Flow
+
+```javascript
+// ERP main (finui.example.com)
+const finspreadFrame = document.createElement('iframe');
+finspreadFrame.src = 'https://finspread.example.com/embed?token=xxx';
+finspreadFrame.sandbox = 'allow-scripts allow-same-origin';
+finspreadFrame.allow = 'clipboard-write';
+
+finspreadFrame.contentWindow.postMessage({
+  type: 'user-info',
+  payload: { userId: 'xxx', plan: 'enterprise' },
+}, 'https://finspread.example.com');
+
+// FinSpread (finspread.example.com)
+window.addEventListener('message', (e) => {
+  if (e.origin !== 'https://finui.example.com') return;
+  if (e.data?.type === 'user-info') {
+    // validate authorization
+    if (!hasLicense(e.data.payload.userId)) {
+      showUpgradeModal();
+    } else {
+      enableSpreadsheet();
+    }
+  }
+});
+```
+
+## 5. Micro-frontend Sandbox: iframe Principles
+
+```javascript
+// qiankun.js / micro-app underlying all iframe
+// Advantages:
+//   1. JS / CSS 100% isolation
+//   2. Main app crash doesn't affect sub-apps
+//   3. Cross-framework (Vue / React) mix
+
+// Performance cost:
+//   1. Each sub-app loads independently → memory × N
+//   2. postMessage communication has latency
+//   3. iframe internal route state sync is complex
+```
+
+**Architect's decision**:
+- **Strong isolation + cross-framework** → iframe sandbox (qiankun / wujie)
+- **Same framework + shared runtime** → Module Federation / Vite Module Graph
+- **Lightweight** → Web Components
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't let iframe height adapt out of control.** `iframe.height = contentWindow.document.body.scrollHeight` can't get cross-origin, **must use ResizeObserver + postMessage**.
+2. **Don't do SEO inside iframe.** Search engines don't crawl iframe content, **key content must be SSR in main page**.
+3. **Don't forget iframe loads slowly.** iframe loading is async, **main page shows skeleton first then embeds iframe**.
+4. **Don't use file:// protocol for cross-origin iframe.** `file://` protocol origin is `null`, **postMessage / Cookie all fail**.
+5. **Don't ignore iframe performance monitoring.** iframe load is LCP's hidden killer, DevTools check `iframe` node load time.
+
+## Summary
+
+Five key facts that thread iframe isolation + postMessage together:
+
+- **iframe sandbox essence**: browser-native independent Document / Cookie / styles, micro-frontend / third-party embedding's first choice.
+- **Same-origin vs cross-origin**: same-origin saves 30% security config, cross-origin must use postMessage.
+- **postMessage four-piece set**: validate origin / source / targetOrigin / data shape, every one required.
+- **FinSpread 30% authorization cost reduction**: cross-domain deployment + main passes user info + FinSpread validates auth, **zero business logic change**.
+- **Micro-frontend sandbox**: qiankun / micro-app / wujie underlying all iframe principles, **strong isolation uses iframe, same framework sharing uses Module Federation**.
+
+**Next post**: Web Components cross-framework reuse — Custom Elements / Shadow DOM / 8 cross-Vue/React universal components practice.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the essence of iframe? In what scenarios must iframe be used over other solutions?
+>
+> **A**: iframe's essence is **browser-native sandbox** — independent Document / independent Cookie / independent JS context / independent styles. **Scenarios where iframe is required**: ① Third-party embedding (SpreadJS / video player / map) requiring cross-domain isolation; ② Micro-frontend sandbox requiring strong isolation + cross-framework; ③ FinSpread-type **independent authorization / independent billing** commercialized products; ④ Cross-domain third-party component integration. **Architect's rule**: **Use same-origin iframe when possible** (saves 30% security config), don't use iframe when avoidable (SEO can't crawl).<AIAsk question="What's the essence of iframe? In what scenarios must iframe be used over other solutions?" lang="en" />
+>
+> **Q2 (Think)**: What are the postMessage security four-piece set? Why must you specify targetOrigin?<AIAsk question="What are the postMessage security four-piece set? Why must you specify targetOrigin?" lang="en" />
+>
+> **Q3 (Think)**: What's the role of iframe in micro-frontend architecture? What's the common principle under qiankun / micro-app / wujie?<AIAsk question="What's the role of iframe in micro-frontend architecture? What's the common principle under qiankun / micro-app / wujie?" lang="en" />
+>
+> **Q4 (Think)**: How does iframe cross-domain deployment do authorization? How did you specifically implement FinSpread's 30% authorization cost reduction?<AIAsk question="How does iframe cross-domain deployment do authorization? How did you specifically implement FinSpread's 30% authorization cost reduction?" lang="en" />
+>
+> **Q5 (Think)**: What are the performance costs of iframe? How to optimize iframe load time and cross-domain communication latency?<AIAsk question="What are the performance costs of iframe? How to optimize iframe load time and cross-domain communication latency?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [MDN: iframe](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe) — iframe official reference
+- [MDN: postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) — postMessage official reference
+- [MDN: iframe sandbox](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#sandbox) — iframe sandbox attribute official guide
+- [qiankun (GitHub)](https://github.com/umijs/qiankun) — qiankun micro-frontend framework
+- [micro-app (GitHub)](https://github.com/jd-opensource/micro-app) — micro-app JD micro-frontend
+- [wujie (GitHub)](https://github.com/Tencent/wujie) — wujie Tencent micro-frontend

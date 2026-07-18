@@ -41,25 +41,45 @@
 > 11 年架构师自我复盘 + 写给同行的前端进阶地图。5 大境界（练气 · 筑基 · 金丹 · 元婴 · 化神）30 篇连续编号修真体系，由浅入深覆盖前端工程师成长全路径。
 > Same series in English at `https://lovanya.github.io/en/blog/frontend-architecture-cultivation-path`.
 
+### 5 大境界速览
+
+- **练气期 · 基础功法（#1-#6）**：浏览器渲染 / CSS·HTML5 / JS 底层（V8 / GC / 事件循环）/ HTTP 网络 / 安全 / TS
+- **筑基期 · 框架与适配（#7-#11）**：框架演变史 / React 19 深度 / Vue 3 深度 / Angular / 响应式移动端
+- **金丹期 · 工程化大成（#12-#16）**：Webpack→Vite→Rspack / pnpm Monorepo / 工程化体系 / 首屏 4.2s→1.8s / 运行时性能
+- **元婴期 · 跨界大成（#17-#24）**：Electron / Taro+Uni-app+Ionic / iframe / Web Components / 监控 / 测试 / UI 组件库 / 中后台
+- **化神期 · 架构师境界（#25-#29）**：Module Federation / 低代码 / RBAC 权限 / 端侧 AI / 角色转变
+
+每篇 5 道重点面试题 + AI 助手按钮,一键拿详细答案。30 篇全部已发布。
 - [前端架构修仙路 —— 总纲导论（序章）](https://lovanya.github.io/blog/frontend-architecture-cultivation-path): 系列导论 + 修仙境界隐喻 + 5 大阶梯导览 + 3 种阅读路径 + 简历技术栈 vs 全系列对照表 + 5 道面试问题方向 (2026-07-18)
 - [浏览器如何渲染出一个网页：从 URL 到像素的完整链路](https://lovanya.github.io/blog/how-browser-renders-page): 关键渲染路径 + 网络层 TTFB + 阻塞规则 + 合成层 + Web Vitals + 顺丰 ERP 4.2s→1.8s 首屏优化实战拆解 (2026-07-18)
-
-### 练气期 · 基础功法（6 篇）
-入门修士根基。看不懂底层，框架学再多也是空中楼阁。#1–#6（浏览器 / CSS·HTML5 / JS 底层 / HTTP / 安全 / TS）
-
-### 筑基期 · 框架与适配（5 篇）
-精通至少一套主流框架 + 能为不同端做适配。#7–#11
-
-### 金丹期 · 工程化大成（5 篇）
-简历里 12min→3min 构建 / 4.2s→1.8s 首屏优化真实数据源。#12–#16
-
-### 元婴期 · 跨界大成（8 篇）
-跨端 + 跨边界 + 跨框架 + 跨系统——所有"跨 X" 的大成者。#17–#24
-
-### 化神期 · 架构师境界（5 篇）
-技术决策者、跨团队领导者、AI 时代掌舵人。#25–#29
-
-> 🔜 下一篇：[练气期 #1 · 浏览器如何渲染出一个网页](https://lovanya.github.io/blog/browser-rendering-pipeline)（预计 2026-07-25 前发布）
+- [CSS / HTML5 进阶：盒模型 / Flex / Grid / 容器查询](https://lovanya.github.io/blog/css-html5-advanced): 盒模型 + BFC + Flex 实战 + Grid 二维布局 + 容器查询替代媒体查询 + CSS 性能 6 件套 (2026-07-18)
+- [JavaScript 底层：V8 / GC / 事件循环](https://lovanya.github.io/blog/js-v8-gc-eventloop): V8 Ignition + TurboFan 编译流水线 + Proxy 响应式 + 依赖追踪 + 分代 GC + 事件循环与 rAF/rIC (2026-07-18)
+- [HTTP / HTTPS / HTTP2 / HTTP3 与缓存策略](https://lovanya.github.io/blog/http-network-advanced): 队头阻塞 + HTTP/2 多路复用 + HPACK + HTTP/3 QUIC + TLS 1.3 + 浏览器 4 层缓存体系 + Surrogate-Key (2026-07-18)
+- [前端安全：XSS / CSRF / CSP / SRI 攻防实战](https://lovanya.github.io/blog/frontend-security-xss-csrf): XSS 三类型 + 防御三件套 + CSRF 防御四件套 + CSP nonce 模式 + SRI + Cookie 三件套 + Token 存储决策 (2026-07-18)
+- [TypeScript 进阶：类型体操与项目实践](https://lovanya.github.io/blog/typescript-advanced-types): 泛型 + 条件类型 + infer + 映射类型 + 模板字面量 + tsconfig 严格开关 + Discriminated Union (2026-07-18)
+- [前端框架演变与 MVVM 思想史：从 jQuery 到 React 19](https://lovanya.github.io/blog/framework-history-mvvm): 20 年主线（jQuery / Knockout / AngularJS / React / Vue / Angular / Solid）+ 三大思想（MVVM / Flux / Signal）+ 决策树 (2026-07-18)
+- [React 深度：Fiber / Hooks / Concurrent 渲染](https://lovanya.github.io/blog/react-fiber-hooks-concurrent): Fiber 协调器链表 + 双缓冲 + 5ms 时间切片 + Hooks 链表 + useTransition / useDeferredValue + Server Components (2026-07-18)
+- [Vue 深度：响应式 / Diff / Composition API](https://lovanya.github.io/blog/vue-reactivity-composition): Proxy 响应式 + track/trigger/effect + Block Tree + patchFlag + Composition API + Vapor mode (2026-07-18)
+- [Angular 与企业级框架对比：DI / RxJS / Zone.js](https://lovanya.github.io/blog/angular-enterprise-di-rxjs): Angular DI 树形结构 + RxJS 异步原语 + Zone.js 变化追踪 + Zoneless 模式 + Ionic + Capacitor 跨端 (2026-07-18)
+- [响应式与移动端适配：viewport / rem / vw / 容器查询](https://lovanya.github.io/blog/responsive-mobile-adaptation): viewport meta 三件套 + rem 三大方案 + vw 方案 + 1px 边框 + 安全区域 + 容器查询 (2026-07-18)
+- [构建工具演进：Webpack → Vite → Rspack 实战](https://lovanya.github.io/blog/build-tools-webpack-vite-rspack): Bundler 本质 + Webpack 5 + Vite 5 + Rspack 3 + Turbopack + 顺丰 ERP 12min→3min 真实案例 (2026-07-18)
+- [包管理与 Monorepo：pnpm / Changesets / Turborepo](https://lovanya.github.io/blog/package-management-monorepo): pnpm 硬链接节省磁盘 + Changesets 语义化版本 + Turborepo 增量构建 (2026-07-18)
+- [前端工程化体系：CI/CD / 规范 / 评审 / 团队沉淀](https://lovanya.github.io/blog/frontend-engineering-ci-cd): CI fail-fast + ESLint / Prettier / Stylelint + Husky + lint-staged + PR 评审清单 + ADR (2026-07-18)
+- [首屏性能 4.2s → 1.8s 实战拆解](https://lovanya.github.io/blog/first-screen-performance-optimization): 5 阶段耗时 + ROI 排序 + 网络层 + CDN + HTTP/3 + 流式 SSR + 关键 CSS + AVIF (2026-07-18)
+- [运行时性能：虚拟滚动 / Web Vitals 长尾优化](https://lovanya.github.io/blog/runtime-performance-virtual-scrolling): 虚拟滚动原理 + TanStack Table + FinSpread 300 列 × 500 行 + INP / CLS 优化 (2026-07-18)
+- [Electron 实战：主进程 / 渲染进程 / 硬件桥接](https://lovanya.github.io/blog/electron-desktop-app): 主进程 vs 渲染进程 + contextBridge 安全 + IPC + 柔记 PC 端 USB Bridge 实战 (2026-07-18)
+- [混合开发框架对比：Taro / Uni-app / Ionic / React Native](https://lovanya.github.io/blog/hybrid-dev-taro-uniapp-ionic): 跨端框架对比 + 编译时 vs 运行时 + 信锐 / 联友混合项目实战 (2026-07-18)
+- [iframe 隔离 + postMessage：微前端 / 第三方嵌入实战](https://lovanya.github.io/blog/iframe-postmessage-microfrontend): 同源 vs 跨域 iframe + postMessage 安全四件套 + FinSpread 30% 授权成本降低 (2026-07-18)
+- [Web Components 跨框架复用：Custom Elements / Shadow DOM](https://lovanya.github.io/blog/web-components-cross-framework): 三大技术 + Slot 跨框架 + Lit / Stencil / HTMLElement 选型 + 8 个跨 Vue/React 通用组件 (2026-07-18)
+- [前端监控体系：错误 / 性能 / 行为三件套](https://lovanya.github.io/blog/frontend-monitoring): Sentry Source Map + Web Vitals 上报 + rrweb 录屏 + 告警分级 + PII 录屏红线 (2026-07-18)
+- [前端测试体系：单元测试 / E2E / 视觉回归](https://lovanya.github.io/blog/frontend-testing-pyramid): 测试金字塔 70/20/10 + Vitest + RTL + Playwright + 覆盖率策略 (2026-07-18)
+- [企业级 UI 组件库设计：Token 系统 / 主题定制 / 文档体系](https://lovanya.github.io/blog/enterprise-ui-component-library): Design Token 三层架构 + API 一致性 + Storybook + SemVer + Codemod + WCAG 2.1 AA (2026-07-18)
+- [中后台开发模式：表单 / 表格 / ECharts 三大场景](https://lovanya.github.io/blog/admin-backend-patterns): React Hook Form + Zod + TanStack Table + 虚拟滚动 + ECharts 三大坑 + 5 个核心 hooks (2026-07-18)
+- [微前端 Module Federation 实战：12min → 3min 构建优化](https://lovanya.github.io/blog/microfrontend-module-federation): qiankun / micro-app / wujie / Module Federation 三大方案 + 顺丰 ERP 12min→1.5min 真实案例 (2026-07-18)
+- [低代码平台设计：表单 / 流程 / 报表的代码生成](https://lovanya.github.io/blog/lowcode-platform-design): Schema 三层抽象 + JSON Logic + 流程编排 + 报表配置 + 80/20 边界 (2026-07-18)
+- [RBAC 权限系统：动态路由 / OAuth 2.0 / JWT](https://lovanya.github.io/blog/rbac-permission-system): RBAC 模型 + 三层权限校验 + JWT + SSO + HttpOnly Cookie + 动态菜单 (2026-07-18)
+- [端侧 AI 与前端架构未来：Web LLM / Chrome AI / CopilotKit](https://lovanya.github.io/blog/client-ai-future-of-frontend): 三层 LLM 架构 + transformers.js + Gemini Nano + CopilotKit + Speculative Decoding + AI 嵌入 UI (2026-07-18)
+- [从高级到架构师：角色转变 / 团队管理 / 评审机制](https://lovanya.github.io/blog/senior-to-architect): 杠杆思维 + 1:1 + PR review + 道 vs 术 + 面试差异 + 晋升路径 (2026-07-18)
 
 ## AI × 前端
 

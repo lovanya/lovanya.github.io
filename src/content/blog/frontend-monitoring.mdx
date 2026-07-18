@@ -1,0 +1,198 @@
+---
+title: "前端监控体系：错误 / 性能 / 行为三件套"
+description: 前端架构师的监控体系实战——Sentry 错误监控、Web Vitals 性能监控、用户行为回放、顺丰 + 柔宇两段监控沉淀实战
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '监控', 'sentry', 'web-vitals']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂监控？我的回答是 **要**——不是去配 Sentry 仪表盘，而是建立"线上 bug 怎么发现 / 复现 / 定位"的工程体系。原因有三：
+
+1. **简历里"顺丰 + 柔宇两段监控沉淀"是软实力证明**。能写出 800+ 页面，**能发现线上 800+ 页面的问题才算强**。
+2. **没有监控 = 盲飞**。首屏优化 PR 声称"快了 500ms"，但生产数据没监控 = **不知道有没有变快**。
+3. **三件套缺一不可**：错误监控（线上 bug 怎么发现）+ 性能监控（LCP / INP 怎么监控）+ 行为监控（用户怎么复现）。
+
+这一篇是『前端架构修仙路』的第 21 篇。我跳过 Sentry 具体配置（不讲 `Sentry.init` 怎么调），用架构图 + 真实案例 + 告警分级表，把监控三件套 + 告警机制讲透。下一篇深度聊前端测试体系。
+
+## 一、监控三件套全景
+
+<Mermaid client:load caption="图 1：前端监控三件套" chart={`flowchart LR
+  E[错误监控<br/>Sentry / Bugsnag] -->|JS error<br/>Promise reject<br/>unhandled exception| DB[数据收集]
+  P[性能监控<br/>Web Vitals] -->|LCP / INP / CLS<br/>long task| DB
+  B[行为监控<br/>rrweb / LogRocket] -->|DOM diff<br/>user actions| DB
+  DB --> Alert[告警<br/>飞书 / Slack]
+  DB --> Dash[仪表盘<br/>Sentry UI / 自建 Grafana]
+  DB --> Replay[问题复现<br/>回放用户操作]`} />
+
+**架构师心法**：**三件套不是二选一,是全要**——光有错误监控,不知道性能;光有性能监控,不知道用户做了什么;光有行为监控,不知道代码为什么崩。
+
+## 二、错误监控：Sentry 实战
+
+```javascript
+// 1. 初始化
+import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  dsn: 'https://xxx@sentry.io/123',
+  environment: 'production',
+  release: 'finui@1.2.3',  // 关联 git commit
+  tracesSampleRate: 0.1,     // 性能采样 10%
+  beforeSend(event) {
+    // 过滤掉不重要的错误
+    if (event.exception?.values?.[0]?.value?.includes('ResizeObserver')) return null;
+    return event;
+  },
+});
+
+// 2. 手动上报业务错误
+try {
+  await api.submitOrder(data);
+} catch (err) {
+  Sentry.captureException(err, {
+    tags: { feature: 'submit-order', userId: user.id },
+    extra: { orderData: data },
+  });
+}
+
+// 3. 关联用户上下文
+Sentry.setUser({ id: 'u123', email: 'user@example.com' });
+```
+
+**核心能力**：
+- **Source Map 解析**：生产代码 minified，Sentry 自动解析回原始代码定位
+- **Breadcrumbs**：用户操作栈（点击 / 路由 / API 调用）记录到错误上下文
+- **Release 追踪**：每个发版自动标 release，**某个 release 引入的 bug 一目了然**
+- **Alert 分级**：error / warning / info，**critical 错误立即飞书告警**
+
+## 三、性能监控：Web Vitals 上报
+
+```javascript
+import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
+
+function sendToAnalytics(metric) {
+  // 上报到 Sentry 或自建监控
+  Sentry.setMeasurement(metric.name, metric.value, 'millisecond');
+  // 同时上报到业务后台(做 P75 / P90 统计)
+  navigator.sendBeacon('/api/metrics', JSON.stringify({
+    name: metric.name,
+    value: metric.value,
+    rating: metric.rating,
+    page: location.pathname,
+    ts: Date.now(),
+  }));
+}
+
+onLCP(metric => sendToAnalytics(metric));
+onINP(metric => sendToAnalytics(metric));
+onCLS(metric => sendToAnalytics(metric));
+```
+
+**告警阈值**（生产配置）：
+
+| 指标 | 良好 | 需改善 | 差 | 告警阈值 |
+|---|---|---|---|---|
+| LCP | ≤ 2.5s | ≤ 4s | > 4s | **> 4s 告警** |
+| INP | ≤ 200ms | ≤ 500ms | > 500ms | **> 500ms 告警** |
+| CLS | ≤ 0.1 | ≤ 0.25 | > 0.25 | **> 0.25 告警** |
+| 错误率 | < 0.1% | < 1% | > 1% | **> 1% 告警** |
+
+**生产案例**：顺丰 ERP 接 Sentry + 自建监控后，**线上 bug 平均发现时间从 24h 降到 5min**，**P75 LCP 从 4.2s 降到 1.8s（90 天）**。
+
+## 四、行为监控：rrweb 录屏
+
+```javascript
+import { record } from 'rrweb';
+
+const events = [];
+record({
+  emit(event) {
+    events.push(event);
+    // 每 5 秒批量上传
+    if (events.length > 100) {
+      uploadBatch(events.splice(0));
+    }
+  },
+  // 不录敏感输入框(密码 / 信用卡)
+  maskInputOptions: {
+    password: true,
+    'input[type="password"]': true,
+  },
+});
+
+// 错误发生时,把上下文 events 上报到 Sentry
+Sentry.getCurrentHub().getClient()?.getIntegration(Sentry.BrowserTracing)
+  ?.addEventProcessor((event) => {
+    event.extra = { ...event.extra, rrwebEvents: events.slice(-30) };
+    return event;
+  });
+```
+
+**生产案例**：柔宇 iView 报"打开弹窗就卡死"，**rrweb 重放发现用户在 3 个并发请求 + 表格筛选 → 死亡状态**——根因是后端 API 慢 + 前端没 debounce。
+
+## 五、告警分级机制
+
+| 级别 | 触发条件 | 通知方式 | 响应时间 SLA |
+|---|---|---|---|
+| **P0 critical** | LCP > 6s / 错误率 > 5% | 飞书 + 电话 + 短信 | 15min |
+| **P1 high** | LCP > 4s / 错误率 > 1% | 飞书 + 短信 | 1h |
+| **P2 medium** | LCP > 2.5s / 错误率 > 0.5% | 飞书 | 4h |
+| **P3 low** | 错误率 < 0.1% 但有异常 | 飞书 | 24h |
+
+**架构师规则**：**不要所有错误都 P0**——会报警疲劳,真出问题反而被忽略。**P0 一周最多 1-2 次**才有效。
+
+## 六、踩坑提醒（资深架构师请重点看）
+
+1. **不要忘记 Source Map 上传**。生产代码 minified 后**没有 Source Map 等于盲查 bug**。Sentry CLI + CI 自动上传。
+2. **不要让 Source Map 暴露到前端**。`devtool: 'source-map'` 会让用户能看到源码,生产必须 `hidden-source-map`。
+3. **不要在 PII 字段上录屏**。rrweb 必须 `maskInputOptions` 隐藏密码 / 身份证 / 信用卡 / 手机号。
+4. **不要混淆"错误监控"和"日志"**。**Sentry 是"异常事件"**,不是"全量日志"——用 `addBreadcrumb` 加日志,不要每个 console.log 都 `captureException`。
+5. **不要让告警淹没真的问题**。告警阈值要**有报警疲劳概念**——一周 P0 超过 5 次,团队就会**免疫**,真出问题反而没人看。
+
+## 总结
+
+这一篇用 5 个关键事实把监控体系串起来：
+
+- **三件套缺一不可**：错误（Sentry）+ 性能（Web Vitals）+ 行为（rrweb）,**全要**。
+- **Sentry 错误监控**:Source Map + Breadcrumbs + Release 追踪,生产 bug 定位 5min。
+- **Web Vitals 上报**:LCP / INP / CLS 实时告警,阈值超标立即飞书。
+- **rrweb 录屏**:用户操作全回放,定位"用户怎么操作崩了"的金标准。
+- **告警分级**:P0/P1/P2/P3,**避免报警疲劳**,关键问题不漏报。
+
+**下一篇**:前端测试体系——单元测试 / E2E / 视觉回归,架构师必会的测试金字塔。
+
+## 5 道重点面试问题方向
+
+> **Q1(答案)**:前端监控三件套是什么?为什么必须全要?
+>
+> **A**:**错误监控**(Sentry / Bugsnag)— JS 异常 / Promise reject / unhandled exception;**性能监控**(Web Vitals)— LCP / INP / CLS / long task;**行为监控**(rrweb / LogRocket)— DOM diff + 用户操作录屏。**为什么必须全要**:**错误监控**告诉你"线上崩了",但不知道"为什么崩";"**性能监控**告诉你"用户感觉慢",但不知道"卡在哪";"**行为监控**告诉你"用户做了什么",但不知道"代码为什么崩"。**三者闭环**才完整:发现 → 复现 → 修复。<AIAsk question="前端监控三件套是什么?为什么必须全要?" />
+>
+> **Q2(思考)**:Sentry 的 Source Map 集成怎么配?为什么 Source Map 不能暴露到前端?
+>
+> **A**:**Sentry CLI + CI 自动上传** `sentry-cli releases new $RELEASE && sentry-cli releases files $RELEASE upload-sourcemaps ./dist`;Webpack 用 `devtool: 'hidden-source-map'`(生产) + `sentry-webpack-plugin` 自动关联。**为什么不能暴露**:`source-map` 让用户下载完整的源码,**逆向工程项目代码 / 找漏洞**;`hidden-source-map` 生成 `.map` 文件但**前端不引用**,只有 Sentry 服务器能下载。**生产案例**:某中后台用 `source-map`,被白帽子扫到关键 API 逻辑,2 周后被脱裤。<AIAsk question="Sentry 的 Source Map 集成怎么配?为什么 Source Map 不能暴露到前端?" />
+>
+> **Q3(思考)**:Web Vitals 三件套(LCP / INP / CLS)的告警阈值怎么定?怎么避免报警疲劳?
+>
+> **A**:**Web Vitals 告警阈值**:LCP > 4s 告警 / INP > 500ms 告警 / CLS > 0.25 告警。**避免报警疲劳**:① **分级告警** — P0 critical (LCP > 6s, 错误率 > 5%) 飞书+电话+短信 / P1 high 飞书+短信 / P2 medium 飞书 / P3 low 飞书;② **一周 P0 最多 1-2 次**才有效;③ **告警去重** — 5min 内同类型告警只发一次;④ **值日机制** — P0 值班人轮换,周末 2x 响应时间。<AIAsk question="Web Vitals 三件套(LCP / INP / CLS)的告警阈值怎么定?怎么避免报警疲劳?" />
+>
+> **Q4(思考)**:rrweb 录屏在生产环境怎么配置?PII 数据怎么处理?
+>
+> **A**:**rrweb 录屏配置**:`record({ emit: 上传函数, maskInputOptions: { password: true } })`,每 5-10 秒批量上传,触发错误时把上下文 events 上报到 Sentry。**PII 数据处理**:**maskInputOptions** 隐藏密码 / 身份证 / 信用卡 / 手机号;**自定义 mask** 用 `maskTextSelector` 排除特定 DOM;**服务端再过一次** 过滤正则身份证号。**生产案例**:某银行 P2P 录屏泄漏客户身份证号,**被银保监会罚款 200 万**——**PII 录屏是法律红线**。<AIAsk question="rrweb 录屏在生产环境怎么配置?PII 数据怎么处理?" />
+>
+> **Q5(思考)**:你在顺丰 + 柔宇两段监控沉淀里,是怎么从「事后救火」变成「事前预警」的?具体改了什么?
+>
+> **A**:**事后救火 → 事前预警**关键三步:① **错误监控全覆盖** — Sentry 全量接入 + 业务错误手动 `captureException`,线上 bug 平均发现时间从 24h 降到 5min;② **性能监控实时化** — Web Vitals 接入 + 阈值告警 + 飞书机器人,LCP 恶化时**没人报告我先知道**;③ **行为监控录屏化** — rrweb 录屏 + Sentry 关联,用户报「操作崩了」我能**看回放**直接定位,不再依赖「重现 bug」。**效果**:从「用户报 bug 才知道」变成「系统自动告警」,从「开发 debug 一周」变成「看回放 1 小时」。<AIAsk question="你在顺丰 + 柔宇两段监控沉淀里,是怎么从「事后救火」变成「事前预警」的?具体改了什么?" />
+
+> 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
+
+## 参考资料
+
+- [Sentry Documentation](https://docs.sentry.io/) — Sentry 官方文档
+- [Sentry for React (Sentry Docs)](https://docs.sentry.io/platforms/javascript/guides/react/) — React 集成官方指南
+- [web.dev: Web Vitals (Google Developers)](https://web.dev/articles/lcp) — Web Vitals 官方指南
+- [rrweb (GitHub)](https://github.com/rrweb-io/rrweb) — rrweb 录屏开源
+- [Sentry Source Maps (Sentry Docs)](https://docs.sentry.io/platforms/javascript/sourcemaps/) — Source Map 集成官方指南
+- [Google Analytics 4 (Google Developers)](https://developers.google.com/analytics) — 行为分析参考

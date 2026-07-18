@@ -1,0 +1,200 @@
+---
+title: "Front-End Testing System: Unit / E2E / Visual Regression"
+description: A frontend architect's testing pyramid — unit / integration / E2E / visual regression four-layer system, Vitest / Playwright / Storybook tool selection, architect's must-master test coverage strategy
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'testing', 'vitest', 'playwright', 'e2e']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand testing? My answer is **yes** — not to write test cases, but to build the engineering system of "testing pyramid". Three reasons:
+
+1. **The "front-end testing system" on resume is what architects must master but is easily overlooked.** Can write 800+ pages isn't rare, **can keep team from writing shit code is real skill**.
+2. **Testing is the safety net for refactoring.** Code without tests **no one dares to touch** — change one place breaks another, becomes unmaintainable in 3 months.
+3. **CI running tests is the last gate at merge.** Lint / TS only catch syntax errors, **tests catch logic errors**.
+
+This is post #22 of the *Frontend Architecture Cultivation Path* series. We skip specific testing APIs (no `expect().toBe()` details), use architecture diagrams + testing pyramid + tool selection to make unit / integration / E2E / visual regression concrete. The next post deep-dives into enterprise UI component library design.
+
+## 1. Testing Pyramid
+
+<Mermaid client:load caption="Figure 1: Testing pyramid" chart={`graph LR
+  E2E[E2E Tests<br/>Playwright / Cypress<br/>simulate real user actions<br/>slow / expensive / few] --> I[Integration Tests<br/>component / interface level<br/>RTL / Testing Library<br/>medium speed / volume]
+  I --> U[Unit Tests<br/>function / class level<br/>Vitest / Jest<br/>fast / many / main force]`} />
+
+**Ratio reference**:
+- Unit tests: **70%** (fast, cheap, many)
+- Integration tests: **20%** (component + API contract)
+- E2E tests: **10%** (most expensive, fewest)
+
+**Architect's mantra**: **E2E is not "the more the better"** — a 30min E2E suite drags down CI. **Unit tests are the coverage main force**.
+
+## 2. Unit Tests: Vitest Practice
+
+```javascript
+// util.test.ts
+import { describe, it, expect } from 'vitest';
+import { formatNumber } from './util';
+
+describe('formatNumber', () => {
+  it('formats integer with thousand separator', () => {
+    expect(formatNumber(1234567)).toBe('1,234,567');
+  });
+  
+  it('handles decimal', () => {
+    expect(formatNumber(1234.56)).toBe('1,234.56');
+  });
+  
+  it('handles zero', () => {
+    expect(formatNumber(0)).toBe('0');
+  });
+  
+  it('handles negative', () => {
+    expect(formatNumber(-1234)).toBe('-1,234');
+  });
+});
+```
+
+**Architect's mantra**:
+- **Unit tests cover all boundaries** (0 / negative / null / undefined / NaN)
+- **describe nesting should be reasonable** (more than 3 levels means function too complex)
+- **Coverage is not "the higher the better"** — DTO / util 100% coverage, business logic 80% is enough
+
+## 3. Component Tests: React Testing Library
+
+```tsx
+// Button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
+it('renders button with text', () => {
+  render(<Button>Click me</Button>);
+  expect(screen.getByText('Click me')).toBeInTheDocument();
+});
+
+it('calls onClick when clicked', () => {
+  const onClick = vi.fn();
+  render(<Button onClick={onClick}>Click</Button>);
+  fireEvent.click(screen.getByText('Click'));
+  expect(onClick).toHaveBeenCalledTimes(1);
+});
+
+it('is disabled when loading', () => {
+  render(<Button loading>Click</Button>);
+  expect(screen.getByText('Click')).toBeDisabled();
+});
+```
+
+**RTL philosophy**:
+- **Test what users see**, not component internals
+- Don't use `getByTestId`, prefer `getByText` / `getByRole`
+- Don't use `container.querySelector`, **use RTL's semantic queries**
+
+## 4. E2E Tests: Playwright Practice
+
+```javascript
+// e2e/login.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('user can login and see dashboard', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[name="username"]', 'admin');
+  await page.fill('input[name="password"]', 'admin123');
+  await page.click('button:has-text("Login")');
+  await expect(page).toHaveURL('/dashboard');
+  await expect(page.locator('h1')).toContainText('Welcome');
+});
+
+test('shows error on invalid credentials', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[name="username"]', 'admin');
+  await page.fill('input[name="password"]', 'wrong');
+  await page.click('button:has-text("Login")');
+  await expect(page.locator('.error-message')).toContainText('Invalid');
+});
+```
+
+**Production case**: SF Express ERP 70+ key flow E2Es (login / form submit / report generation / permission validation), **CI runs 8min as regression fallback**.
+
+## 5. Visual Regression: Playwright + screenshot diff
+
+```javascript
+test('button visual regression', async ({ page }) => {
+  await page.goto('/components/button');
+  // screenshot and compare to baseline
+  await expect(page).toHaveScreenshot('button.png', {
+    maxDiffPixels: 100,  // allow 100 pixel diff
+  });
+});
+```
+
+**Architect's rule**: **Visual regression** only tests **key pages / complex components** (homepage / detail / form pages) — one screenshot per component = test file explosion.
+
+## 6. Test Coverage Strategy
+
+| Layer | Coverage target | Tool | Speed |
+|---|---|---|---|
+| **util / helper** | 100% | Vitest | < 1s |
+| **Business core** | 80% | Vitest + RTL | < 5s |
+| **DTO / types** | 0% (don't write) | — | — |
+| **E2E key flows** | 100% coverage | Playwright | 5-10min |
+
+**Architect's mantra**: **Coverage is reference not target**. **100% coverage but all trivial tests** = false sense of security. **Core business logic 80% + key E2E fallback** = real guarantee.
+
+## 7. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't pursue 100% coverage.** DTO / type definitions / config functions **waste time writing**. Vitest config `coverage.exclude` to exclude.
+2. **Don't test DOM in unit tests.** Unit tests = pure functions / classes, testing DOM = **integration test**. **Use RTL for components, don't use Vitest for components**.
+3. **Don't let E2E run too long.** E2E suite > 30min, team will **skip CI**. **10-20 key flow E2Es is enough**.
+4. **Don't let tests depend on the network.** `fetch('https://api.example.com')` **100% fails on CI**. **Use MSW / mswjs to intercept requests and mock data**.
+5. **Don't forget to maintain tests.** Tests no one maintains for 3 months = false pass (business changed but tests didn't). **Tests also need code review**.
+
+## Summary
+
+Six key facts that thread testing pyramid together:
+
+- **Testing pyramid**: unit 70% + integration 20% + E2E 10%, **E2E is not "the more the better"**.
+- **Vitest unit tests**: boundary 100% / business 80% / DTO 0%, **coverage is reference not target**.
+- **RTL component tests**: test what users see, no `getByTestId`, prefer `getByRole` / `getByText`.
+- **Playwright E2E**: key flow 10-20, CI runs 8min fallback, don't run 30min+.
+- **Visual regression**: only test key pages, `maxDiffPixels: 100` allows slight differences.
+- **Test maintenance**: tests also need code review, 3 months no maintenance = false pass.
+
+**Next post**: Enterprise UI component library design — iView / FinUI's design philosophy, Token system / theme customization / documentation system.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the testing pyramid? Why should unit tests be the main force?
+>
+> **A**: **Testing pyramid**: unit 70% + integration 20% + E2E 10%. **Why unit tests are main force**: ① **Fast** — Vitest runs 1000 unit tests < 1s, devs run on the fly; ② **Cheap** — no browser, no network mock; ③ **Many** — unit tests cover all util / helper / business core, code coverage easy to reach 80%. **E2E is expensive + slow** — one E2E runs 5-10s, 100 E2Es = 8min CI, run 30min+ and team will **skip CI**. **Architect's mantra**: E2E fallback key flows (login / submit / pay), unit tests cover business logic, don't reverse.<AIAsk question="What's the testing pyramid? Why should unit tests be the main force?" lang="en" />
+>
+> **Q2 (Think)**: What's React Testing Library's design philosophy? Why can't you use `getByTestId`?
+>
+> **A**: **RTL philosophy**: **test what users see, not component internals**. **Why can't use `getByTestId`**: `data-testid` is for tests, users don't see it. **Prefer `getByText` / `getByRole`** — these are content users actually perceive. **Production case**: a component v1 used `data-testid` for testing, removed `data-testid` in refactor, all tests failed. **After switching to `getByText`**, refactor only changes behavior without breaking user perception, tests stable.<AIAsk question="What's React Testing Library's design philosophy? Why can't you use getByTestId?" lang="en" />
+>
+> **Q3 (Think)**: How does Playwright intercept network requests for mock? Why can't tests depend on real network?
+>
+> **A**: **Playwright mock three-piece set**: ① `page.route('**/api/**', route => route.fulfill({ body: mockData, status: 200 }))` — intercept API return mock data; ② `page.context().route()` cross-page shared mock; ③ `page.unroute()` clear mock. **Why can't depend on real network**: ① **100% fails on CI** — sandbox env external access unstable; ② **Uncontrollable** — real API returns change, tests flaky; ③ **Slow** — real network 100-500ms, test suite accumulates 5-10min wasted. **Production case**: a team's E2E used real API, production API change broke all tests, switched to mock stable 95% → 100%.<AIAsk question="How does Playwright intercept network requests for mock? Why can't tests depend on real network?" lang="en" />
+>
+> **Q4 (Think)**: Is 100% coverage enough? Why is coverage reference not target?
+>
+> **A**: **100% coverage ≠ 100% test quality**. **Counter-example**: a DTO class 100% covered (just a few lines of getter / setter), key business logic 0% covered, looks like 80% overall coverage but **core flow completely untested**. **Architect's mantra**: ① **Coverage = code run / total code**, DTO / config classes **waste time writing**; ② **Core coverage > 100% total coverage** — business core 80% + utilities 0% > DTO 100% + core 0%; ③ **Use mutation testing** — change a line of business code does test catch, real coverage is meaningful.<AIAsk question="Is 100% coverage enough? Why is coverage reference not target?" lang="en" />
+>
+> **Q5 (Think)**: In your 800+ page large project, how did you land the testing pyramid? How to set coverage targets for different modules?
+>
+> **A**: **800+ page testing pyramid landing**: ① **Core business modules** (ERP forms / reports / workflows) — unit 80% + integration 60% + E2E key flows; ② **UI component library** (Button / Table / Form) — unit 90% + Storybook visual regression; ③ **Routing / utility functions** — unit 100% (pure functions simple); ④ **Page-level business** — E2E 10-20 key flows fallback, no unit tests (cost too high). **CI integration**: PR runs unit + integration + visual regression (< 5min), after merge to main runs E2E (< 10min).<AIAsk question="In your 800+ page large project, how did you land the testing pyramid? How to set coverage targets for different modules?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [Vitest Documentation](https://vitest.dev/) — Vitest official documentation
+- [React Testing Library (GitHub)](https://github.com/testing-library/react-testing-library) — RTL official repository
+- [Playwright Documentation](https://playwright.dev/) — Playwright official documentation
+- [Testing Trophy (Kent C. Dodds)](https://testingjavascript.com/) — React testing methodology
+- [Playwright Best Practices (Playwright Docs)](https://playwright.dev/docs/best-practices) — Playwright best practices
+- [MSW (Mock Service Worker)](https://mswjs.io/) — network request mock library

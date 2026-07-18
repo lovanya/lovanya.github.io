@@ -1,0 +1,200 @@
+---
+title: "Hybrid Development Framework Comparison: Taro / Uni-app / Ionic / React Native"
+description: A frontend architect's hybrid development deep dive — Taro / Uni-app / Ionic / React Native four cross-platform framework comparison, compile-time vs runtime dual schemes, Xinrui / Lianyou hybrid project cases
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'hybrid-development', 'taro', 'uni-app', 'ionic', 'rn']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand hybrid development? My answer is **yes** — not to learn RN / Flutter / native development, but to build the engineering judgment of "when to use H5 / mini-program / RN / Flutter". Three reasons:
+
+1. **The resume mentions "Xinrui / Lianyou hybrid projects".** These projects have "one codebase covering H5 + mini-program + DingTalk / Feishu / WeChat" real scenarios.
+2. **Hybrid development is 80% trade-offs**: H5 wrapper / mini-program / RN / Flutter / native each fits different scenarios. **Architects must rank priorities**.
+3. **Cross-platform is not "write once run everywhere"**, it's "**share core logic, adapt UI native**". Understanding boundaries avoids performance / experience pitfalls.
+
+This is post #18 of the *Frontend Architecture Cultivation Path* series. We skip specific APIs (no Taro `useState` details), use architecture diagrams + decision tables + real cases to make the four cross-platform frameworks comparison + selection decisions concrete. The next post deep-dives into iframe isolation + postMessage.
+
+## 1. Four Major Cross-Platform Frameworks Panorama
+
+| Framework | Targets | Render layer | Language | Learning curve |
+|---|---|---|---|---|
+| **Taro** | H5 + multi mini-program | React / Vue / Nerv compile-time | TS / JS | ⭐⭐⭐ |
+| **Uni-app** | H5 + multi mini-program + App | Vue compile-time | Vue / TS | ⭐⭐ |
+| **Ionic** | H5 + iOS + Android (Capacitor) | Angular / React / Vue + Cordova | Framework native | ⭐⭐⭐ |
+| **React Native** | iOS + Android | Native components | React + TS | ⭐⭐⭐⭐ |
+| **Flutter** | iOS + Android + Desktop + Web | Self-drawing engine | Dart | ⭐⭐⭐⭐⭐ |
+| **Tauri** | Desktop (Windows / Mac / Linux) | Web frontend | Rust + frontend | ⭐⭐⭐⭐ |
+
+**Architect's mantra**: **No silver bullet, every framework has its target scenario, mismatch = 6 months rewrite**.
+
+## 2. Taro: React-syntax Multi-Mini-Program Solution
+
+```javascript
+// Taro 3.x: one React codebase compiles to 5+ targets
+import { useState } from '@tarojs/taro';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return <View>{count}</View>;
+}
+```
+
+**Compile output**:
+- H5 → standard React 18
+- WeChat mini-program → WXML + JS
+- Alipay mini-program → AXML + JS
+- ByteDance mini-program → TTML + JS
+- RN → React Native
+
+**Advantages**: **React-style business code + multi-platform coverage**, **Jest / Vitest unit tests run directly**. **Disadvantages**: **custom components hard (must use Taro's)**, **new platform support lags** (HarmonyOS support slow).
+
+## 3. Uni-app: Vue-syntax Multi-Platform Solution
+
+```vue
+<!-- uni-app: Vue syntax cross-platform -->
+<template>
+  <view class="container">
+    <text>{{ count }}</text>
+    <button @click="increment">+</button>
+  </view>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const count = ref(0);
+const increment = () => count.value++;
+</script>
+```
+
+**Difference from Taro**:
+- **Taro** uses React syntax (teams with React background choose Taro)
+- **Uni-app** uses Vue syntax (teams with Vue background choose Uni-app)
+- **Ecosystem**: Uni-app's plugin market is richer (DCloud-led, highest domestic market share)
+
+## 4. Ionic + Capacitor: Web Tech Stack Mobile Solution
+
+```typescript
+// Ionic + Angular / React / Vue: write once, Web / iOS / Android three targets
+import { IonButton, IonContent, IonPage } from '@ionic/react';
+
+function HomePage() {
+  return (
+    <IonPage>
+      <IonContent>
+        <IonButton>Click me</IonButton>
+      </IonContent>
+    </IonPage>
+  );
+}
+```
+
+**Capacitor is Ionic's parent company's modern cross-platform**:
+- **Faster, lighter** than traditional Cordova
+- Web project `cap sync` directly → iOS / Android package
+- **Better TS support / more modern plugins**
+
+**Xinrui Ionic + Angular practice**: ran 3+ years with 6 Apps, **one codebase supporting iOS / Android / Web**.
+
+## 5. React Native: Native Components + JS Bridge
+
+```tsx
+// React Native: native components, JS communicates via Bridge
+import { View, Text, Button } from 'react-native';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <View>
+      <Text>{count}</Text>
+      <Button title="+" onPress={() => setCount(count + 1)} />
+    </View>
+  );
+}
+```
+
+**Core mechanism**:
+- **JavaScript engine** runs business logic (React 18+ integrates Hermes engine)
+- **Native components** render UI (`<View>` maps to iOS `UIView` / Android `ViewGroup`)
+- **Bridge** communicates JS ↔ Native (old architecture, new architecture uses JSI direct calls)
+
+**Advantages**: **real native performance + JS dev efficiency**. **Disadvantages**: **ecosystem split** (npm packages not always RN-compatible), **new architecture Fabric/TurboModules still in migration**.
+
+## 6. Four-Framework Selection Decision Tree
+
+```
+Project selection
+├── Cover H5 + multi mini-program + App
+│   ├── React background → **Taro**
+│   ├── Vue background → **Uni-app**
+│   └── Need native experience → **React Native + mini-program native package**
+├── Cover Web + iOS + Android, UI not heavy
+│   └── Web tech stack → **Ionic + Capacitor**
+├── Heavy experience / heavy interaction / heavy performance
+│   ├── React background + only mobile → **React Native (new architecture)**
+│   └── Heavy UI self-drawing / cross-platform extreme → **Flutter**
+└── Desktop application
+    └── Cross-platform + small bundle → **Tauri**
+```
+
+## 7. Cross-Platform Real Case Comparison
+
+| Project | Framework | Targets | Team size | Duration |
+|---|---|---|---|---|
+| Xinrui device management | Ionic + Angular | Web / iOS / Android | 5 | 6 months |
+| Lianyou ERP mobile | Uni-app | H5 / WeChat / DingTalk / App | 3 | 4 months |
+| Some ToB data dashboard | Taro | H5 / multi mini-program | 4 | 5 months |
+| Some ToC social App | React Native | iOS / Android | 8 | 12 months |
+| Some ToC short video | Flutter | iOS / Android | 10 | 18 months |
+
+## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't use Flutter for admin backend.** Flutter's strength is animation and UI self-drawing, admin backend doesn't need it, **Flutter 5MB+ bundle is meaningless**.
+2. **Don't treat RN as RN-Native.** RN isn't native, **performance is always 20-30% worse than native**. Heavy interactions (gesture / animation) use Swift / Kotlin.
+3. **Don't confuse Uni-app Vue 2 vs Vue 3.** Uni-app x and earlier uses Vue 2, later Vue 3 + Composition API. **Wrong version = entire project rewrite**.
+4. **Don't ignore mini-program limits.** Mini-programs don't have full DOM / no Web Worker / no IndexedDB. **Used means working around**.
+5. **Don't let "cross-platform" become an excuse for laziness.** If only H5 + WeChat, **plain H5 + weixin-js-sdk is enough**; cross-platform frameworks have 100KB+ runtime, **unused is waste**.
+
+## Summary
+
+Six key facts that thread hybrid development together:
+
+- **Cross-platform has no silver bullet**: each framework fits different scenarios, **mismatch = 6 months rewrite**.
+- **Taro**: React syntax + compile-time to multi-target, **fits React teams**.
+- **Uni-app**: Vue syntax + highest domestic market share, **fits Vue teams**.
+- **Ionic + Capacitor**: Web tech stack covers iOS / Android, **Web teams get started fastest**.
+- **React Native**: Native components + JS bridge, **real native experience**.
+- **Flutter**: self-drawing engine + Dart, **ultimate weapon for UI-heavy apps**.
+- **Decision tree**: H5+mini-program → Taro/Uni-app / Mobile+Web → Ionic / Heavy experience → RN or Flutter.
+
+**Next post**: iframe isolation + postMessage — micro-frontend / third-party embedding / FinSpread's 30% authorization cost reduction case.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the core difference between Taro / Uni-app / Ionic / React Native — the four cross-platform frameworks? What scenarios are each suitable for?
+>
+> **A**: **Taro** uses React syntax, **compile-time** to 5+ targets (H5 / multi mini-program / App), **fits React teams**; **Uni-app** uses Vue syntax, highest domestic market share, rich plugin market, **fits Vue teams**; **Ionic + Capacitor** uses Angular/React/Vue + Cordova/Capacitor plugins, **Web tech stack covers iOS/Android**, **Web teams get started fastest**; **React Native** uses React syntax + native component rendering, **real native experience + JS dev efficiency**. **Decision**: H5+mini-program → Taro/Uni-app; Mobile+Web → Ionic; Heavy experience → RN or Flutter.<AIAsk question="What's the core difference between Taro / Uni-app / Ionic / React Native — the four cross-platform frameworks? What scenarios are each suitable for?" lang="en" />
+>
+> **Q2 (Think)**: What's the core difference between Taro and Uni-app? How do React teams vs Vue teams choose?<AIAsk question="What's the core difference between Taro and Uni-app? How do React teams vs Vue teams choose?" lang="en" />
+>
+> **Q3 (Think)**: What's the essential difference between React Native and Flutter? When to use RN vs Flutter?<AIAsk question="What's the essential difference between React Native and Flutter? When to use RN vs Flutter?" lang="en" />
+>
+> **Q4 (Think)**: What's the essential difference between Ionic + Capacitor vs Cordova? Why is Capacitor the modern cross-platform better choice?<AIAsk question="What's the essential difference between Ionic + Capacitor vs Cordova? Why is Capacitor the modern cross-platform better choice?" lang="en" />
+>
+> **Q5 (Think)**: In your Xinrui / Lianyou hybrid projects, how did you choose cross-platform? React Native + mini-program native package vs Uni-app + mini-program native package — how to weigh?<AIAsk question="In your Xinrui / Lianyou hybrid projects, how did you choose cross-platform? React Native + mini-program native package vs Uni-app + mini-program native package — how to weigh?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [Taro Documentation](https://taro-docs.jd.com/) — Taro official documentation
+- [Uni-app Documentation](https://uniapp.dcloud.net.cn/) — Uni-app official documentation
+- [Ionic + Capacitor (Ionic Docs)](https://ionicframework.com/docs/) — Ionic + Capacitor official documentation
+- [React Native Documentation](https://reactnative.dev/) — React Native official documentation
+- [Flutter Documentation](https://flutter.dev/) — Flutter official documentation
+- [Tauri Documentation](https://tauri.app/) — Tauri cross-platform desktop application official documentation

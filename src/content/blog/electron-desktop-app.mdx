@@ -1,0 +1,241 @@
+---
+title: "Electron 实战：主进程 / 渲染进程 / 硬件桥接"
+description: 前端架构师的 Electron 实战——主进程 vs 渲染进程模型、IPC 通信、preload 注入、Node API 集成、柔记 PC 客户端 USB Bridge 实战
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', 'electron', '桌面应用', 'ipc']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂 Electron？我的回答是 **要**——不是去写 C++ 插件，而是建立"Web 技术做桌面应用的边界在哪里"的工程判断。原因有三：
+
+1. **简历里柔记 PC 端是稀缺经验**。带 USB 硬件通信的桌面应用，**前端工程师能独立 cover 是巨大优势**。
+2. **Electron 是 Web 技术的延伸**，**不是替换**。理解它的限制（bundle size / 性能 / 内存），才知道什么时候该用 Web 什么时候该用原生。
+3. **安全模型必懂**。渲染进程开 `nodeIntegration: false` + `contextIsolation: true` + `preload` 注入，**这套安全配置是 12.x 后强制要求**。
+
+这一篇是『前端架构修仙路』的第 17 篇。我跳过 IPC 具体 API（不讲 `ipcMain.handle` 怎么用），用架构图 + 真实案例 + 安全清单，把 Electron 的进程模型 / 通信机制 / USB Bridge 实战讲透。下一篇深度聊混合开发（Taro / Uni-app / Ionic）。
+
+## 一、Electron 的进程模型
+
+<Mermaid client:load caption="图 1：Electron 进程模型" chart={`flowchart LR
+  M[Main Process<br/>Node.js 环境<br/>全操作系统权限] -->|管理| W1[Window 1<br/>Renderer 进程]
+  M -->|管理| W2[Window 2]
+  M -->|管理| W3[Window N]
+  M <-->|ipcMain / ipcRenderer<br/>IPC 通信| W1
+  W1 <-->|preload.js<br/>contextBridge 注入| R[React / Vue<br/>渲染进程]
+  W1 -.不可访问.-> N[Node API / FS / Shell]
+  W1 <-->|Web API / DOM| R`} />
+
+**核心三角色**：
+
+1. **主进程**：唯一能访问 Node API（文件系统 / shell / 硬件），管理所有窗口
+2. **渲染进程**：每个窗口一个独立 Chromium 进程，**默认不能访问 Node API**
+3. **preload 脚本**：在渲染进程加载前执行，**作为唯一安全通道**注入 Node 能力
+
+**架构师心法**：**Electron = Chromium + Node.js**。两个 runtime 在同一进程里跑，**安全边界要明确**。
+
+## 二、安全配置（12.x 必填）
+
+```javascript
+// main.js
+new BrowserWindow({
+  webPreferences: {
+    nodeIntegration: false,        // ❌ 禁止渲染进程直接访问 Node
+    contextIsolation: true,        // ✅ 强制 contextBridge 隔离
+    sandbox: true,                 // ✅ 沙箱（牺牲一部分 API 但更安全）
+    preload: path.join(__dirname, 'preload.js'),
+  },
+});
+
+// preload.js（唯一能访问 Node 的渲染进程上下文）
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  // 暴露白名单 API,而不是整个 Node
+  readFile: (path) => ipcRenderer.invoke('read-file', path),
+  writeFile: (path, content) => ipcRenderer.invoke('write-file', path, content),
+  onUSBData: (callback) => ipcRenderer.on('usb-data', (_, data) => callback(data)),
+});
+```
+
+**安全三件套**：
+- `nodeIntegration: false`（默认就是 false，但显式声明）
+- `contextIsolation: true`（隔离 preload 和 renderer context）
+- `preload` + `contextBridge.exposeInMainWorld`（白名单 API）
+
+**生产案例**：某 Electron app 早期 nodeIntegration: true，**某个 npm 依赖被供应链攻击直接拿到 shell 权限**。改用 contextBridge 后攻击面缩到白名单 API。
+
+## 三、IPC 通信：主进程 ↔ 渲染进程
+
+```javascript
+// 主进程 (main.js)
+import { ipcMain, BrowserWindow } from 'electron';
+
+ipcMain.handle('read-file', async (event, path) => {
+  // 主进程才有 fs 权限
+  const content = await fs.readFile(path, 'utf-8');
+  return content;
+});
+
+ipcMain.handle('usb-connect', async (event, vendorId) => {
+  // USB 设备连接逻辑(主进程)
+  return await usbHandler.connect(vendorId);
+});
+
+// 渲染进程 (React 组件)
+const content = await window.api.readFile('/path/to/file');
+```
+
+**三种 IPC 模式**：
+
+| 模式 | API | 用途 |
+|---|---|---|
+| **invoke / handle** | 异步 + 返回值 | "调用 + 等结果"，**80% 场景** |
+| **send / on** | 单向 + 不返回 | "通知"，如硬件数据推送 |
+| **MessagePort** | 双向长连接 | 大数据流（文件 / 视频） |
+
+## 四、柔记 PC 客户端 USB Bridge 实战
+
+简历里出现 **"柔记 PC 端项目"**——这是 Electron + 智能硬件的混合项目：手写笔通过 USB 连接到 PC，写字笔迹实时显示在屏幕上。
+
+### 4.1 USB 设备通信架构
+
+```typescript
+// 主进程:USB 监听
+import { usb } from 'usb';  // node-usb
+
+ipcMain.handle('usb-connect', async (event, vendorId) => {
+  const device = usb.findByIds(vendorId, productId);
+  if (!device) throw new Error('USB device not found');
+  
+  device.open();
+  const endpoint = device.interface(0).endpoint(0);  // IN endpoint
+  
+  // 监听数据流
+  endpoint.on('data', (data) => {
+    // 把数据通过 IPC 推送到渲染进程
+    BrowserWindow.getFocusedWindow().webContents.send('usb-data', data.toString('hex'));
+  });
+  
+  return { connected: true };
+});
+```
+
+### 4.2 渲染进程:实时笔迹渲染
+
+```jsx
+function WritingPad() {
+  const [strokes, setStrokes] = useState([]);
+  
+  useEffect(() => {
+    // 接收 USB 数据 → 解析为笔迹点 → 渲染 Canvas
+    window.api.onUSBData((hex) => {
+      const points = parseHexToPoints(hex);
+      setStrokes(prev => [...prev, points]);
+    });
+  }, []);
+  
+  return (
+    <canvas ref={canvasRef} />
+  );
+}
+```
+
+**生产数据**：柔记 PC 端 **笔迹延迟 < 16ms**（1 帧），**Windows + macOS 双端同步**。
+
+## 五、Electron 的三大限制与对策
+
+### 5.1 Bundle size
+
+```
+Electron 应用典型 size:
+  最小:  ~80MB(空项目)
+  Vue 3 + Pinia + Element Plus:  ~150MB
+  React + Ant Design:  ~180MB
+  含 Native 模块(sqlite3 / node-usb):  ~250MB
+```
+
+**对策**：
+- **动态 import**：主进程只打包核心,业务代码 lazy load
+- **Web Worker 分离计算密集任务**：不占主进程
+- **外部加载**：大型资源（视频 / 数据库）运行时下载,不打包
+
+### 5.2 性能 vs 原生
+
+| 维度 | Electron | 原生 |
+|---|---|---|
+| 启动时间 | 500-1500ms | 100-300ms |
+| 内存占用 | 100-300MB | 30-80MB |
+| CPU 占用 | 比原生高 30-50% | 最优 |
+| 跨平台 | 一套代码 | 需各端开发 |
+
+**对策**：**Electron 适合中后台工具 / 富文本 / 设计类应用**；**重性能 / 重 3D / 系统级应用用 Tauri / Flutter / 原生**。
+
+### 5.3 自动更新
+
+```javascript
+// 使用 electron-updater
+import { autoUpdater } from 'electron-updater';
+
+autoUpdater.checkForUpdatesAndNotify();
+
+// 主进程配置
+app.on('ready', () => {
+  autoUpdater.on('update-available', () => {
+    mainWindow.webContents.send('update-available');
+  });
+  autoUpdater.on('update-downloaded', () => {
+    autoUpdater.quitAndInstall();
+  });
+});
+```
+
+**架构师规则**：**桌面应用必须有自动更新机制**——用户不会主动下载新版本。
+
+## 六、踩坑提醒（资深架构师请重点看）
+
+1. **不要在渲染进程开 `nodeIntegration: true`**。**安全漏洞** = shell 权限 = 任意代码执行。
+2. **不要让 preload 脚本过大**。preload 启动时同步执行,**太大导致窗口打开延迟**。
+3. **不要忽视主进程崩溃**。主进程是单点,**任何 unhandled rejection 都可能 kill 整个 app**。配 `process.on('uncaughtException')` 兜底。
+4. **不要在 Electron 里塞太多业务**。Electron 适合**带硬件通信 / 系统集成 / 富 UI**的应用;**纯业务 Web 端用浏览器就够了**。
+5. **不要忘记 Mac 公证**。Mac 应用不上 notarization 用户打开会被 Gatekeeper 拦截,**发布前必须跑 xcrun notarytool**。
+
+## 总结
+
+这一篇用 5 个关键事实把 Electron 实战串起来：
+
+- **进程模型**：主进程 (Node) + 渲染进程 (Chromium) + preload,**安全边界要明确**。
+- **安全配置**：nodeIntegration: false / contextIsolation: true / sandbox: true 三件套必填。
+- **IPC 通信**：invoke/handle (80%) + send/on (通知) + MessagePort (大数据)。
+- **USB Bridge 实战**：node-usb 主进程监听 + IPC 推送 + 渲染进程 Canvas 渲染,**延迟 < 16ms**。
+- **三大限制**：bundle 80-250MB / 启动 500-1500ms / 内存 100-300MB,**中后台工具类应用最适合**。
+
+**下一篇**：混合开发 Taro / Uni-app / Ionic——跨端框架对比,信锐 / 联友混合项目实战。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：Electron 的主进程 / 渲染进程 / preload 三个角色各负责什么？为什么渲染进程默认不能访问 Node API？
+>
+> **A**：**主进程** —— 唯一能访问 Node API (文件系统 / shell / USB),管理所有窗口生命周期;**渲染进程** —— 每个窗口一个独立 Chromium 进程,只能访问 Web API / DOM;**preload 脚本** —— 在渲染进程加载前执行,作为唯一安全通道注入 Node 能力。**为什么默认不能访问 Node**:Web 应用 90% 场景不需要 Node,**不暴露 Node = 攻击面缩到最小**;且渲染进程如果开 NodeIntegration,**npm 依赖一旦被供应链攻击就拿到 shell 权限**——这是真实事故。<AIAsk question="Electron 的主进程 / 渲染进程 / preload 三个角色各负责什么？为什么渲染进程默认不能访问 Node API？" />
+>
+> **Q2（思考）**：Electron 12.x 之后为什么强制 contextIsolation: true？安全三件套具体怎么配置？<AIAsk question="Electron 12.x 之后为什么强制 contextIsolation: true？安全三件套具体怎么配置？" />
+>
+> **Q3（思考）**：invoke / handle 和 send / on 的区别是什么？IPC 通信在大数据传输时该用什么？<AIAsk question="invoke / handle 和 send / on 的区别是什么？IPC 通信在大数据传输时该用什么？" />
+>
+> **Q4（思考）**：Electron 应用 bundle size 太大怎么办？Electron 适合什么样的应用场景？<AIAsk question="Electron 应用 bundle size 太大怎么办？Electron 适合什么样的应用场景？" />
+>
+> **Q5（思考）**：你在柔记 PC 端项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？<AIAsk question="你在柔记 PC 端项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [Electron Documentation](https://www.electronjs.org/docs) — Electron 官方文档
+- [Electron Security Checklist](https://www.electronjs.org/docs/latest/tutorial/security) — 安全清单官方指南
+- [Context Isolation (Electron Blog)](https://www.electronjs.org/blog/electron-20-0) — Context Isolation 设计
+- [node-usb (GitHub)](https://github.com/node-usb/node-usb) — Node.js USB 通信库
+- [electron-builder (GitHub)](https://github.com/electron-userland/electron-builder) — Electron 打包工具
+- [Tauri vs Electron (Tauri Docs)](https://tauri.app/v1/guides/compare/) — 轻量替代方案对比

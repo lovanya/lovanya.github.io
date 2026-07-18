@@ -1,0 +1,379 @@
+---
+title: "TypeScript Advanced: Type Gymnastics and Project Practice"
+description: A frontend architect's deep dive into the TS type system — generics, conditional types, infer, template literal types. From type gymnastics to real ERP / FinUI / Electron project experience
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'typescript', 'type-system', 'engineering']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect master TypeScript? My answer is **yes** — not to derive TypeScript Compiler source, but to build the engineering intuition of "use types to block runtime errors at compile time". Three reasons:
+
+1. **Large projects depend on TS as gatekeeper.** 800+ page ERP without TS — every new field is P0 bug risk; with TS, **80% of field typos, null handling omissions, API field type drift are caught at the `tsc` stage**.
+2. **Type gymnastics aren't showing off, they're abstraction tools.** `Partial<T>` / `Pick<T, K>` / `ReturnType<typeof fn>` are the building blocks of design reuse; writing conditional types + `infer` is a must for building frameworks / SDKs.
+3. **tsconfig directly determines the dev experience.** `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` — whether these switches are on determines the team's code rigor baseline.
+
+This is post #6 of the *Frontend Architecture Cultivation Path* series. We skip TypeScript compiler internals (no AST / checker deep dive), use real-world cases + step-by-step type derivations + configuration tables to make generics / conditional types / `infer` / template literal types concrete. The next post enters the Foundation Building period, covering front-end framework evolution and MVVM history.
+
+## 1. Why Architects Must Use TypeScript: Real Production Data
+
+All ERP / FinUI / Electron projects on my resume depend heavily on TypeScript. **Why not JS?** Three comparisons:
+
+| Dimension | JavaScript | TypeScript |
+|---|---|---|
+| Field typo errors | Found at runtime (production P0) | Caught at compile time |
+| Refactoring renames | grep + tests | Compiler tells you all references |
+| Third-party API types | Docs + JSDoc | `.d.ts` autocompletes |
+| Team collaboration | Verbal conventions | Types ARE documentation |
+| Long-term maintenance | More chaotic over time | Type net keeps code "self-constrained" |
+
+**Production case**: SF Express ERP's 200+ table column definitions, **after migrating to TS, field typo rate dropped from 0.5% to 0** — because every `<TableColumn prop="xxx" />` requires `xxx` to be declared in the `Columns` type.
+
+## 2. TypeScript Type System Overview
+
+<Mermaid client:load caption="Figure 1: 4 layers of the TS type system" chart={`flowchart LR
+  T[TS Type System] --> A[Basic Types<br/>string / number / boolean / null / undefined]
+  A --> O[Composite Types<br/>object / array / tuple / enum]
+  O --> G[Generics + Abstraction<br/>generic functions / classes / abstract]
+  G --> C[Type Computation<br/>conditional types + infer + mapped + template literals]`} />
+
+The higher up, the more powerful but also more abstract. **Architects must master the first 3 layers + the core moves of layer 4**.
+
+## 3. Generics: From "any" to "Type Parameterization"
+
+### 3.1 Basic Generics: Transform "Repetition" into "Parameterization"
+
+```typescript
+// ❌ Anti-pattern: write once for each type
+function identityString(arg: string): string { return arg; }
+function identityNumber(arg: number): number { return arg; }
+function identityBoolean(arg: boolean): boolean { return arg; }
+
+// ✅ Recommended: generics
+function identity<T>(arg: T): T { return arg; }
+const a = identity<string>('hello');    // T = string
+const b = identity(42);                  // T inferred as number
+```
+
+### 3.2 Generic Constraints: `extends`
+
+```typescript
+// T must have a length property
+function longest<T extends { length: number }>(a: T, b: T): T {
+  return a.length >= b.length ? a : b;
+}
+
+longest('hello', 'hi');     // ✅ string has length
+longest([1, 2], [3, 4, 5]); // ✅ array has length
+longest(123, 456);          // ❌ number has no length
+```
+
+### 3.3 The Killer Scenario in React: Component Props
+
+```typescript
+// Generic props for controlled components
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+  keyExtractor: (item: T) => string;
+}
+
+function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map(item => (
+        <li key={keyExtractor(item)}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  );
+}
+
+// Usage
+<List<User>
+  items={users}
+  renderItem={u => <span>{u.name}</span>}
+  keyExtractor={u => u.id}
+/>
+```
+
+Once `T` is inferred as `User` from `items`, **`renderItem` and `keyExtractor` automatically get `User` types** — this is what plain React can't do.
+
+## 4. Conditional Types: if-else in the Type System
+
+### 4.1 Basics: `T extends U ? X : Y`
+
+```typescript
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<string>;   // true
+type B = IsString<number>;   // false
+type C = IsString<'hello'>;  // true (literal types extend string)
+```
+
+### 4.2 Real-World: API Response Type Extraction
+
+```typescript
+// Backend might return user or error; auto-extract data type
+type ApiResponse<Data, Error = string> = {
+  code: number;
+  data?: Data;
+  error?: Error;
+};
+
+// Auto-extract data field type
+type ExtractData<T> = T extends ApiResponse<infer D, any> ? D : never;
+
+type UserResp = ApiResponse<{ id: number; name: string }>;
+type User = ExtractData<UserResp>;  // { id: number; name: string }
+```
+
+### 4.3 `infer`: Declare Local Variables in Conditional Types
+
+`infer` is the **killer feature** of conditional types — **infer and capture** sub-types from generics.
+
+```typescript
+// Extract function return type
+type MyReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+
+function fetchUser() { return { id: 1, name: 'Alice' }; }
+type User = MyReturnType<typeof fetchUser>;  // { id: number; name: string }
+
+// Extract Promise inner type
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+type A = UnwrapPromise<Promise<string>>;  // string
+type B = UnwrapPromise<number>;           // number
+
+// Extract array element type
+type ElementOf<T> = T extends (infer E)[] ? E : never;
+type E = ElementOf<string[]>;  // string
+```
+
+**Architect insight**: `infer` lets you **extract sub-types from complex types without introducing extra type parameters**. This is the core weapon for writing frameworks / SDKs / utilities.
+
+### 4.4 Real-World: Component Props with `as` Pattern
+
+```typescript
+// <Button as="a"> changes Button's props type
+type AsProps<El extends keyof JSX.IntrinsicElements> = {
+  as?: El;
+} & JSX.IntrinsicElements[El];
+
+function Button<E extends keyof JSX.IntrinsicElements = 'button'>(
+  props: AsProps<E>
+) { /* ... */ }
+
+// Usage
+<Button>click</Button>                          // props: button props
+<Button as="a" href="/home">home</Button>        // props: anchor props, auto-completes href
+```
+
+## 5. Mapped Types: Batch Transform Object Types
+
+### 5.1 Basics: `{ [K in keyof T]: ... }`
+
+```typescript
+// Make all fields readonly
+type ReadonlyAll<T> = { readonly [K in keyof T]: T[K] };
+
+type User = { id: number; name: string };
+type FrozenUser = ReadonlyAll<User>;
+// { readonly id: number; readonly name: string }
+
+// Make all fields optional
+type OptionalAll<T> = { [K in keyof T]?: T[K] };
+type PartialUser = OptionalAll<User>;  // { id?: number; name?: string }
+```
+
+### 5.2 Built-in Mapped Types (TS Native)
+
+```typescript
+Partial<T>           // all fields optional ({ [K]?: T[K] })
+Required<T>          // all fields required ({ [K]-?: T[K] })
+Readonly<T>          // all fields readonly ({ readonly [K]: T[K] })
+Pick<T, K>           // pick fields ({ [P in K]: T[P] })
+Omit<T, K>           // exclude fields (Pick<T, Exclude<keyof T, K>>)
+Record<K, V>         // index signature ({ [P in K]: V })
+NonNullable<T>       // exclude null/undefined
+```
+
+**Production case**:
+
+```typescript
+// Table column definition, expose only some fields to backend
+interface FullUser {
+  id: number;
+  name: string;
+  email: string;
+  passwordHash: string;  // shouldn't be exposed to frontend
+}
+
+// DTO for backend, exclude sensitive fields
+type UserDTO = Omit<FullUser, 'passwordHash'>;
+
+// React props subset
+type UserCardProps = Pick<FullUser, 'id' | 'name'>;
+```
+
+## 6. Template Literal Types: TS 4.1+ String-Level Types
+
+### 6.1 String Concatenation Types
+
+```typescript
+// Auto-concatenate event names
+type EventName = `on${Capitalize<string>}`;  // 'onClick' | 'onChange' | ...
+
+// Auto-concatenate API paths
+type ApiPath = `/api/${string}`;  // any path starting with /api/
+
+// Concatenate CSS units
+type CssUnit = `${number}${'px' | 'rem' | 'em' | '%'}`;
+const width: CssUnit = '100px';    // ✅
+const height: CssUnit = '5rem';   // ✅
+const invalid: CssUnit = '5vw';  // ❌
+```
+
+### 6.2 Real-World: Type-Safe i18n Keys
+
+```typescript
+type Locale = 'zh' | 'en' | 'ja';
+type Namespace = 'common' | 'blog' | 'admin';
+type I18nKey = `${Namespace}.${string}`;
+
+const t = (key: I18nKey, locale: Locale) => { /* ... */ };
+t('common.welcome', 'zh');  // ✅
+t('common.', 'zh');        // ❌ TS error: string cannot be empty
+t('home.welcome', 'zh');   // ❌ TS error: namespace must be common/blog/admin
+```
+
+**FinUI project case**: by using template literal types + auto-generation scripts, i18n key typo rate dropped from 2% to 0.
+
+## 7. tsconfig Key Switches: Architect's Discipline
+
+```jsonc
+{
+  "compilerOptions": {
+    "strict": true,                  // enable all strict options
+    "noUncheckedIndexedAccess": true, // arr[i] defaults to T | undefined
+    "exactOptionalPropertyTypes": true, // { x?: string } can't be assigned undefined
+    "noImplicitOverride": true,      // subclass override must be explicit
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,         // compile each file independently
+    "skipLibCheck": true,             // skip .d.ts checking, accelerate
+    "verbatimModuleSyntax": true,    // force import type annotation
+    "target": "ES2022",                // minimum target
+    "moduleResolution": "Bundler",    // Vite/Webpack style
+    "module": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"]
+  }
+}
+```
+
+**Architect's decision table**:
+
+| Switch | New project | Old project | Reason |
+|---|---|---|---|
+| `strict` | ✅ Must-on | ✅ Must-on | Basic discipline |
+| `noUncheckedIndexedAccess` | ✅ Must-on | ⚠️ Depends on migration cost | Prevent array out-of-bounds |
+| `exactOptionalPropertyTypes` | ✅ Recommended | ❌ Old project cautious | Strict optional vs undefined |
+| `noUnusedLocals` | ✅ Recommended | ✅ | Reduce dead code |
+| `skipLibCheck` | ✅ Must-on | ✅ | Without it, build 5-10× slower |
+| `verbatimModuleSyntax` | ✅ Recommended | ❌ | Force type-only import |
+
+**Production case**: iView's early JS project migrated to TS, **in the first week strict + noUncheckedIndexedAccess exposed 200+ hidden bugs**; fixed in 2 weeks, project stability went from 95% to 99.5%.
+
+## 8. Pattern: Discriminated Union
+
+**The TS pattern architects should master most** — better than class hierarchy for expressing state:
+
+```typescript
+// ❌ Anti-pattern: optional fields scattered
+interface ApiResult {
+  loading?: boolean;
+  data?: User;
+  error?: Error;
+}
+if (result.data) {  // data might still be undefined
+  // ...
+}
+
+// ✅ Recommended: discriminated union
+type ApiResult =
+  | { status: 'loading' }
+  | { status: 'success'; data: User }
+  | { status: 'error'; error: Error };
+
+function handle(result: ApiResult) {
+  switch (result.status) {
+    case 'loading':
+      // result: { status: 'loading' }
+      break;
+    case 'success':
+      // result: { status: 'success'; data: User } — TS auto-narrows
+      console.log(result.data.name);
+      break;
+    case 'error':
+      // result: { status: 'error'; error: Error }
+      console.error(result.error);
+      break;
+  }
+}
+```
+
+**Production case**: All FinUI async component props use discriminated union; in 3 years, no "data is undefined" runtime crashes.
+
+## 9. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't abuse `any`.** `any` makes TS meaningless — `tsconfig` adds `"noImplicitAny": true` as the baseline.
+2. **Don't force type assertions with `as`.** `as` is the "escape hatch" to bypass TS — use only when truly necessary. **The real solution is to add type definitions**, not `as unknown as User`.
+3. **Don't let `enum` appear at cross-package boundaries.** `enum` compiles to reverse-mapped objects; bugs at cross-package usage. **Use `as const` + literal union types instead**.
+4. **Don't mix `interface` and `type` doing the same thing.** Team convention: `interface` only for React props / public APIs (extensible); `type` for type computation (not extensible).
+5. **Don't ignore TS compile errors.** "Project runs fine" is an anti-pattern — **every accumulated TS error doubles future refactoring cost**.
+
+## Summary
+
+Nine key facts that thread TypeScript advanced topics together:
+
+- **TS is essential for large projects**: field typo rate from 0.5% → 0, refactoring finds 100% of all references.
+- **Generics + constraints + `extends`** are the foundation of type parameterization.
+- **Conditional types + `infer`** let you do "if-else" in the type system — the killer weapon for framework authors.
+- **Mapped types** (Partial / Pick / Omit) are the standard tools for batch transforming objects.
+- **Template literal types** make string-level type safety (CSS units, API paths, i18n keys).
+- **tsconfig strict switches** determine the team's code rigor baseline.
+- **Discriminated Union** replaces class hierarchy for state expression.
+- **`any` / `as` / `enum` are the three poisons**, team discipline must explicitly forbid them.
+
+**Next post**: Foundation Building opener — front-end framework evolution and MVVM history, from Backbone / Knockout to React / Vue / Angular's evolutionary logic.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What are TypeScript generics, conditional types, and the `infer` keyword? Give a real project example for each.
+>
+> **A**: **Generics** are type parameterization — `<T>` lets functions / interfaces / classes accept any type without losing type info. **Conditional types** `T extends U ? X : Y` are if-else at the type level, used for type distribution and mapping. **`infer`** declares a local variable in conditional types, capturing a sub-type from a generic — typical uses are extracting function return types (`ReturnType<T>`), Promise inner types (`Awaited<T>`), array element types. **Real-world case**: React component `<List<T>>` uses generics so `items` / `renderItem` / `keyExtractor` types are linked; framework's "component props change with `as` attribute" uses `infer` to extract corresponding element props from `keyof JSX.IntrinsicElements`.<AIAsk question="What are TypeScript generics, conditional types, and the infer keyword? Give a real project example for each." lang="en" />
+>
+> **Q2 (Think)**: What are the pitfalls of TypeScript's `enum`? Why recommend `as const` + literal union types instead?<AIAsk question="What are the pitfalls of TypeScript's enum? Why recommend as const + literal union types instead?" lang="en" />
+>
+> **Q3 (Think)**: What are the advantages of TypeScript's Discriminated Union over class hierarchy? Give an example with API loading/success/error states.<AIAsk question="What are the advantages of TypeScript's Discriminated Union over class hierarchy? Give an example with API loading/success/error states." lang="en" />
+>
+> **Q4 (Think)**: What does the `noUncheckedIndexedAccess` tsconfig option do when turned on? Why should large projects enable it?<AIAsk question="What does the noUncheckedIndexedAccess tsconfig option do when turned on? Why should large projects enable it?" lang="en" />
+>
+> **Q5 (Think)**: How did you promote TypeScript in an 800+ page ERP project? How do you migrate a team from JS to TS without breaking velocity?<AIAsk question="How did you promote TypeScript in an 800+ page ERP project? How do you migrate a team from JS to TS without breaking velocity?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [TypeScript Handbook: Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html) — authoritative generics reference
+- [TypeScript Handbook: Conditional Types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html) — official conditional types guide
+- [TypeScript Handbook: Template Literal Types](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html) — template literal types
+- [TypeScript: tsconfig reference](https://www.typescriptlang.org/tsconfig/) — complete tsconfig options
+- [Type-Level TypeScript](https://type-level-typescript.com/) — advanced type gymnastics tutorial
+- [Effective TypeScript (Dan Vanderkam)](https://effectivetypescript.dev/) — 65 concrete actionable best practices

@@ -1,0 +1,255 @@
+---
+title: "前端工程化体系：CI/CD / 规范 / 评审 / 团队沉淀"
+description: 前端架构师的工程化实战——CI/CD 流水线、ESLint / Prettier / Husky 规范、PR 评审清单、团队最佳实践沉淀机制，附顺丰 + 柔宇两段工程化经验
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '工程化', 'ci-cd', 'eslint']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂工程化？我的回答是 **要**——不是去写 Jenkinsfile，而是建立"团队 50 人怎么不踩同一个坑"的工程体系。原因有三：
+
+1. **简历里"团队 ESLint + Husky 沉淀"是软实力证明**。能写出 800+ 页面的代码不算强，**能让团队稳定输出 800+ 页面同等质量的代码才算强**。
+2. **工程化是 10 倍杠杆**。一次写好规范 → 100 个 PR 自动套用 → 节省 1000 小时 review。
+3. **没有工程化的团队 = 慢性死亡**。3 个月后人人都按自己习惯写代码，**重构成本指数级增长**。
+
+这一篇是『前端架构修仙路』的第 14 篇。我跳过具体配置（不讲 ESLint 每条规则），用架构图 + 真实数据 + 评审清单，把 CI / CD / 规范 / 评审 / 团队沉淀讲透。下一篇深度聊首屏性能 4.2s→1.8s 实战拆解。
+
+## 一、CI / CD 流水线：现代前端必备
+
+<Mermaid client:load caption="图 1：现代前端 CI/CD 流水线" chart={`flowchart LR
+  P[PR 提交] --> L1[Lint & Format]
+  L1 --> L2[TypeScript 类型检查]
+  L2 --> L3[单元测试]
+  L3 --> L4[E2E 测试 Playwright]
+  L4 --> L5[Bundle 分析]
+  L5 --> L6[Build 生产产物]
+  L6 --> L7[预览环境]
+  L7 --> R[合并到 main]
+  R --> L8[Build & Deploy]
+  L8 --> L9[CDN 刷新]
+  L9 --> L10[生产环境]`} />
+
+**架构师心法**：**每个阶段都应该是快速失败**——Lint 1min 失败就别跑测试了。
+
+### 1.1 GitHub Actions 完整流水线
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type Check
+        run: pnpm typecheck
+
+      - name: Unit Test
+        run: pnpm test:unit --reporter=verbose
+
+      - name: E2E Test
+        run: pnpm test:e2e
+
+      - name: Build
+        run: pnpm build
+
+      - name: Bundle Analysis
+        run: pnpm analyze && pnpm report-bundle
+```
+
+**生产案例**：某中后台 CI 全套 8 分钟（包含 E2E），**所有 PR 合并前自动验证**。
+
+## 二、代码规范：ESLint + Prettier + Stylelint
+
+### 2.1 三件套分工
+
+- **ESLint**：JS / TS 静态分析（变量未使用、不等号方向）
+- **Prettier**：代码格式化（缩进、引号、尾逗号）
+- **Stylelint**：CSS / SCSS / Less 规范
+
+**架构师规则**：**Prettier 负责格式，ESLint 负责逻辑**。两者职责不重叠，**Prettier 配 ESLint 时关掉冲突规则**：
+
+```javascript
+// .eslintrc.js
+{
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',  // 关闭所有 Prettier 冲突规则
+  ],
+  rules: {
+    // 自定义业务规则
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    '@typescript-eslint/no-explicit-any': 'error',
+  },
+}
+```
+
+### 2.2 共享配置：`eslint-config-{team}`
+
+```javascript
+// packages/eslint-config/index.js
+module.exports = {
+  extends: ['eslint:recommended', 'prettier'],
+  rules: {
+    'no-console': 'warn',
+    'prefer-const': 'error',
+  },
+};
+
+// 子项目用 extends 复用
+// apps/admin/.eslintrc.js
+module.exports = {
+  extends: ['&#64;team/eslint-config'],
+};
+```
+
+**生产案例**：顺丰 ERP monorepo 用 `&#64;finui/eslint-config`，**所有子项目共享同一套规范**——加新规则一次，20 个项目同时生效。
+
+## 三、Git Hooks：Husky + lint-staged
+
+```json
+// package.json
+{
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{css,scss}": ["stylelint --fix", "prettier --write"],
+    "*.md": "prettier --write"
+  }
+}
+```
+
+```bash
+# .husky/pre-commit
+pnpm lint-staged
+# 只 lint 改动的文件,不跑全量
+```
+
+**架构师规则**：**Husky 跑 lint-staged，CI 跑全量**——本地快速检查，CI 兜底。
+
+## 四、PR 评审清单（架构师视角）
+
+| 维度 | 评审重点 |
+|---|---|
+| **类型 / 接口** | 字段类型、命名、可选 / 必填一致 |
+| **组件设计** | 复用 / 拆分 / props 是否过度 |
+| **状态管理** | local / global / server 边界 |
+| **性能** | 是否触发不必要 re-render / 大 list 是否虚拟化 |
+| **可访问性** | aria-label / 键盘导航 / 颜色对比 |
+| **国际化** | 文案是否抽到 i18n 文件 |
+| **错误处理** | try/catch / 错误边界 / 用户提示 |
+| **测试覆盖** | 核心逻辑是否有单测 |
+| **可观测性** | 是否上报到监控 / 日志 |
+| **文档** | README / 接口变更说明 |
+
+**生产规则**：**架构师 review 看"系统一致性"，业务人员 review 看"功能正确性"**——职责分工。
+
+## 五、团队沉淀机制：让规范可继承
+
+### 5.1 文档化决策（ADR）
+
+```markdown
+# ADR-001: 选择 React Query 作为数据获取方案
+
+## 状态
+已采纳 (2026-07-18)
+
+## 背景
+团队有 3 种数据获取方式:useEffect + fetch / SWR / React Query
+
+## 决策
+全团队统一用 React Query。
+
+## 取舍
+- 优势:缓存 / 失效 / 乐观更新 / Suspense 集成
+- 代价:bundle size 12KB,学习曲线 1 周
+
+## 替代方案
+- SWR:API 类似,但乐观更新弱
+- useEffect:零依赖,但要自己写缓存
+```
+
+### 5.2 代码模板 + snippet
+
+```bash
+# scripts/new-component.sh
+#!/bin/bash
+COMPONENT_NAME=$1
+mkdir -p src/components/$COMPONENT_NAME
+cat > src/components/$COMPONENT_NAME/index.tsx <<EOF
+import { type FC } from 'react';
+import styles from './styles.module.css';
+
+interface ${COMPONENT_NAME}Props {
+  // TODO: 添加 props
+}
+
+export const ${COMPONENT_NAME}: FC<${COMPONENT_NAME}Props> = (props) => {
+  return <div className={styles.root}>${COMPONENT_NAME}</div>;
+};
+EOF
+```
+
+**架构师心法**：**好的工程化 = 90% 模板 + 10% 决策**。让团队不需要每次想"这个组件怎么起头"。
+
+## 六、踩坑提醒（资深架构师请重点看）
+
+1. **不要在 CI 跑无关检查**。每个 stage 必须**能快速失败**——一个 PR 跑 30min CI 会被绕过的。
+2. **不要让 lint 规则过多**。ESLint 规则超过 50 条，**团队会被淹没**。**只开能挡 80% bug 的关键规则**。
+3. **不要在 Husky 里跑全量测试**。Husky 只跑 lint-staged（单文件检查），**CI 跑全量测试**。
+4. **不要把规范写在 Wiki 里**。Wiki 会被遗忘，**规范要写进 eslint-config 包和 ADR 文档**，装上就能用。
+5. **不要忽视 PR 模板**。`.github/PULL_REQUEST_TEMPLATE.md` 强制开发者填"为什么改 / 怎么测"，**3 句话省 5 分钟 review**。
+
+## 总结
+
+这一篇用 5 个关键事实把工程化串起来：
+
+- **CI / CD 流水线**：Lint → Type Check → Test → Build → Deploy，**每个 stage 快速失败**。
+- **ESLint + Prettier + Stylelint**：格式 / 逻辑分离,共享 `&#64;team/eslint-config` 包。
+- **Husky + lint-staged**：本地只跑改动文件,CI 跑全量,分工明确。
+- **PR 评审清单**：架构师看系统一致性,业务人员看功能正确性。
+- **ADR + 代码模板**：决策可继承,新组件不需要从零起头。
+
+**下一篇**：首屏性能 4.2s→1.8s 实战拆解——顺丰 ERP 那个 4.2s 首屏的真实优化案例,5 阶段耗时分布。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：现代前端 CI / CD 流水线应该包含哪些阶段？为什么每个阶段都要能快速失败？
+>
+> **A**：**8 个标准阶段**：Lint & Format → TypeScript 类型检查 → 单元测试 → E2E 测试 → Bundle 分析 → Build → 预览环境 → 部署。**每个阶段都要能快速失败**：Lint 1min 失败就别跑测试,单测 5min 失败就别跑 E2E。**原则**:**fail-fast 节省总 CI 时间**——一个 PR 跑 30min 团队会绕过 CI,跑 8min 团队会自觉等。**生产案例**:某中后台 CI 全套 8min,E2E + Bundle 分析一起跑,所有 PR 合并前自动验证。<AIAsk question="现代前端 CI / CD 流水线应该包含哪些阶段？为什么每个阶段都要能快速失败？" />
+>
+> **Q2（思考）**：ESLint / Prettier / Stylelint 三件套的职责分工是什么？为什么 Prettier 配 ESLint 时要关掉冲突规则？<AIAsk question="ESLint / Prettier / Stylelint 三件套的职责分工是什么？为什么 Prettier 配 ESLint 时要关掉冲突规则？" />
+>
+> **Q3（思考）**：Husky + lint-staged 和 CI 流水线在代码检查上是怎么分工的？为什么不在 Husky 里跑全量测试？<AIAsk question="Husky + lint-staged 和 CI 流水线在代码检查上是怎么分工的？为什么不在 Husky 里跑全量测试？" />
+>
+> **Q4（思考）**：架构师 review PR 应该看什么？和业务人员 review 的职责分工是什么？<AIAsk question="架构师 review PR 应该看什么？和业务人员 review 的职责分工是什么？" />
+>
+> **Q5（思考）**：你在 200+ 工程师的团队里是怎么沉淀工程化规范的？ADR 和代码模板怎么写才能让新人快速上手？<AIAsk question="你在 200+ 工程师的团队里是怎么沉淀工程化规范的？ADR 和代码模板怎么写才能让新人快速上手？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions) — GitHub Actions 官方文档
+- [ESLint Documentation](https://eslint.org/) — ESLint 官方文档
+- [Prettier Documentation](https://prettier.io/) — Prettier 官方文档
+- [Husky (GitHub)](https://github.com/typicode/husky) — Husky Git Hooks 工具
+- [Architecture Decision Records (GitHub)](https://github.com/joelparkerhenderson/architecture-decision-records) — ADR 模板参考
+- [Conventional Comments](https://conventionalcomments.org/) — PR 评审评论规范

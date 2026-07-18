@@ -1,0 +1,198 @@
+---
+title: "前端测试体系：单元测试 / E2E / 视觉回归"
+description: 前端架构师的测试金字塔——单元测试 / 集成测试 / E2E / 视觉回归四层体系、Vitest / Playwright / Storybook 工具链选型、架构师必会的测试覆盖率策略
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '测试', 'vitest', 'playwright', 'e2e']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂测试？我的回答是 **要**——不是去写测试用例，而是建立"测试金字塔"的工程体系。原因有三：
+
+1. **简历里"前端测试体系"是架构师必会但易忽视的能力**。会写 800+ 页面不稀奇，**能让团队不写屎山代码才是真本事**。
+2. **测试是重构的安全网**。没有测试的代码**没人敢动**——改一处崩一处，3 个月后变成不可维护。
+3. **CI 跑测试是 merge 的最后一道关**。Lint / TS 只能挡语法错误，**测试挡逻辑错误**。
+
+这一篇是『前端架构修仙路』的第 22 篇。我跳过具体测试 API（不讲 `expect().toBe()` 怎么用），用架构图 + 测试金字塔 + 工具选型，把单测 / 集成 / E2E / 视觉回归讲透。下一篇深度聊企业级 UI 组件库设计。
+
+## 一、测试金字塔
+
+<Mermaid client:load caption="图 1：测试金字塔" chart={`graph LR
+  E2E[E2E 测试<br/>Playwright / Cypress<br/>模拟用户真实操作<br/>慢 / 贵 / 少] --> I[集成测试<br/>组件级 + 接口级<br/>RTL / Testing Library<br/>中速 / 中量]
+  I --> U[单元测试<br/>函数 / 类级<br/>Vitest / Jest<br/>快 / 多 / 主力]`} />
+
+**比例参考**：
+- 单元测试：**70%**（快、便宜、多）
+- 集成测试：**20%**（组件 + API 契约）
+- E2E 测试：**10%**（最贵、最少）
+
+**架构师心法**：**E2E 不是越多越好**——一个 30min 的 E2E 套件会拖垮 CI。**单元测试才是覆盖率主力**。
+
+## 二、单元测试：Vitest 实战
+
+```javascript
+// util.test.ts
+import { describe, it, expect } from 'vitest';
+import { formatNumber } from './util';
+
+describe('formatNumber', () => {
+  it('formats integer with thousand separator', () => {
+    expect(formatNumber(1234567)).toBe('1,234,567');
+  });
+  
+  it('handles decimal', () => {
+    expect(formatNumber(1234.56)).toBe('1,234.56');
+  });
+  
+  it('handles zero', () => {
+    expect(formatNumber(0)).toBe('0');
+  });
+  
+  it('handles negative', () => {
+    expect(formatNumber(-1234)).toBe('-1,234');
+  });
+});
+```
+
+**架构师心法**：
+- **单元测试覆盖所有边界**（0 / 负数 / null / undefined / NaN）
+- **describe 嵌套要合理**（3 层以上说明函数太复杂）
+- **覆盖率不是越高越好**——DTO / util 100% 覆盖，业务逻辑 80% 覆盖即可
+
+## 三、组件测试：React Testing Library
+
+```tsx
+// Button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './Button';
+
+it('renders button with text', () => {
+  render(<Button>Click me</Button>);
+  expect(screen.getByText('Click me')).toBeInTheDocument();
+});
+
+it('calls onClick when clicked', () => {
+  const onClick = vi.fn();
+  render(<Button onClick={onClick}>Click</Button>);
+  fireEvent.click(screen.getByText('Click'));
+  expect(onClick).toHaveBeenCalledTimes(1);
+});
+
+it('is disabled when loading', () => {
+  render(<Button loading>Click</Button>);
+  expect(screen.getByText('Click')).toBeDisabled();
+});
+```
+
+**RTL 哲学**：
+- **测用户看到什么**，不是测组件内部实现
+- 不用 `getByTestId`，优先 `getByText` / `getByRole`
+- 不用 `container.querySelector`，**用 RTL 的语义化查询**
+
+## 四、E2E 测试：Playwright 实战
+
+```javascript
+// e2e/login.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('user can login and see dashboard', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[name="username"]', 'admin');
+  await page.fill('input[name="password"]', 'admin123');
+  await page.click('button:has-text("Login")');
+  await expect(page).toHaveURL('/dashboard');
+  await expect(page.locator('h1')).toContainText('Welcome');
+});
+
+test('shows error on invalid credentials', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[name="username"]', 'admin');
+  await page.fill('input[name="password"]', 'wrong');
+  await page.click('button:has-text("Login")');
+  await expect(page.locator('.error-message')).toContainText('Invalid');
+});
+```
+
+**生产案例**：顺丰 ERP 70+ 关键流程 E2E（登录 / 表单提交 / 报表生成 / 权限校验），**CI 跑 8min 兜底回归**。
+
+## 五、视觉回归：Playwright + screenshot diff
+
+```javascript
+test('button visual regression', async ({ page }) => {
+  await page.goto('/components/button');
+  // 截图并对比基线
+  await expect(page).toHaveScreenshot('button.png', {
+    maxDiffPixels: 100,  // 允许 100 像素差异
+  });
+});
+```
+
+**架构师规则**：**视觉回归**只测**关键页面 / 复杂组件**（首页 / 详情页 / 表单页）—— 每个组件测一次 = 测试文件爆炸。
+
+## 六、测试覆盖率策略
+
+| 层级 | 覆盖率目标 | 工具 | 速度 |
+|---|---|---|---|
+| **util / helper** | 100% | Vitest | < 1s |
+| **业务核心** | 80% | Vitest + RTL | < 5s |
+| **DTO / 类型** | 0%（不写） | — | — |
+| **E2E 关键流程** | 100% 覆盖 | Playwright | 5-10min |
+
+**架构师心法**：**覆盖率是参考不是目标**。**100% 覆盖但全是 trivial 测试** = 假安全感。**核心业务逻辑 80% 覆盖 + 关键 E2E 兜底** = 真保障。
+
+## 七、踩坑提醒（资深架构师请重点看）
+
+1. **不要追求 100% 覆盖率**。DTO / 类型定义 / 配置函数**写了浪费时间**。Vitest 配置 `coverage.exclude` 排除。
+2. **不要在单元测试里测 DOM**。单元测试 = 测纯函数 / 类,DOM 测了 = **集成测试**。**用 RTL 测组件,不要用 Vitest 测组件**。
+3. **不要让 E2E 跑太久**。E2E 套件 > 30min,团队会**跳过 CI**。**关键流程 10-20 个 E2E 就够**。
+4. **不要让测试依赖网络**。`fetch('https://api.example.com')` 在 CI 上**100% 失败**。**用 MSW / mswjs 拦截请求 mock 数据**。
+5. **不要忘记维护测试**。3 个月没人维护的测试 = false pass（业务改了但测试没改）。**测试也要 code review**。
+
+## 总结
+
+这一篇用 6 个关键事实把测试金字塔串起来：
+
+- **测试金字塔**：单测 70% + 集成 20% + E2E 10%,**E2E 不是越多越好**。
+- **Vitest 单测**:边界 100% / 业务 80% / DTO 0%,**覆盖率是参考不是目标**。
+- **RTL 组件测试**:测用户看到什么,不用 `getByTestId`,优先 `getByRole` / `getByText`。
+- **Playwright E2E**:关键流程 10-20 个,CI 跑 8min 兜底,不要跑 30min+。
+- **视觉回归**:只测关键页面,`maxDiffPixels: 100` 允许轻微差异。
+- **测试维护**:测试也要 code review,3 个月不维护 = false pass。
+
+**下一篇**:企业级 UI 组件库设计——iView / FinUI 的设计哲学,Token 系统 / 主题定制 / 文档体系。
+
+## 5 道重点面试问题方向
+
+> **Q1(答案)**:测试金字塔是什么?为什么单元测试应该是主力?
+>
+> **A**:**测试金字塔**:单测 70% + 集成 20% + E2E 10%。**为什么单测是主力**:① **快** — Vitest 跑 1000 个单测 < 1s,开发时随手跑;② **便宜** — 不用起浏览器,不用 mock 网络;③ **多** — 单测覆盖所有 util / helper / 业务核心,代码覆盖率容易到 80%。**E2E 贵 + 慢** — 一次 E2E 跑 5-10s,100 个 E2E = 8min CI,跑 30min+ 团队会**跳过 CI**。**架构师心法**:E2E 兜底关键流程(登录 / 提单 / 支付),单测覆盖业务逻辑,不要颠倒。<AIAsk question="测试金字塔是什么?为什么单元测试应该是主力?" />
+>
+> **Q2(思考)**:React Testing Library 的设计哲学是什么?为什么不能用 `getByTestId`?
+>
+> **A**:**RTL 哲学**:**测用户看到什么,不是测组件内部实现**。**为什么不用 `getByTestId`**:`data-testid` 是给测试用的,用户看不到。**优先用 `getByText` / `getByRole`** — 这些是用户实际感知的内容。**实战案例**:某组件 v1 用 `data-testid` 测,改版时去掉了 `data-testid`,所有测试失败。**改成 `getByText` 后,改版只改行为不破坏用户感知,测试稳定**。<AIAsk question="React Testing Library 的设计哲学是什么?为什么不能用 getByTestId?" />
+>
+> **Q3(思考)**:Playwright 怎么拦截网络请求做 mock?为什么测试不能依赖真实网络?
+>
+> **A**:**Playwright mock 三件套**:① `page.route('**/api/**', route => route.fulfill({ body: mockData, status: 200 }))` — 拦截 API 返回 mock 数据;② `page.context().route()` 跨页面共享 mock;③ `page.unroute()` 清除 mock。**为什么不能依赖真实网络**:① **CI 100% 失败** — 沙箱环境访问外网不稳;② **不可控** — 真实 API 返回会变,测试 flaky;③ **慢** — 真实网络 100-500ms,测试套件累积 5-10min 浪费时间。**生产案例**:某团队 E2E 用了真实 API,生产 API 一改测试全挂,改成 mock 后稳定 95% → 100%。<AIAsk question="Playwright 怎么拦截网络请求做 mock?为什么测试不能依赖真实网络?" />
+>
+> **Q4(思考)**:覆盖率 100% 就够了吗?为什么覆盖率是参考不是目标?
+>
+> **A**:**100% 覆盖率 ≠ 100% 测试质量**。**反例**:某 DTO 类 100% 覆盖(就是几行 getter / setter),关键业务逻辑 0% 覆盖,看似 80% 整体覆盖率但**核心流程完全没测**。**架构师心法**:① **覆盖率 = 已跑代码 / 总代码**,DTO / 配置类**写了浪费时间**;② **核心覆盖率 > 100% 总覆盖率** — 业务核心 80% 覆盖 + 工具类 0% 覆盖 > DTO 100% 覆盖 + 核心 0% 覆盖;③ **用 mutation testing** — 改一行业务代码测试是否捕获,真覆盖才有意义。<AIAsk question="覆盖率 100% 就够了吗?为什么覆盖率是参考不是目标?" />
+>
+> **Q5(思考)**:你在 800+ 页面的大型项目里是怎么落地测试金字塔的?不同模块覆盖率目标怎么定?
+>
+> **A**:**800+ 页面测试金字塔落地**:① **核心业务模块**(ERP 表单 / 报表 / 工作流)— 单元测试 80% + 集成测试 60% + E2E 关键流程;② **UI 组件库**(Button / Table / Form)— 单元测试 90% + Storybook 视觉回归;③ **路由 / 工具函数** — 单元测试 100%(纯函数简单);④ **页面级业务** — E2E 10-20 个关键流程兜底,不写单元测试(成本太高)。**CI 集成**:PR 跑单测+集成+视觉回归(< 5min),合 main 后跑 E2E(< 10min)。<AIAsk question="你在 800+ 页面的大型项目里是怎么落地测试金字塔的?不同模块覆盖率目标怎么定?" />
+
+> 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
+
+## 参考资料
+
+- [Vitest Documentation](https://vitest.dev/) — Vitest 官方文档
+- [React Testing Library (GitHub)](https://github.com/testing-library/react-testing-library) — RTL 官方仓库
+- [Playwright Documentation](https://playwright.dev/) — Playwright 官方文档
+- [Testing Trophy (Kent C. Dodds)](https://testingjavascript.com/) — React 测试方法论
+- [Playwright Best Practices (Playwright Docs)](https://playwright.dev/docs/best-practices) — Playwright 最佳实践
+- [MSW (Mock Service Worker)](https://mswjs.io/) — 网络请求 mock 库

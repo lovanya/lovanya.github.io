@@ -1,0 +1,257 @@
+---
+title: "Front-End Engineering System: CI/CD / Standards / Review / Team Best Practices"
+description: A frontend architect's engineering practice — CI/CD pipelines, ESLint / Prettier / Husky standards, PR review checklist, team best practice accumulation mechanism, with SF Express + Rouyu two engineering experience summaries
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'engineering', 'ci-cd', 'eslint']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand engineering? My answer is **yes** — not to write Jenkinsfiles, but to build the engineering system for "how 50 team members don't step on the same pitfall". Three reasons:
+
+1. **The "team ESLint + Husky accumulation" on resume is soft skill proof.** Writing 800+ pages of code isn't strong, **being able to make the team stably output 800+ pages of equal quality code is strong**.
+2. **Engineering is a 10× leverage.** Write good conventions once → 100 PRs automatically apply → save 1000 hours of review.
+3. **A team without engineering = chronic death.** After 3 months everyone writes code by their own habits, **refactoring costs grow exponentially**.
+
+This is post #14 of the *Frontend Architecture Cultivation Path* series. We skip specific configuration (no talking about every ESLint rule), use architecture diagrams + real data + review checklists to make CI / CD / standards / review / team accumulation concrete. The next post deep-dives into first-screen performance 4.2s→1.8s practical case.
+
+## 1. CI / CD Pipeline: Modern Front-end Must-Have
+
+<Mermaid client:load caption="Figure 1: Modern front-end CI/CD pipeline" chart={`flowchart LR
+  P[PR Submit] --> L1[Lint & Format]
+  L1 --> L2[TypeScript Type Check]
+  L2 --> L3[Unit Test]
+  L3 --> L4[E2E Test Playwright]
+  L4 --> L5[Bundle Analysis]
+  L5 --> L6[Build Production]
+  L6 --> L7[Preview Environment]
+  L7 --> R[Merge to main]
+  R --> L8[Build & Deploy]
+  L8 --> L9[CDN Purge]
+  L9 --> L10[Production]`} />
+
+**Architect's mantra**: **each stage should fail-fast** — if Lint fails in 1min, don't run tests.
+
+### 1.1 GitHub Actions Complete Pipeline
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type Check
+        run: pnpm typecheck
+
+      - name: Unit Test
+        run: pnpm test:unit --reporter=verbose
+
+      - name: E2E Test
+        run: pnpm test:e2e
+
+      - name: Build
+        run: pnpm build
+
+      - name: Bundle Analysis
+        run: pnpm analyze && pnpm report-bundle
+```
+
+**Production case**: a middle admin backend CI full set takes 8 min (including E2E), **all PRs auto-validated before merge**.
+
+## 2. Code Standards: ESLint + Prettier + Stylelint
+
+### 2.1 Three-Piece Set Division
+
+- **ESLint**: JS / TS static analysis (unused variables, equals direction)
+- **Prettier**: code formatting (indentation, quotes, trailing commas)
+- **Stylelint**: CSS / SCSS / Less standards
+
+**Architect's rule**: **Prettier handles format, ESLint handles logic**. Responsibilities don't overlap, **when configuring Prettier with ESLint, disable conflicting rules**:
+
+```javascript
+// .eslintrc.js
+{
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',  // disable all Prettier-conflicting rules
+  ],
+  rules: {
+    // custom business rules
+    'no-console': ['warn', { allow: ['warn', 'error'] }],
+    '@typescript-eslint/no-explicit-any': 'error',
+  },
+}
+```
+
+### 2.2 Shared Config: `eslint-config-{team}`
+
+```javascript
+// packages/eslint-config/index.js
+module.exports = {
+  extends: ['eslint:recommended', 'prettier'],
+  rules: {
+    'no-console': 'warn',
+    'prefer-const': 'error',
+  },
+};
+
+// Sub-project reuses via extends
+// apps/admin/.eslintrc.js
+module.exports = {
+  extends: ['@team/eslint-config'],
+};
+```
+
+**Production case**: SF Express ERP monorepo uses `&#64;finui/eslint-config`, **all sub-projects share the same standards** — add a new rule once, 20 projects take effect simultaneously.
+
+## 3. Git Hooks: Husky + lint-staged
+
+```json
+// package.json
+{
+  "scripts": {
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{css,scss}": ["stylelint --fix", "prettier --write"],
+    "*.md": "prettier --write"
+  }
+}
+```
+
+```bash
+# .husky/pre-commit
+pnpm lint-staged
+# only lint changed files, don't run full set
+```
+
+**Architect's rule**: **Husky runs lint-staged, CI runs full set** — local quick check, CI fallback.
+
+## 4. PR Review Checklist (Architect's View)
+
+| Dimension | Review focus |
+|---|---|
+| **Types / Interfaces** | Field types, naming, optional/required consistency |
+| **Component design** | Reuse / split / props over-design |
+| **State management** | local / global / server boundaries |
+| **Performance** | Does it trigger unnecessary re-renders / is large list virtualized |
+| **Accessibility** | aria-label / keyboard nav / color contrast |
+| **i18n** | Is text extracted to i18n files |
+| **Error handling** | try/catch / error boundary / user prompts |
+| **Test coverage** | Core logic has unit tests |
+| **Observability** | Is it reported to monitoring / logging |
+| **Documentation** | README / API change notes |
+
+**Production rule**: **architect review sees "system consistency", business reviewer sees "functional correctness"** — division of labor.
+
+## 5. Team Accumulation Mechanism: Make Standards Inheritable
+
+### 5.1 Document Decisions (ADR)
+
+```markdown
+# ADR-001: Choose React Query as Data Fetching Solution
+
+## Status
+Adopted (2026-07-18)
+
+## Context
+Team has 3 data fetching methods: useEffect + fetch / SWR / React Query
+
+## Decision
+Whole team uniformly uses React Query.
+
+## Trade-offs
+- Pros: cache / invalidation / optimistic updates / Suspense integration
+- Cons: bundle size 12KB, 1-week learning curve
+
+## Alternatives
+- SWR: similar API, but weaker optimistic updates
+- useEffect: zero deps, but need to write cache yourself
+```
+
+### 5.2 Code Templates + Snippets
+
+```bash
+# scripts/new-component.sh
+#!/bin/bash
+COMPONENT_NAME=$1
+mkdir -p src/components/$COMPONENT_NAME
+cat > src/components/$COMPONENT_NAME/index.tsx <<EOF
+import { type FC } from 'react';
+import styles from './styles.module.css';
+
+interface ${COMPONENT_NAME}Props {
+  // TODO: add props
+}
+
+export const ${COMPONENT_NAME}: FC<${COMPONENT_NAME}Props> = (props) => {
+  return <div className={styles.root}>${COMPONENT_NAME}</div>;
+};
+EOF
+```
+
+**Architect's mantra**: **good engineering = 90% template + 10% decision**. Let the team not need to think "how to start this component" each time.
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't run unrelated checks in CI.** Each stage must **fail-fast** — a PR with 30min CI gets bypassed.
+2. **Don't have too many lint rules.** More than 50 ESLint rules, **team gets overwhelmed**. **Only open rules that block 80% of bugs**.
+3. **Don't run full tests in Husky.** Husky only runs lint-staged (single file check), **CI runs full tests**.
+4. **Don't write standards in Wiki.** Wiki gets forgotten, **standards must go in eslint-config packages and ADR docs**, install and use.
+5. **Don't ignore PR templates.** `.github/PULL_REQUEST_TEMPLATE.md` forces developers to fill "why change / how to test", **3 sentences saves 5 min review**.
+
+## Summary
+
+Five key facts that thread engineering together:
+
+- **CI / CD pipeline**: Lint → Type Check → Test → Build → Deploy, **each stage fail-fast**.
+- **ESLint + Prettier + Stylelint**: format/logic separation, share `&#64;team/eslint-config` package.
+- **Husky + lint-staged**: local only runs changed files, CI runs full set, division of labor clear.
+- **PR review checklist**: architect sees system consistency, business reviewer sees functional correctness.
+- **ADR + code templates**: decisions inheritable, new components don't need to start from scratch.
+
+**Next post**: First-screen performance 4.2s→1.8s practical case — SF Express ERP's real 4.2s→1.8s optimization, 5-stage time distribution.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What stages should a modern front-end CI / CD pipeline include? Why must each stage fail-fast?
+>
+> **A**: **8 standard stages**: Lint & Format → TypeScript type check → Unit test → E2E test → Bundle analysis → Build → Preview env → Deploy. **Each stage must fail-fast**: Lint 1min failure → don't run tests; unit test 5min failure → don't run E2E. **Principle**: **fail-fast saves total CI time** — a PR with 30min CI gets bypassed, 8min CI gets self-waited. **Production case**: a middle admin backend CI full set takes 8min, E2E + Bundle analysis run together, all PRs auto-validated before merge.<AIAsk question="What stages should a modern front-end CI / CD pipeline include? Why must each stage fail-fast?" lang="en" />
+>
+> **Q2 (Think)**: What's the division of labor between ESLint / Prettier / Stylelint? Why disable conflicting rules when configuring Prettier with ESLint?<AIAsk question="What's the division of labor between ESLint / Prettier / Stylelint? Why disable conflicting rules when configuring Prettier with ESLint?" lang="en" />
+>
+> **Q3 (Think)**: How do Husky + lint-staged and CI pipeline divide code-check work? Why not run full tests in Husky?<AIAsk question="How do Husky + lint-staged and CI pipeline divide code-check work? Why not run full tests in Husky?" lang="en" />
+>
+> **Q4 (Think)**: What should architects review in PRs? What's the division of labor with business reviewers?<AIAsk question="What should architects review in PRs? What's the division of labor with business reviewers?" lang="en" />
+>
+> **Q5 (Think)**: How did you accumulate engineering standards in a 200+ engineer team? How do ADR and code templates help new team members onboard quickly?<AIAsk question="How did you accumulate engineering standards in a 200+ engineer team? How do ADR and code templates help new team members onboard quickly?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [GitHub Actions Documentation](https://docs.github.com/en/actions) — GitHub Actions official documentation
+- [ESLint Documentation](https://eslint.org/) — ESLint official documentation
+- [Prettier Documentation](https://prettier.io/) — Prettier official documentation
+- [Husky (GitHub)](https://github.com/typicode/husky) — Husky Git Hooks tool
+- [Architecture Decision Records (GitHub)](https://github.com/joelparkerhenderson/architecture-decision-records) — ADR template reference
+- [Conventional Comments](https://conventionalcomments.org/) — PR review comment convention

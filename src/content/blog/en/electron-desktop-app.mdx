@@ -1,0 +1,243 @@
+---
+title: "Electron Practice: Main Process / Renderer / Hardware Bridge"
+description: A frontend architect's Electron practice — main vs renderer process model, IPC communication, preload injection, Node API integration, Rouyu PC client USB Bridge case
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'electron', 'desktop-app', 'ipc']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand Electron? My answer is **yes** — not to write C++ plugins, but to build the engineering judgment of "where's the boundary of web tech doing desktop apps". Three reasons:
+
+1. **The Rouyu PC client on resume is scarce experience.** Desktop apps with USB hardware communication, **frontend engineers covering it independently is a huge advantage**.
+2. **Electron is web tech's extension, not replacement.** Understanding its limits (bundle size / performance / memory), you know when to use Web vs native.
+3. **Security model is must-understand.** Renderer must have `nodeIntegration: false` + `contextIsolation: true` + `preload` injection, **this security config is required from 12.x onward**.
+
+This is post #17 of the *Frontend Architecture Cultivation Path* series. We skip specific IPC APIs (no `ipcMain.handle` details), use architecture diagrams + real cases + security checklist to make Electron's process model / communication mechanism / USB Bridge concrete. The next post deep-dives into hybrid development (Taro / Uni-app / Ionic).
+
+## 1. Electron's Process Model
+
+<Mermaid client:load caption="Figure 1: Electron process model" chart={`flowchart LR
+  M[Main Process<br/>Node.js env<br/>full OS permissions] -->|manages| W1[Window 1<br/>Renderer process]
+  M -->|manages| W2[Window 2]
+  M -->|manages| W3[Window N]
+  M <-->|ipcMain / ipcRenderer<br/>IPC comm| W1
+  W1 <-->|preload.js<br/>contextBridge inject| R[React / Vue<br/>renderer process]
+  W1 -.no access.-> N[Node API / FS / Shell]
+  W1 <-->|Web API / DOM| R`} />
+
+**Three core roles**:
+
+1. **Main process**: only one with access to Node API (filesystem / shell / hardware), manages all windows
+2. **Renderer process**: each window is an independent Chromium process, **cannot access Node API by default**
+3. **preload script**: runs before renderer loads, **the only safe channel** to inject Node capabilities
+
+**Architect's mantra**: **Electron = Chromium + Node.js**. Two runtimes running in the same process, **security boundaries must be clear**.
+
+## 2. Security Configuration (Required from 12.x)
+
+```javascript
+// main.js
+new BrowserWindow({
+  webPreferences: {
+    nodeIntegration: false,        // ❌ prohibit renderer directly accessing Node
+    contextIsolation: true,        // ✅ enforce contextBridge isolation
+    sandbox: true,                 // ✅ sandbox (sacrifice some APIs for security)
+    preload: path.join(__dirname, 'preload.js'),
+  },
+});
+
+// preload.js (only renderer context with Node access)
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  // expose whitelist APIs, not the entire Node
+  readFile: (path) => ipcRenderer.invoke('read-file', path),
+  writeFile: (path, content) => ipcRenderer.invoke('write-file', path, content),
+  onUSBData: (callback) => ipcRenderer.on('usb-data', (_, data) => callback(data)),
+});
+```
+
+**Security three-piece set**:
+- `nodeIntegration: false` (default is false, but explicit declaration)
+- `contextIsolation: true` (isolate preload and renderer context)
+- `preload` + `contextBridge.exposeInMainWorld` (whitelist APIs)
+
+**Production case**: an early Electron app had `nodeIntegration: true`, **a supply-chain attack on an npm dependency got shell access**. After switching to contextBridge, attack surface narrowed to whitelist APIs.
+
+## 3. IPC Communication: Main Process ↔ Renderer
+
+```javascript
+// Main process (main.js)
+import { ipcMain, BrowserWindow } from 'electron';
+
+ipcMain.handle('read-file', async (event, path) => {
+  // main process has fs permission
+  const content = await fs.readFile(path, 'utf-8');
+  return content;
+});
+
+ipcMain.handle('usb-connect', async (event, vendorId) => {
+  // USB device connect logic (main process)
+  return await usbHandler.connect(vendorId);
+});
+
+// Renderer process (React component)
+const content = await window.api.readFile('/path/to/file');
+```
+
+**Three IPC modes**:
+
+| Mode | API | Use |
+|---|---|---|
+| **invoke / handle** | async + return value | "Call + wait for result", **80% scenarios** |
+| **send / on** | one-way + no return | "Notification", like hardware data push |
+| **MessagePort** | bidirectional long connection | Big data streams (file / video) |
+
+## 4. Rouyu PC Client USB Bridge Practice
+
+The resume line **"Rouyu PC client project"** — this is an Electron + smart hardware hybrid project: stylus connects to PC via USB, handwriting strokes display on screen in real-time.
+
+### 4.1 USB Device Communication Architecture
+
+```typescript
+// Main process: USB monitor
+import { usb } from 'usb';  // node-usb
+
+ipcMain.handle('usb-connect', async (event, vendorId) => {
+  const device = usb.findByIds(vendorId, productId);
+  if (!device) throw new Error('USB device not found');
+  
+  device.open();
+  const endpoint = device.interface(0).endpoint(0);  // IN endpoint
+  
+  // Listen to data stream
+  endpoint.on('data', (data) => {
+    // push data to renderer via IPC
+    BrowserWindow.getFocusedWindow().webContents.send('usb-data', data.toString('hex'));
+  });
+  
+  return { connected: true };
+});
+```
+
+### 4.2 Renderer: Real-Time Stroke Rendering
+
+```jsx
+function WritingPad() {
+  const [strokes, setStrokes] = useState([]);
+  
+  useEffect(() => {
+    // Receive USB data → parse to stroke points → render Canvas
+    window.api.onUSBData((hex) => {
+      const points = parseHexToPoints(hex);
+      setStrokes(prev => [...prev, points]);
+    });
+  }, []);
+  
+  return (
+    <canvas ref={canvasRef} />
+  );
+}
+```
+
+**Production data**: Rouyu PC client **stroke latency < 16ms** (1 frame), **Windows + macOS dual-platform sync**.
+
+## 5. Electron's Three Limits and Countermeasures
+
+### 5.1 Bundle Size
+
+```
+Electron app typical size:
+  Minimum:  ~80MB (empty project)
+  Vue 3 + Pinia + Element Plus:  ~150MB
+  React + Ant Design:  ~180MB
+  With native modules (sqlite3 / node-usb):  ~250MB
+```
+
+**Countermeasures**:
+- **Dynamic import**: main process only bundles core, business code lazy-loads
+- **Web Worker for compute-intensive tasks**: doesn't block main process
+- **External loading**: large resources (video / database) downloaded at runtime, not bundled
+
+### 5.2 Performance vs Native
+
+| Dimension | Electron | Native |
+|---|---|---|
+| Startup time | 500-1500ms | 100-300ms |
+| Memory usage | 100-300MB | 30-80MB |
+| CPU usage | 30-50% higher than native | Optimal |
+| Cross-platform | One codebase | Per-platform development |
+
+**Countermeasures**: **Electron fits admin tools / rich text / design apps**; **performance-heavy / 3D-heavy / system-level apps use Tauri / Flutter / native**.
+
+### 5.3 Auto-Update
+
+```javascript
+// Use electron-updater
+import { autoUpdater } from 'electron-updater';
+
+autoUpdater.checkForUpdatesAndNotify();
+
+// Main process config
+app.on('ready', () => {
+  autoUpdater.on('update-available', () => {
+    mainWindow.webContents.send('update-available');
+  });
+  autoUpdater.on('update-downloaded', () => {
+    autoUpdater.quitAndInstall();
+  });
+});
+```
+
+**Architect's rule**: **desktop apps must have auto-update** — users won't actively download new versions.
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't enable `nodeIntegration: true` in renderer.** **Security vulnerability** = shell access = arbitrary code execution.
+2. **Don't make preload script too large.** preload runs synchronously on startup, **too large delays window opening**.
+3. **Don't ignore main process crashes.** Main process is single point, **any unhandled rejection can kill entire app**. Configure `process.on('uncaughtException')` as fallback.
+4. **Don't stuff too much business into Electron.** Electron fits **apps with hardware comms / system integration / rich UI**; **pure business web side just use browser**.
+5. **Don't forget Mac notarization.** Mac apps without notarization get blocked by Gatekeeper, **must run `xcrun notarytool` before release**.
+
+## Summary
+
+Five key facts that thread Electron practice together:
+
+- **Process model**: main (Node) + renderer (Chromium) + preload, **security boundaries must be clear**.
+- **Security config**: nodeIntegration: false / contextIsolation: true / sandbox: true three-piece set is required.
+- **IPC communication**: invoke/handle (80%) + send/on (notifications) + MessagePort (big data).
+- **USB Bridge practice**: node-usb main process monitor + IPC push + renderer Canvas render, **latency < 16ms**.
+- **Three limits**: bundle 80-250MB / startup 500-1500ms / memory 100-300MB, **admin tool apps fit best**.
+
+**Next post**: Hybrid development Taro / Uni-app / Ionic — cross-platform framework comparison, Xinrui / Lianyou hybrid project practice.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What are the three roles of Electron's main process / renderer process / preload? Why can't the renderer process access Node API by default?
+>
+> **A**: **Main process** — only one with Node API access (filesystem / shell / USB), manages all window lifecycles; **renderer process** — each window is an independent Chromium process, can only access Web API / DOM; **preload script** — runs before renderer loads, the only safe channel to inject Node capabilities. **Why default can't access Node**: Web apps 90% of scenarios don't need Node, **not exposing Node = smallest attack surface**; and if renderer opens NodeIntegration, **a supply-chain attack on npm dependencies gets shell access** — this is a real incident.<AIAsk question="What are the three roles of Electron's main process / renderer process / preload? Why can't the renderer process access Node API by default?" lang="en" />
+>
+> **Q2 (Think)**: Why did Electron 12.x enforce contextIsolation: true? How exactly to configure the security three-piece set?<AIAsk question="Why did Electron 12.x enforce contextIsolation: true? How exactly to configure the security three-piece set?" lang="en" />
+>
+> **Q3 (Think)**: What's the difference between invoke / handle and send / on? What should IPC use for large data transfer?<AIAsk question="What's the difference between invoke / handle and send / on? What should IPC use for large data transfer?" lang="en" />
+>
+> **Q4 (Think)**: Electron app bundle size is too large, how to fix? What app scenarios does Electron fit?<AIAsk question="Electron app bundle size is too large, how to fix? What app scenarios does Electron fit?" lang="en" />
+>
+> **Q5 (Think)**: How did you implement USB communication in the Rouyu PC client project? How did you design the main process + renderer process division of labor?<AIAsk question="How did you implement USB communication in the Rouyu PC client project? How did you design the main process + renderer process division of labor?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [Electron Documentation](https://www.electronjs.org/docs) — Electron official documentation
+- [Electron Security Checklist](https://www.electronjs.org/docs/latest/tutorial/security) — security checklist official guide
+- [Context Isolation (Electron Blog)](https://www.electronjs.org/blog/electron-20-0) — Context Isolation design
+- [node-usb (GitHub)](https://github.com/node-usb/node-usb) — Node.js USB communication library
+- [electron-builder (GitHub)](https://github.com/electron-userland/electron-builder) — Electron packaging tool
+- [Tauri vs Electron (Tauri Docs)](https://tauri.app/v1/guides/compare/) — lightweight alternative comparison

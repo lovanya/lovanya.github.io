@@ -1,0 +1,200 @@
+---
+title: "Front-End Monitoring System: Error / Performance / Behavior Three-Piece Set"
+description: A frontend architect's monitoring system practice — Sentry error monitoring, Web Vitals performance monitoring, user behavior replay, with SF Express + Rouyu two monitoring practice summaries
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'monitoring', 'sentry', 'web-vitals']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand monitoring? My answer is **yes** — not to configure Sentry dashboards, but to build the engineering system for "how to find / reproduce / locate production bugs". Three reasons:
+
+1. **The "SF Express + Rouyu two monitoring practice" on resume is soft skill proof.** Can write 800+ pages, **can find issues in 800+ pages online = strong**.
+2. **No monitoring = blind flying.** First-screen optimization PR claims "500ms faster" but no production data monitoring = **don't know if it actually got faster**.
+3. **Three-piece set is all required**: error monitoring (how to find online bugs) + performance monitoring (how to monitor LCP / INP) + behavior monitoring (how to reproduce user actions).
+
+This is post #21 of the *Frontend Architecture Cultivation Path* series. We skip Sentry specific configuration (no `Sentry.init` details), use architecture diagrams + real cases + alert grading table to make monitoring three-piece set + alert mechanism concrete. The next post deep-dives into front-end testing system.
+
+## 1. Monitoring Three-Piece Set Panorama
+
+<Mermaid client:load caption="Figure 1: Front-end monitoring three-piece set" chart={`flowchart LR
+  E[Error Monitoring<br/>Sentry / Bugsnag] -->|JS error<br/>Promise reject<br/>unhandled exception| DB[Data Collection]
+  P[Performance Monitoring<br/>Web Vitals] -->|LCP / INP / CLS<br/>long task| DB
+  B[Behavior Monitoring<br/>rrweb / LogRocket] -->|DOM diff<br/>user actions| DB
+  DB --> Alert[Alert<br/>Feishu / Slack]
+  DB --> Dash[Dashboard<br/>Sentry UI / Self-built Grafana]
+  DB --> Replay[Issue Reproduction<br/>user action replay]`} />
+
+**Architect's mantra**: **three-piece set is not either/or, all required** — just error monitoring doesn't know performance; just performance doesn't know user actions; just behavior doesn't know why code crashed.
+
+## 2. Error Monitoring: Sentry Practice
+
+```javascript
+// 1. Initialize
+import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  dsn: 'https://xxx@sentry.io/123',
+  environment: 'production',
+  release: 'finui@1.2.3',  // associate git commit
+  tracesSampleRate: 0.1,     // performance sampling 10%
+  beforeSend(event) {
+    // filter out unimportant errors
+    if (event.exception?.values?.[0]?.value?.includes('ResizeObserver')) return null;
+    return event;
+  },
+});
+
+// 2. Manually report business errors
+try {
+  await api.submitOrder(data);
+} catch (err) {
+  Sentry.captureException(err, {
+    tags: { feature: 'submit-order', userId: user.id },
+    extra: { orderData: data },
+  });
+}
+
+// 3. Associate user context
+Sentry.setUser({ id: 'u123', email: 'user@example.com' });
+```
+
+**Core capabilities**:
+- **Source Map parsing**: production code minified, Sentry auto-parses back to original for location
+- **Breadcrumbs**: user action stack (click / route / API call) recorded to error context
+- **Release tracking**: each release auto-tagged, **a release-introduced bug is immediately visible**
+- **Alert grading**: error / warning / info, **critical errors immediately alert via Feishu**
+
+## 3. Performance Monitoring: Web Vitals Reporting
+
+```javascript
+import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
+
+function sendToAnalytics(metric) {
+  // report to Sentry or self-built monitoring
+  Sentry.setMeasurement(metric.name, metric.value, 'millisecond');
+  // also report to business backend (P75 / P90 statistics)
+  navigator.sendBeacon('/api/metrics', JSON.stringify({
+    name: metric.name,
+    value: metric.value,
+    rating: metric.rating,
+    page: location.pathname,
+    ts: Date.now(),
+  }));
+}
+
+onLCP(metric => sendToAnalytics(metric));
+onINP(metric => sendToAnalytics(metric));
+onCLS(metric => sendToAnalytics(metric));
+```
+
+**Alert thresholds** (production config):
+
+| Metric | Good | Needs improvement | Poor | Alert threshold |
+|---|---|---|---|---|
+| LCP | ≤ 2.5s | ≤ 4s | > 4s | **> 4s alert** |
+| INP | ≤ 200ms | ≤ 500ms | > 500ms | **> 500ms alert** |
+| CLS | ≤ 0.1 | ≤ 0.25 | > 0.25 | **> 0.25 alert** |
+| Error rate | < 0.1% | < 1% | > 1% | **> 1% alert** |
+
+**Production case**: SF Express ERP with Sentry + self-built monitoring, **average online bug discovery time from 24h to 5min**, **P75 LCP from 4.2s to 1.8s (90 days)**.
+
+## 4. Behavior Monitoring: rrweb Recording
+
+```javascript
+import { record } from 'rrweb';
+
+const events = [];
+record({
+  emit(event) {
+    events.push(event);
+    // batch upload every 5 seconds
+    if (events.length > 100) {
+      uploadBatch(events.splice(0));
+    }
+  },
+  // don't record sensitive input fields (password / credit card)
+  maskInputOptions: {
+    password: true,
+    'input[type="password"]': true,
+  },
+});
+
+// when error occurs, upload context events to Sentry
+Sentry.getCurrentHub().getClient()?.getIntegration(Sentry.BrowserTracing)
+  ?.addEventProcessor((event) => {
+    event.extra = { ...event.extra, rrwebEvents: events.slice(-30) };
+    return event;
+  });
+```
+
+**Production case**: Rouyu iView reported "open modal freezes", **rrweb replay found user made 3 concurrent requests + table filter → deadlock state** — root cause was slow backend API + frontend had no debounce.
+
+## 5. Alert Grading Mechanism
+
+| Level | Trigger condition | Notification | Response SLA |
+|---|---|---|---|
+| **P0 critical** | LCP > 6s / error rate > 5% | Feishu + phone + SMS | 15min |
+| **P1 high** | LCP > 4s / error rate > 1% | Feishu + SMS | 1h |
+| **P2 medium** | LCP > 2.5s / error rate > 0.5% | Feishu | 4h |
+| **P3 low** | error rate < 0.1% but anomaly | Feishu | 24h |
+
+**Architect's rule**: **Don't make all errors P0** — will cause alert fatigue, real issues get ignored. **P0 once a week at most 1-2 times** to be effective.
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't forget Source Map upload.** Production code minified, **no Source Map = blind debugging**. Sentry CLI + CI auto-upload.
+2. **Don't expose Source Map to frontend.** `devtool: 'source-map'` lets users see source code, production must use `hidden-source-map`.
+3. **Don't record PII fields.** rrweb must `maskInputOptions` hide password / ID / credit card / phone.
+4. **Don't confuse "error monitoring" with "logging".** **Sentry is "exception events"**, not "full logs" — use `addBreadcrumb` for logs, don't `captureException` every console.log.
+5. **Don't let alerts drown real issues.** Alert thresholds need **alert fatigue concept** — a week of P0 over 5 times, team becomes **immune**, real issues get ignored.
+
+## Summary
+
+Five key facts that thread monitoring system together:
+
+- **Three-piece set all required**: error (Sentry) + performance (Web Vitals) + behavior (rrweb), **all required**.
+- **Sentry error monitoring**: Source Map + Breadcrumbs + Release tracking, production bug location 5min.
+- **Web Vitals reporting**: LCP / INP / CLS real-time alerts, threshold exceeded immediately Feishu.
+- **rrweb recording**: user actions full replay, locating "user did what to crash" gold standard.
+- **Alert grading**: P0/P1/P2/P3, **avoid alert fatigue**, critical issues not missed.
+
+**Next post**: Front-end testing system — unit / E2E / visual regression, the test pyramid architects must master.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What are front-end monitoring three-piece set? Why must you have all of them?
+>
+> **A**: **Error monitoring** (Sentry / Bugsnag) — JS exceptions / Promise reject / unhandled exception; **performance monitoring** (Web Vitals) — LCP / INP / CLS / long task; **behavior monitoring** (rrweb / LogRocket) — DOM diff + user action recording. **Why all required**: **error monitoring** tells you "online crashed", but not "why crashed"; **performance monitoring** tells you "user feels slow", but not "where stuck"; **behavior monitoring** tells you "what user did", but not "why code crashed". **Three closed loop** is complete: discover → reproduce → fix.<AIAsk question="What are front-end monitoring three-piece set? Why must you have all of them?" lang="en" />
+>
+> **Q2 (Think)**: How to configure Sentry's Source Map integration? Why can't Source Map be exposed to frontend?
+>
+> **A**: **Sentry CLI + CI auto-upload** `sentry-cli releases new $RELEASE && sentry-cli releases files $RELEASE upload-sourcemaps ./dist`; Webpack uses `devtool: 'hidden-source-map'` (production) + `sentry-webpack-plugin` auto-associates. **Why can't be exposed**: `source-map` lets users download full source, **reverse engineer code / find vulnerabilities**; `hidden-source-map` generates `.map` files but **frontend doesn't reference**, only Sentry server can download. **Production case**: a middle platform used `source-map`, was scanned by white hat for key API logic, was exploited 2 weeks later.<AIAsk question="How to configure Sentry's Source Map integration? Why can't Source Map be exposed to frontend?" lang="en" />
+>
+> **Q3 (Think)**: How to set alert thresholds for Web Vitals three-piece (LCP / INP / CLS)? How to avoid alert fatigue?
+>
+> **A**: **Web Vitals alert thresholds**: LCP > 4s alert / INP > 500ms alert / CLS > 0.25 alert. **Avoid alert fatigue**: ① **Graded alerts** — P0 critical (LCP > 6s, error rate > 5%) Feishu+phone+SMS / P1 high Feishu+SMS / P2 medium Feishu / P3 low Feishu; ② **P0 once a week at most 1-2 times** to be effective; ③ **Alert deduplication** — same type alert within 5min only sent once; ④ **On-call mechanism** — P0 duty person rotates, weekend 2x response time.<AIAsk question="How to set alert thresholds for Web Vitals three-piece (LCP / INP / CLS)? How to avoid alert fatigue?" lang="en" />
+>
+> **Q4 (Think)**: How to configure rrweb recording in production? How to handle PII data?
+>
+> **A**: **rrweb recording config**: `record({ emit: uploadFn, maskInputOptions: { password: true } })`, batch upload every 5-10 seconds, on error upload context events to Sentry. **PII data handling**: **maskInputOptions** hides password / ID / credit card / phone; **custom mask** use `maskTextSelector` to exclude specific DOM; **server-side again** filter with regex ID number. **Production case**: a bank P2P leaked customer ID via recording, **was fined 2 million by CBIRC** — **PII recording is a legal red line**.<AIAsk question="How to configure rrweb recording in production? How to handle PII data?" lang="en" />
+>
+> **Q5 (Think)**: In your SF Express + Rouyu two monitoring practice, how did you change from "firefighting after" to "predicting before"? What specifically changed?
+>
+> **A**: **Firefighting after → predicting before three keys**: ① **Error monitoring full coverage** — Sentry full integration + business errors manually `captureException`, online bug average discovery time from 24h to 5min; ② **Performance monitoring real-time** — Web Vitals integration + threshold alerts + Feishu bot, when LCP degrades **no one reports I know first**; ③ **Behavior monitoring recording** — rrweb recording + Sentry association, when user reports 'operation crashed' I can **watch replay** directly locate, no longer dependent on 'reproduce bug'. **Effect**: from 'user reports bug to know' to 'system auto-alerts', from 'developer debugs a week' to 'watch replay 1 hour'.<AIAsk question='In your SF Express + Rouyu two monitoring practice, how did you change from "firefighting after" to "predicting before"? What specifically changed?' lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [Sentry Documentation](https://docs.sentry.io/) — Sentry official documentation
+- [Sentry for React (Sentry Docs)](https://docs.sentry.io/platforms/javascript/guides/react/) — React integration official guide
+- [web.dev: Web Vitals (Google Developers)](https://web.dev/articles/lcp) — Web Vitals official guide
+- [rrweb (GitHub)](https://github.com/rrweb-io/rrweb) — rrweb recording open source
+- [Sentry Source Maps (Sentry Docs)](https://docs.sentry.io/platforms/javascript/sourcemaps/) — Source Map integration official guide
+- [Google Analytics 4 (Google Developers)](https://developers.google.com/analytics) — behavior analytics reference

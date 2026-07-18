@@ -188,19 +188,19 @@ Each interview question has an AI helper button right behind it — one click ge
 
 ## VI. 5 High-Priority Interview Question Directions
 
-> **Q1 (with answer)**: What are the core mental models of React / Vue / Angular?
+> **Q1 (with answer)**: What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?
 >
-> **A**: **React** is "**View = fn(state)**" — unidirectional data flow, functional thinking, manual perf control via `memo / useMemo`. **Vue** is "**reactive data proxy**" — `Proxy`-based auto-dependency tracking, most natural authoring. **Angular** is "**dependency injection + Zone.js dirty checking**" — enterprise convention-over-configuration, long-term maintainability. **Interview depth**: frame them as 3 different *philosophies of handling UI-state relations*, not "which is better". True depth: you can articulate Angular's DI tree / React Fiber's double-buffered reconciliation / Vue 3's `effect` scheduler.<AIAsk question="What are the core mental models of React / Vue / Angular?" lang="en" />
+> **A**: **Network layer** (DNS → TCP → TLS → HTTP response → TTFB) + **rendering layer** (HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **Frontend can optimize**: ① Network: CDN + HTTP/3 + edge cache compresses TTFB from hundreds of ms to tens of ms; ② HTML size + streaming SSR gets first bytes faster; ③ CSS / fonts: inline critical CSS + `font-display: swap` reduces blocking; ④ JS: code splitting + tree-shaking gets main thread idle fast; ⑤ Images: `preload` + AVIF + LQIP placeholders. **Interview tip**: name a quantifiable metric per stage (ms or %), sounds far more professional than "we optimized the network" in general. Detailed answer in **[Post #1 · How Browsers Render a Page](/en/blog/how-browser-renders-page)**'s 5 interview questions.<AIAsk question="What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?" lang="en" />
 >
-> **Q2 (think)**: What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?<AIAsk question="What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?" lang="en" />
+> **Q2 (think)**: What's the core difference between HTTP/1.1 / HTTP/2 / HTTP/3? Why does HTTP/3 use QUIC instead of TCP?<AIAsk question="What's the core difference between HTTP/1.1 / HTTP/2 / HTTP/3? Why does HTTP/3 use QUIC instead of TCP?" lang="en" />
 >
-> **Q3 (think)**: In production, 80% of RAG-retrieved documents are irrelevant — how do you do query rewrite + rerank?<AIAsk question="In production, 80% of RAG-retrieved documents are irrelevant — how do you do query rewrite + rerank?" lang="en" />
+> **Q3 (think)**: What are V8's Hidden Class and Inline Cache? How do you write code that takes full advantage of V8 optimization?<AIAsk question="What are V8's Hidden Class and Inline Cache? How do you write code that takes full advantage of V8 optimization?" lang="en" />
 >
-> **Q4 (think)**: How does Module Federation handle dependency sharing between host and remote apps? What about version conflicts?<AIAsk question="How does Module Federation handle dependency sharing between host and remote apps? What about version conflicts?" lang="en" />
+> **Q4 (think)**: What problem does React Fiber reconciler solve? What are the pain points of Stack Reconciler?<AIAsk question="What problem does React Fiber reconciler solve? What are the pain points of Stack Reconciler?" lang="en" />
 >
-> **Q5 (think)**: Design a frontend monitoring SDK supporting 5000 concurrent users — what are the 3 most critical architectural decisions?<AIAsk question="Design a frontend monitoring SDK supporting 5000 concurrent users — what are the 3 most critical architectural decisions?" lang="en" />
+> **Q5 (think)**: In production, how did you take a first-screen from 4.2s to 1.8s? What specifically changed at the network layer?<AIAsk question="In production, how did you take a first-screen from 4.2s to 1.8s? What specifically changed at the network layer?" lang="en" />
 
-> 💡 Each question has an AI helper button right behind it — one click gets a detailed answer.
+> 💡 Each question has an AI helper button right behind it — one click gets a detailed answer. All 30 posts are now published, each with its own 5 high-priority interview questions.
 
 ## VII. Next Steps
 

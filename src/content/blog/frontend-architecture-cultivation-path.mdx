@@ -187,19 +187,19 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 ## 六、5 道重点面试问题方向
 
-> **Q1（答案）**：React / Vue / Angular 三大框架的核心心智模型分别是什么？
+> **Q1（答案）**：浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？
 >
-> **A**：**React** 的核心是「**View = fn(state)**」——单向数据流，函数式思维，性能可控需要手动 `memo / useMemo`；**Vue** 的核心是「**响应式数据代理**」——基于 `Proxy` 自动追踪依赖，写起来最自然；**Angular** 的核心是「**依赖注入 + Zone.js 自动脏检查**」——大企业级约定优于配置，长期可维护。**面试要点**：把这三者讲成 3 种*处理 UI 与状态关系*的不同哲学，而不是"谁更好用"。真正的回答深度是：你能讲清 Angular DI 的树形结构 / React Fiber 的双缓冲协调 / Vue 3 的 `effect` 调度器。<AIAsk question="React / Vue / Angular 三大框架的核心心智模型分别是什么？" />
+> **A**：**网络层**（DNS → TCP → TLS → HTTP 响应 → TTFB）+ **渲染层**（HTML 解析 → DOM Tree → CSS 解析 → CSSOM → Render Tree → Layout → Paint → Composite → 屏幕像素）。**前端能优化的**：① 网络层走 CDN + HTTP/3 + 边缘缓存把 TTFB 从几百 ms 压到几十 ms；② HTML 体积 + 流式 SSR 让首字节更快到达；③ CSS / 字体关键路径 inline + `font-display: swap` 减少阻塞；④ JS 用代码分割 + tree-shaking 让主线程尽快空闲；⑤ 图片用 `preload` + AVIF + LQIP 占位。**面试要点**：把每阶段说出一个可量化的指标（毫秒或百分比），比泛泛而谈"网络优化"专业得多。详细答案见 **[第 1 篇 · 浏览器如何渲染出一个网页](/blog/how-browser-renders-page)** 的 5 道重点面试题。<AIAsk question="浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？" />
 >
-> **Q2（思考）**：浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？<AIAsk question="浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？" />
+> **Q2（思考）**：HTTP/1.1 / HTTP/2 / HTTP/3 的核心区别是什么？HTTP/3 为什么用 QUIC 而不是 TCP？<AIAsk question="HTTP/1.1 / HTTP/2 / HTTP/3 的核心区别是什么？HTTP/3 为什么用 QUIC 而不是 TCP？" />
 >
-> **Q3（思考）**：在生产环境里，RAG 检索出来的文档 80% 是无关的——你怎么做 query rewrite + rerank？<AIAsk question="在生产环境里，RAG 检索出来的文档 80% 是无关的——你怎么做 query rewrite + rerank？" />
+> **Q3（思考）**：V8 引擎的 Hidden Class 和 Inline Cache 是什么？怎样写代码才能充分利用 V8 的优化？<AIAsk question="V8 引擎的 Hidden Class 和 Inline Cache 是什么？怎样写代码才能充分利用 V8 的优化？" />
 >
-> **Q4（思考）**：Module Federation 如何处理主子应用之间的依赖共享？版本冲突怎么办？<AIAsk question="Module Federation 如何处理主子应用之间的依赖共享？版本冲突怎么办？" />
+> **Q4（思考）**：React Fiber 协调器解决了什么问题？Stack Reconciler 的痛点是什么？<AIAsk question="React Fiber 协调器解决了什么问题？Stack Reconciler 的痛点是什么？" />
 >
-> **Q5（思考）**：设计一个支持 5000 人同时在线的前端监控 SDK，最关键的 3 个架构决策是什么？<AIAsk question="设计一个支持 5000 人同时在线的前端监控 SDK，最关键的 3 个架构决策是什么？" />
+> **Q5（思考）**：你在生产环境里是怎么把首屏时间从 4.2s 优化到 1.8s 的？网络层具体做了什么改动？<AIAsk question="你在生产环境里是怎么把首屏时间从 4.2s 优化到 1.8s 的？网络层具体做了什么改动？" />
 
-> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。30 篇全部已发布，每篇都自带 5 道面试真题。
 
 ## 七、下一步
 

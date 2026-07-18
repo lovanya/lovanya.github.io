@@ -1,0 +1,361 @@
+---
+title: "Responsive and Mobile Adaptation: viewport / rem / vw / Container Queries"
+description: A frontend architect's mobile adaptation full-stack — viewport meta / rem adaptation / vw scheme / container queries, with 1px borders / 0.5px lines / safe areas / portrait-landscape switching for admin backend + mobile scenarios
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'responsive', 'mobile', 'viewport']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand responsive design? My answer is **yes** — not to memorize every viewport meta, but to build the engineering intuition of "one codebase runs on all devices". Three reasons:
+
+1. **Admin backend mobile is a high-frequency scenario.** ERP / FinUI / CRM increasingly require PC + tablet + mobile three-end access, **responsive is not a "bonus" but a "required question"**.
+2. **Viewport misconfig breaks the whole page.** Wrong `device-width` / missing `initial-scale` / wrong `user-scalable` — all make users see a shrunken page.
+3. **Architects unify the approach.** 5 projects using 5 different rem adaptation schemes, **debugging bugs is hard cross-project**. **Architect's job is to set one rule, the whole team follows**.
+
+This is post #11 of the *Frontend Architecture Cultivation Path* series. We skip browser-specific device details (like iOS Safari's rubber-band scrolling), use architecture diagrams + scheme comparison tables + real code to make viewport / rem / vw / container queries / 1px borders / safe areas concrete. The next post deep-dives into build tools (Webpack → Vite → Rspack evolution).
+
+## 1. viewport meta: The Starting Point for Mobile Adaptation
+
+### 1.1 What Happens Without viewport
+
+```html
+<!-- ❌ No viewport meta: mobile browser assumes desktop width, shrinks render -->
+<html>
+<head>
+  <!-- missing viewport meta -->
+</head>
+```
+
+**Result**: iPhone 12 (390pt wide) renders the page at 980px wide, **all elements appear 2.5× smaller**, user must double-tap to zoom.
+
+### 1.2 Standard viewport
+
+```html
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no,
+               viewport-fit=cover">
+```
+
+**Breakdown**:
+
+- `width=device-width`: make layout viewport = device width (**most critical**)
+- `initial-scale=1.0`: initial scale 1:1, no shrinking
+- `maximum-scale=1.0`: prevent user zoom (**accessibility controversy**, usually set 5.0)
+- `user-scalable=no`: prevent zoom (**strong A11y anti-pattern**, use carefully)
+- `viewport-fit=cover`: let page extend into iPhone notch / Dynamic Island area (**iOS 11+ required**)
+
+**Architect's rule**: **only use `width=device-width, initial-scale=1.0, viewport-fit=cover` three-piece set**. Don't touch other parameters (especially `user-scalable=no` is an A11y anti-pattern).
+
+## 2. rem Adaptation Scheme: The Classic Mobile Solution
+
+### 2.1 What is rem
+
+`rem` = root em, **relative to the root element's (html) font-size**.
+
+```css
+html { font-size: 100px; }  /* common config when design draft is 750px */
+.box { width: 1rem; }         /* actual 100px */
+```
+
+### 2.2 Scheme 1: JS Dynamically Set Root Font Size (Most Classic)
+
+```javascript
+// Set root font size = screen width / design draft width * base size
+function setRootFontSize() {
+  const docWidth = document.documentElement.clientWidth;
+  const baseSize = (docWidth / 750) * 100;  // design draft 750px
+  document.documentElement.style.fontSize = `${Math.min(baseSize, 100)}px`;
+  // Math.min limits when accessed on PC (no more than 100px)
+}
+
+window.addEventListener('resize', setRootFontSize);
+setRootFontSize();
+```
+
+**Advantages**: write dimensions in rem once, **auto-responsive to screen width**. **Disadvantage**: **JS rendering depends on root font-size setting**, first paint may flash.
+
+### 2.3 Scheme 2: CSS Media Queries (Recommended)
+
+```css
+html { font-size: 50px; }                  /* base */
+
+@media (min-width: 320px) { html { font-size: 42.67px; } }
+@media (min-width: 360px) { html { font-size: 48px; } }
+@media (min-width: 375px) { html { font-size: 50px; } }
+@media (min-width: 414px) { html { font-size: 55.2px; } }
+@media (min-width: 768px) { html { font-size: 100px; } }
+```
+
+**Advantages**: **pure CSS, no JS dependency**. **Disadvantage**: step-wise transitions, not smooth; maintaining device lists is painful.
+
+### 2.4 Scheme 3: CSS Variables + calc (Modern Recommended)
+
+```css
+:root {
+  /* design draft 375px, 1rem = 100px */
+  --rem-base: calc(100vw / 3.75);  /* 100% viewport width / 3.75 = 1rem */
+}
+
+@media (min-width: 768px) {
+  /* PC end limits max font size, prevents too large */
+  :root {
+    --rem-base: 100px;  /* fixed 100px */
+  }
+}
+```
+
+**Advantages**: **pure CSS, smooth responsive, no JS dependency**. **Disadvantage**: browser may round `vw` calculations (precision issue, **add max-font-size protection in production**).
+
+### 2.5 rem Scheme Selection Decision Table
+
+| Scheme | First-paint flash | Smoothness | PC limit | Recommendation |
+|---|---|---|---|---|
+| JS dynamic root | ⚠️ Yes | ✅ Smooth | ✅ Needs min() limit | ⭐⭐⭐ |
+| Media queries | ❌ None | ⚠️ Stepwise | ✅ Built-in | ⭐⭐ |
+| CSS Variables + vw | ❌ None | ✅ Smooth | ⚠️ Needs max limit | ⭐⭐⭐⭐ |
+
+**Architect's recommendation**: **Scheme 3 (vw + CSS Variables) + postcss-px-to-viewport for auto px conversion**.
+
+## 3. vw Adaptation Scheme: Modern Approach
+
+### 3.1 Core Idea
+
+`1vw = 1% viewport width`, directly use viewport width as the unit.
+
+```css
+/* Design draft 375px, 1px = 1/375vw, direct conversion */
+.title { font-size: calc(100vw / 3.75); }  /* 100px on 375px screen */
+```
+
+**Advantages**: **no JS needed at all, smooth responsive**. **Disadvantage**: large screens get too large (e.g., 100px at 1920px → 512px).
+
+### 3.2 Protect with max-width
+
+```css
+.title {
+  font-size: 16px;  /* base for huge screens */
+}
+
+/* Under 750px: vw responsive */
+/* Note: use @media max-width because vw goes out of control on larger screens */
+@media (max-width: 750px) {
+  .title { font-size: calc(100vw / 3.75); }
+}
+```
+
+### 3.3 postcss-px-to-viewport: Automation
+
+```javascript
+// postcss.config.js
+module.exports = {
+  plugins: {
+    'postcss-px-to-viewport': {
+      unitToConvert: 'px',     // conversion unit
+      viewportWidth: 375,      // design draft width
+      unitPrecision: 5,        // precision
+      propList: ['*'],          // all properties
+      viewportUnit: 'vw',      // conversion target
+      fontViewportUnit: 'vw',  // fonts use vw
+      selectorBlackList: ['ignore-'],  // exclude ignore- prefixed classes
+      minPixelValue: 1,
+      mediaQuery: false,
+    },
+  },
+};
+```
+
+**Effect**: source `padding: 16px;` automatically compiles to `padding: 4.2667vw;`. **Development experience unchanged, runtime auto-responsive**.
+
+## 4. 1px Border Problem: Mobile Visual Trap
+
+### 4.1 Problem Essence
+
+**iPhone 12's devicePixelRatio = 3**, CSS `1px` border is rendered as **3 physical pixels** — looks "thick" on retina screens.
+
+### 4.2 Solution: transform scale
+
+```css
+.border-1px {
+  position: relative;
+  border: none;
+}
+.border-1px::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: #ccc;
+  transform: scaleY(0.333);  /* 1 / 3 = 0.333 */
+  transform-origin: 0 0;
+}
+
+/* Multi-direction borders */
+@mixin border-1px($color: #ccc, $direction: all) {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    top: if($direction == bottom, auto, 0);
+    bottom: if($direction == top, auto, 0);
+    left: if($direction == right, auto, 0);
+    right: if($direction == left, auto, 0);
+    background: $color;
+    transform: scale(if($direction == top or $direction == bottom, 0.333, 1), if($direction == left or $direction == right, 0.333, 1));
+    transform-origin: if($direction == right, right, left) if($direction == bottom, bottom, top) 0;
+  }
+}
+```
+
+### 4.3 Modern Approach: `border-image` or viewport
+
+```css
+/* Scheme 1: viewport unit (auto-responsive to DPR) */
+.border-bottom {
+  border-bottom: 0.333vw solid #ccc;
+}
+
+/* Scheme 2: border-image (poor compatibility, not recommended in 2024) */
+```
+
+**Production case**: an admin backend's borders looked thick on iPhone 12, **switching to transform scale halved the visual weight** — CSS physical 1px border vs visual 1px border.
+
+## 5. Safe Areas: iPhone Notch / Dynamic Island
+
+iPhone X+ top notch + bottom Home Indicator occupy part of the screen, **page content directly covering the full screen gets occluded**.
+
+### 5.1 CSS env() Function
+
+```css
+/* Top safe distance */
+.header {
+  padding-top: env(safe-area-inset-top);     /* 44px on iPhone 12 */
+  padding-top: max(env(safe-area-inset-top), 0px);  /* compatible with non-iPhone */
+}
+
+/* Bottom safe distance */
+.footer {
+  padding-bottom: env(safe-area-inset-bottom);  /* 34px on iPhone 12 */
+}
+
+/* Landscape left/right */
+.container {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+```
+
+**Key**: `viewport-fit=cover` + `env()` must appear **as a pair** — otherwise `env()` returns 0.
+
+### 5.2 Fullscreen / Landscape Adaptation
+
+```css
+/* Landscape: hide top status bar */
+@media (orientation: landscape) {
+  .header { padding-top: 0; }
+}
+
+/* Dark mode adaptation (iOS 13+) */
+@media (prefers-color-scheme: dark) {
+  :root { --bg-color: #1a1a1a; }
+}
+```
+
+**Production case**: an H5 page's bottom button was blocked by iPhone 14 Pro Max's Home Indicator, **adding env(safe-area-inset-bottom) made the button fully visible**.
+
+## 6. Portrait-Landscape Switching Recalculation
+
+```javascript
+// Listen for both resize + orientationchange
+function onResize() {
+  setRootFontSize();  // recalculate rem
+}
+
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => {
+  setTimeout(onResize, 100);  // delay 100ms, wait for browser to complete switch
+});
+```
+
+**Key trap**: after orientationchange, **immediately** getting window.innerWidth may return old value (iOS Safari). **setTimeout 100ms protection**.
+
+## 7. Container Queries: Component-Level Responsiveness
+
+Container queries were covered earlier (CSS chapter), here emphasizing the mobile scenario:
+
+```css
+/* Card component: different layouts in different container widths */
+.card-list {
+  container-type: inline-size;
+  container-name: card-area;
+}
+
+.card {
+  display: flex;
+  flex-direction: row;
+}
+
+@container card-area (max-width: 400px) {
+  .card {
+    flex-direction: column;  /* narrow container: cards stack */
+  }
+}
+```
+
+**Production case**: a mobile H5's same card component "in main area + in popup", **container queries implement different layouts**, no JS width listening.
+
+## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't mix multiple adaptation schemes.** rem + vw + media queries mixed, **debugging math is unclear**. **Whole team uses one scheme**.
+2. **Don't forget `viewport-fit=cover`.** iOS notch / Dynamic Island blocks content, **without it the back button in the top status bar is invisible**.
+3. **Don't treat `user-scalable=no` as default.** Visually impaired users depend on zoom, **WCAG 2.1 explicitly forbids default-disabled zoom**. If you must, **provide accessible alternatives (e.g., font size buttons)**.
+4. **Don't use px directly for borders.** On retina screens `border: 1px solid` looks twice as thick. **Use transform scale or vw units**.
+5. **Don't access `window` in SSR.** Next.js / Nuxt SSR runs in Node environment, **no viewport**. **Mobile adaptation must use CSS media queries + vw, not JS-dependent**.
+
+## Summary
+
+Eight key facts that thread mobile responsive adaptation together:
+
+- **viewport meta three-piece**: `width=device-width` + `initial-scale=1.0` + `viewport-fit=cover`.
+- **rem scheme**: JS dynamic root / media queries / CSS Variables + vw, **vw + CSS Variables is 2024 recommendation**.
+- **vw scheme**: pure CSS smooth responsive, with `postcss-px-to-viewport` auto-conversion.
+- **1px borders**: when DPR > 1, use `transform: scaleY(0.333)`, visually thin line.
+- **Safe areas**: `env(safe-area-inset-*)` + `viewport-fit=cover`, iPhone notch / Dynamic Island adaptation.
+- **Portrait-landscape switching**: after orientationchange **setTimeout 100ms** recalculate rem.
+- **Container queries**: component-level responsive, **mobile H5 popup/main-area shared component's killer weapon**.
+- **A11y anti-pattern**: `user-scalable=no` default-disabled zoom, **WCAG 2.1 forbids**.
+
+**Next post**: Build tool evolution — Webpack 5 / Vite 5 / Rspack 3 / Turbopack, real case breakdown from 12min to 3min.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: Which values must the mobile viewport meta tag set? What happens if they're missing?
+>
+> **A**: **Three required**: `width=device-width` (make layout viewport = device width, missing renders at 980px), `initial-scale=1.0` (initial scale 1:1, missing scales down proportionally), `viewport-fit=cover` (page extends into iPhone notch / Dynamic Island, missing gets content occluded by status bar). **Counter-example**: iPhone 12 without viewport renders at 980px, all elements appear 2.5× smaller, user must double-tap to zoom. **Architect's rule**: **only use these three, don't touch other parameters** — especially `user-scalable=no` is an A11y anti-pattern (WCAG 2.1 explicitly forbids default-disabled zoom).<AIAsk question="Which values must the mobile viewport meta tag set? What happens if they're missing?" lang="en" />
+>
+> **Q2 (Think)**: What are the pros and cons of the three rem adaptation schemes (JS dynamic root / media queries / CSS Variables + vw)? Which is recommended in 2024?<AIAsk question="What are the pros and cons of the three rem adaptation schemes (JS dynamic root / media queries / CSS Variables + vw)? Which is recommended in 2024?" lang="en" />
+>
+> **Q3 (Think)**: Why does a 1px border look twice as thick on retina screens? How to fix? Which is better — transform scale or vw units?<AIAsk question="Why does a 1px border look twice as thick on retina screens? How to fix? Which is better — transform scale or vw units?" lang="en" />
+>
+> **Q4 (Think)**: How do you adapt to iPhone X+'s notch / Dynamic Island? What's the working principle of env(safe-area-inset-*)?<AIAsk question="How do you adapt to iPhone X+'s notch / Dynamic Island? What's the working principle of env(safe-area-inset-*)?" lang="en" />
+>
+> **Q5 (Think)**: How do you do responsive in production? How do you combine rem / vw / container queries? What's the unified scheme across PC / tablet / mobile three ends?<AIAsk question="How do you do responsive in production? How do you combine rem / vw / container queries? What's the unified scheme across PC / tablet / mobile three ends?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [MDN: Viewport meta tag](https://developer.mozilla.org/en-US/docs/Web/HTML/Viewport_meta_tag) — viewport meta official reference
+- [CSS values: env() (MDN)](https://developer.mozilla.org/en-US/docs/Web/CSS/env) — env() safe area official guide
+- [CSS Container Queries (web.dev)](https://web.dev/articles/css-container-queries) — container queries practical guide
+- [Designing for iPhone X (Apple HIG)](https://developer.apple.com/design/human-interface-guidelines/ios/visual-design/adaptivity-and-layout/) — iPhone notch adaptation official guide
+- [postcss-px-to-viewport (GitHub)](https://github.com/evrone/postcss-px-to-viewport) — px to vw auto-conversion PostCSS plugin
+- [Mobile Web Performance (Google Developers)](https://developer.chrome.com/docs/lighthouse/mobile) — mobile performance optimization complete set

@@ -1,0 +1,221 @@
+---
+title: "包管理与 Monorepo：pnpm / Changesets / Turborepo"
+description: 前端架构师的包管理深度——pnpm 硬链接节省磁盘、Changesets 语义化版本管理、Turborepo 增量构建，附 ERP Monorepo 多包架构实战
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '包管理', 'pnpm', 'monorepo']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂包管理？我的回答是 **要**——不是去背 npm install 命令，而是建立"依赖关系图如何影响项目结构和发布流程"的工程判断。原因有三：
+
+1. **简历里 ERP Monorepo 是真实项目**。5+ 子包（ui / utils / eslint-config / ts-config / cli）的架构，**单仓多包** 是中后台标准答案。
+2. **版本管理决定发版安全**。手动 `npm version` + `npm publish` 容易出错，**Changesets 把"修改了什么 → 应该发什么版本 → 自动写 changelog"自动化**。
+3. **磁盘 + 安装速度是隐性生产力**。某 5 项目 monorepo 用 npm install 占 12GB，**pnpm + 硬链接只占 3GB**，CI 时间从 8min 降到 2min。
+
+这一篇是『前端架构修仙路』的第 13 篇。我跳过具体配置文件（不讲 `--registry` 之类），用架构图 + 真实数据 + 选型决策表，把 pnpm / workspace / Changesets / Turborepo 讲透。下一篇深度聊前端工程化（CI/CD / 规范 / 评审）。
+
+## 一、npm / yarn / pnpm 三巨头对比
+
+| 工具 | 安装速度 | 磁盘占用 | monorepo | node_modules 结构 | hoisting |
+|---|---|---|---|---|---|
+| npm | 慢 | **大**（每个项目独立副本） | workspaces | 嵌套 | 早期嵌套，npm 3+ 扁平 |
+| yarn | 中 | 大 | workspaces | 嵌套 | 扁平 |
+| yarn pnp | 快 | **零**（无 node_modules） | 有限支持 | 不用 node_modules | 不用 |
+| **pnpm** | **快**（多线程 + 硬链接） | **极小**（所有包共享 store） | **优秀** | **符号链接 + 硬链接** | 按需 hoist |
+
+**pnpm 三大优势**：
+
+1. **硬链接节省磁盘**：所有项目共享全局 store（`~/.pnpm-store/`），同版本依赖只存一份
+2. **符号链接保结构**：`node_modules/foo` 是符号链接到全局 store，**保留 ESM 解析的嵌套结构**
+3. **严格的依赖隔离**：包不能"意外"访问未声明的依赖（与 npm 不同）
+
+## 二、pnpm 工作区（Workspace）配置
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - 'apps/*'           # 应用:admin / mobile / docs
+  - 'packages/*'       # 共享包:ui / utils / eslint-config
+  - 'tools/*'          # 工具:cli / scripts
+```
+
+```jsonc
+// 根 package.json
+{
+  "name": "monorepo",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",            // 递归所有包 build
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "dev": "pnpm -F @app/admin dev",      // -F filter 只跑特定包
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",               // 所有包共享的 dev 依赖
+    "prettier": "^3.0.0"
+  }
+}
+```
+
+**架构师心法**：
+- **apps/** 是发布产物（admin / mobile app）
+- **packages/** 是内部库（被 apps 引用）
+- **tools/** 是构建 / 部署工具
+
+## 三、Changesets：语义化版本 + Changelog 自动化
+
+### 3.1 语义化版本（SemVer）规则
+
+```
+MAJOR.MINOR.PATCH
+  ↑      ↑      ↑
+  不兼容  新功能  Bug 修复
+
+pre-release: 1.0.0-alpha.1
+pre-release: 1.0.0-beta.2
+pre-release: 1.0.0-rc.0
+```
+
+**架构师决策表**：
+
+| 改动 | 版本号 |
+|---|---|
+| 修复 bug、不破坏 API | PATCH（1.0.0 → 1.0.1） |
+| 新增 API、向后兼容 | MINOR（1.0.0 → 1.1.0） |
+| API 破坏 | MAJOR（1.0.0 → 2.0.0） |
+
+### 3.2 Changesets 工作流
+
+```bash
+# 1. 开发者改完代码后,创建一个 changeset
+pnpm changeset
+
+# 2. 选择受影响的包 + 版本类型
+# 交互式询问
+? Which packages would you like to include? @ui/table
+? What kind of change is this? minor
+? Please write a summary: Add virtual scroll support
+
+# 3. 生成 .changeset/random-hash.md 文件
+---
+"@ui/table": minor
+---
+
+Add virtual scroll support
+
+# 4. 提 PR,合并时 CI 自动:
+#    - 合并所有 changeset
+#    - 升级 package.json 版本
+#    - 生成 CHANGELOG.md
+#    - git tag + npm publish
+```
+
+**生产案例**：顺丰 ERP 用 Changesets 后，**发版错误率从每月 1-2 次降到 0**——版本号、changelog、tag 全自动。
+
+## 四、Turborepo：增量构建 + 远程缓存
+
+### 4.1 核心机制
+
+Turborepo 是 Vercel 出的 monorepo 任务编排器：
+
+```jsonc
+// turbo.json
+{
+  "$schema": "https://turbo.build/schema.json",
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],            // 依赖上游包的 build
+      "outputs": ["dist/**"],
+      "cache": true                        // 缓存结果
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "lint": { "cache": true }
+  }
+}
+```
+
+**核心收益**：
+
+1. **增量构建**：只构建**受本次改动影响的包**（基于依赖图 + git diff）
+2. **远程缓存**：`turbo run build --summarize` 上传产物到 Vercel，CI 直接下载缓存
+3. **并行执行**：多个包的 build / test 并发跑（不用串行）
+
+### 4.2 真实性能
+
+```
+某 monorepo (10 个包):
+  全量构建:
+    npm run build:        8 min
+    pnpm -r build:        5 min
+    turbo run build:      4 min (无缓存)
+    turbo run build:      30 sec (有缓存,改 1 个包)
+```
+
+## 五、Monorepo 工具横向对比
+
+| 维度 | Lerna | Nx | Rush | **Turborepo** |
+|---|---|---|---|---|
+| 学习曲线 | 中 | 陡 | 陡 | **低** |
+| 增量构建 | ❌ 弱 | ✅ 强 | ✅ 强 | ✅ **好** |
+| 远程缓存 | 需付费 | ✅ | ✅ | ✅ **Vercel 免费层** |
+| 任务编排 | ✅ | ✅ 强 | ✅ 强 | ✅ **简单** |
+| Vite 兼容 | ✅ | ✅ | ✅ | ✅ **完美** |
+| 社区规模 | 中 | 大 | 中 | **增长快** |
+
+**架构师决策**：
+- **小 monorepo（< 10 包）**：Turborepo
+- **中大 monorepo（10-50 包）**：Nx 或 Turborepo
+- **超大 monorepo（50+ 包）**：Nx（功能最全）
+
+## 六、踩坑提醒（资深架构师请重点看）
+
+1. **不要在 monorepo 里混用 npm + pnpm**。lockfile 不一致会让依赖版本漂移，**生产部署必出问题**。
+2. **不要把"通用工具"放到共享包**。像 `eslint-config` 这种独立小包用 `extends` 引用，**不要塞 50 个 dev 依赖到根 package.json**。
+3. **不要用 `*` 写依赖版本**。monorepo 里包之间是硬依赖（workspace protocol），**版本必须显式**才能被依赖分析。
+4. **不要忽视 Changeset 的 peer dependency**。改动 `@ui/table` 时,如果它依赖 `@utils/format` 也要升级,需要在 changeset 里**同时声明**。
+5. **不要在 CI 上跑 `--frozen-lockfile` 之外的操作**。CI 用 `pnpm install --frozen-lockfile` 保证 lockfile 不会被改,**避免构建漂移**。
+
+## 总结
+
+这一篇用 5 个关键事实把包管理与 Monorepo 串起来：
+
+- **pnpm 硬链接节省磁盘**：所有项目共享全局 store,依赖磁盘占用降 70%。
+- **语义化版本**：MAJOR.MINOR.PATCH,Changesets 自动化版本号 + changelog + tag。
+- **workspace + pnpm -r**：单仓多包统一管理,跨包引用走 `workspace:*`。
+- **Turborepo 增量构建**：基于依赖图 + git diff 只构建受影响的包,远程缓存让 CI 提速 10 倍。
+- **决策树**：小 monorepo Turborepo / 中大 Nx / 超大 Nx。
+
+**下一篇**：前端工程化体系——CI/CD / 规范 / 评审 / 团队沉淀,顺丰 + 柔宇两段工程化经验。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：pnpm 相比 npm / yarn 的核心优势是什么？为什么 monorepo 强烈推荐用 pnpm？
+>
+> **A**：pnpm 三大核心优势：① **硬链接节省磁盘** —— 所有项目共享全局 store（~/.pnpm-store/）,同版本依赖只存一份,某 5 项目 monorepo 用 pnpm 从 12GB 降到 3GB;② **符号链接保结构** —— node_modules/foo 是符号链接到全局 store,保留 ESM 解析的嵌套结构;③ **严格的依赖隔离** —— 包不能"意外"访问未声明的依赖,避免 npm 的幽灵依赖问题。**monorepo 强烈推荐**:因为硬链接在多个 workspace 共享同一版本时**磁盘和安装时间都是 O(1)**。<AIAsk question="pnpm 相比 npm / yarn 的核心优势是什么？为什么 monorepo 强烈推荐用 pnpm？" />
+>
+> **Q2（思考）**：Changesets 的工作流是什么？它解决了版本管理的哪些痛点？<AIAsk question="Changesets 的工作流是什么？它解决了版本管理的哪些痛点？" />
+>
+> **Q3（思考）**：Turborepo 的「增量构建」是怎么实现的？远程缓存的具体收益是什么？<AIAsk question="Turborepo 的「增量构建」是怎么实现的？远程缓存的具体收益是什么？" />
+>
+> **Q4（思考）**：Lerna / Nx / Rush / Turborepo 这四个 Monorepo 工具的优劣和适用场景分别是什么？<AIAsk question="Lerna / Nx / Rush / Turborepo 这四个 Monorepo 工具的优劣和适用场景分别是什么？" />
+>
+> **Q5（思考）**：你在 800+ 页面的 ERP Monorepo 项目里是怎么拆分 packages / apps 的？跨包依赖怎么管理？<AIAsk question="你在 800+ 页面的 ERP Monorepo 项目里是怎么拆分 packages / apps 的？跨包依赖怎么管理？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [pnpm Documentation](https://pnpm.io/) — pnpm 官方文档
+- [Changesets (GitHub)](https://github.com/changesets/changesets) — Changesets 官方仓库
+- [Turborepo Documentation](https://turbo.build/) — Turborepo 官方文档
+- [Monorepo Explained (GitHub)](https://monorepo.tools/) — Monorepo 工具选型指南
+- [Nx Documentation](https://nx.dev/) — Nx 官方文档
+- [Semantic Versioning 2.0.0](https://semver.org/) — SemVer 官方规范

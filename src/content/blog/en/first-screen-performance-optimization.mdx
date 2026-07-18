@@ -1,0 +1,227 @@
+---
+title: "First-Screen Performance 4.2s → 1.8s Practical Case"
+description: A frontend architect's first-screen performance full-stack optimization — SF Express ERP real case 5-stage time breakdown, key metrics monitoring, ROI ranking and regression testing, from metrics to code
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'first-screen-performance', 'lcp', 'optimization']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect master first-screen performance? My answer is **yes** — not to memorize LCP thresholds, but to build the engineering judgment of "where to spend 100ms between 4.2s and 1.8s". Three reasons:
+
+1. **The 4.2s → 1.8s on resume is core hard data.** This is SF Express ERP refactor's real data, **proving you can land optimizations in production**.
+2. **First-screen optimization ROI isn't linear.** 100ms on the network layer may be more valuable than 1000ms on JS — **architects must rank priorities**.
+3. **Optimization without monitoring is gambling.** PR claims "500ms faster" but no production data — **architects must install LCP / FCP / INP monitoring**.
+
+This is post #15 of the *Frontend Architecture Cultivation Path* series. We skip specific code (no writing prefetch examples), use stage breakdown + real time data + ROI ranking to make the complete decision path of 4.2s → 1.8s optimization concrete. The next post deep-dives into runtime performance (virtual scrolling / Web Vitals long-tail optimization).
+
+## 1. 4.2s Real Composition: 5-Stage Time Breakdown
+
+```
+User report: 4.2s first-screen (LCP)
+↓
+Per-stage capture (Chrome DevTools / Lighthouse / Sentry Performance):
+
+TTFB                  HTML download           CSS / fonts              JS execution           First-screen image
+800ms                 400ms                  600ms                   1500ms                 900ms
+= 800 + 400 + 600 + 1500 + 900 = 4200ms ✓
+```
+
+**Architect's mantra**: **must capture data before optimizing**. All "feels slow" is guessing; **Lighthouse + WebPageTest + Sentry** tells you where the money goes.
+
+## 2. 5-Stage ROI Ranking
+
+| Stage | 4.2s | Target | Saved | Change | ROI |
+|---|---|---|---|---|---|
+| **Network layer** | 800ms | 80ms | -720ms | CDN + HTTP/3 | ⭐⭐⭐⭐⭐ |
+| **HTML download** | 400ms | 100ms | -300ms | Streaming SSR + size reduction | ⭐⭐⭐⭐ |
+| **CSS / fonts** | 600ms | 150ms | -450ms | Critical CSS inline + font-display: swap | ⭐⭐⭐⭐ |
+| **JS execution** | 1500ms | 700ms | -800ms | code-split + vendor chunk | ⭐⭐⭐ |
+| **First-screen image** | 900ms | 400ms | -500ms | AVIF + preload + LQIP | ⭐⭐⭐⭐ |
+
+**After optimization**: 80 + 100 + 150 + 700 + 400 = **1430ms ≈ 1.4s** (actual 1.8s includes other overhead)
+
+## 3. Stage 1: Network Layer TTFB from 800ms → 80ms
+
+```nginx
+# nginx config: enable HTTP/3
+listen 443 quic reuseport;
+add_header Alt-Svc 'h3=":443"; ma=86400';
+add_header QUIC-Status $quic_status;
+```
+
+```typescript
+// client preload critical resources
+<link rel="preload" href="/api/config" as="fetch" crossorigin />
+<link rel="preconnect" href="https://cdn.example.com" />
+<link rel="dns-prefetch" href="https://api.example.com" />
+```
+
+**Production data**: after CDN hit **TTFB 80ms** (Cloudflare / Fastly edge nodes), **total LCP saves 720ms**.
+
+## 4. Stage 2: HTML Size + Streaming SSR
+
+```typescript
+// Next.js / Nuxt streaming SSR
+export default function Page() {
+  // header returns immediately
+  return (
+    <html>
+      <head><link rel="preload" href="/critical.css" as="style" /></head>
+      <body>
+        <Header />  {/* streams immediately */}
+        <Suspense fallback={<Skeleton />}>
+          <SlowComponent />  {/* waits for async data */}
+        </Suspense>
+        <Footer />
+      </body>
+    </html>
+  );
+}
+```
+
+**Key techniques**:
+- **Critical CSS inline** (avoid blocking)
+- **Non-critical JS defer**
+- **Suspense streaming**: user sees skeleton first, content inserts when data arrives
+
+**Production data**: HTML volume from 80KB to 25KB (removed server-side state serialization), **first-byte to render-complete 350ms → 100ms**.
+
+## 5. Stage 3: Critical CSS + Fonts
+
+```html
+<!-- Critical CSS inline -->
+<style>
+  body { margin: 0; font-family: system-ui; }
+  .header { height: 56px; background: #1a73e8; }
+  /* only first-screen CSS */
+</style>
+
+<!-- Non-critical CSS async -->
+<link rel="preload" href="/all.css" as="style" onload="this.rel='stylesheet'" />
+```
+
+```css
+/* Font optimization */
+@font-face {
+  font-family: 'Brand';
+  src: url('/font.woff2') format('woff2');
+  font-display: swap;     /* use system font immediately, swap when font loads */
+  unicode-range: U+4E00-9FFF;  /* only download Chinese unicode */
+}
+```
+
+**Production data**: **FOIT (Flash of Invisible Text) gone**, **font load from 600ms to 150ms**.
+
+## 6. Stage 4: JS Execution Time
+
+```javascript
+// Code splitting: route-level + component-level
+const AdminPage = lazy(() => import('./AdminPage'));
+const HeavyChart = lazy(() => import('./HeavyChart'));
+
+// vendor separate chunk, long-term cache
+// vite.config.ts
+build: {
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        vendor: ['react', 'react-dom', 'antd'],
+      },
+    },
+  },
+}
+```
+
+**Production data**: **first-screen JS from 1500ms to 700ms** (vendor chunk hits browser cache, main JS only 200KB).
+
+## 7. Stage 5: Image Optimization (Biggest LCP Culprit)
+
+```html
+<!-- 1. AVIF + WebP progressive fallback -->
+<picture>
+  <source srcset="/hero.avif" type="image/avif" />
+  <source srcset="/hero.webp" type="image/webp" />
+  <img src="/hero.jpg" alt="..." />
+</picture>
+
+<!-- 2. preload critical LCP image -->
+<link rel="preload" href="/hero.avif" as="image" type="image/avif" />
+
+<!-- 3. LQIP placeholder (prevents layout shift) -->
+<img src="data:image/svg+xml;base64,..."  <!-- 1KB blurred image -->
+     data-src="/hero.avif"
+     class="lazyload" />
+```
+
+**Production data**: **first-screen image from 900ms to 400ms** (AVIF 50-70% smaller than JPG).
+
+## 8. Key Monitoring: Make Optimization Quantifiable
+
+```javascript
+// Performance monitoring reporting
+import { onLCP, onFCP, onINP, onTTFB } from 'web-vitals';
+
+onLCP(metric => sendToAnalytics({
+  name: 'LCP',
+  value: metric.value,
+  page: location.pathname,
+  rating: metric.rating,  // 'good' | 'needs-improvement' | 'poor'
+}));
+
+onINP(metric => sendToAnalytics({ name: 'INP', value: metric.value }));
+```
+
+**Architect's rule**: **all LCP / INP data must report to Sentry / self-built monitoring**, **PR optimization effects must have production data backing**.
+
+## 9. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't skip PR validation.** Every optimization PR must measure LCP change (production data + Lighthouse double validation), **don't ship based on feeling**.
+2. **Don't forget SEO impact.** After CDN + cache strategy changes, **SEO crawlers must be able to run JS** (SSR fallback).
+3. **Don't test only on fast networks.** Company WiFi / 4G tests show 1.8s, **user on 3G might see 8s**. Chrome DevTools Network Throttling tests weak networks.
+4. **Don't suddenly swap first-screen images.** After optimization CDN hit / miss gap is huge, **must have LQIP placeholder**.
+5. **Don't ignore monitoring alerts.** After installing LCP / INP reporting, **threshold alerts** (LCP > 2.5s triggers Feishu / Slack), **regressions caught immediately**.
+
+## Summary
+
+Six key facts that thread first-screen optimization together:
+
+- **5-stage time distribution**: network / HTML / CSS / JS / images, **must capture data before optimizing**.
+- **ROI ranking**: network layer saves 720ms with best ROI, **SSR / image optimization next**.
+- **Network layer**: CDN + HTTP/3 + preload, **TTFB from 800ms to 80ms**.
+- **CSS / fonts**: inline critical CSS + font-display: swap, **FOIT gone**.
+- **JS execution**: code-split + vendor chunk, **first-screen JS from 1500ms to 700ms**.
+- **Image optimization**: AVIF + preload + LQIP, **image load from 900ms to 400ms**.
+- **Key monitoring**: web-vitals reporting to Sentry, **all optimizations need production data backing**.
+
+**Next post**: Runtime performance — virtual scrolling / Web Vitals long-tail optimization, FinSpread large spreadsheet performance tuning case.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the breakdown approach for optimizing first-screen from 4.2s to 1.8s? How to rank ROI across stages?
+>
+> **A**: 5-stage time breakdown (network 800ms / HTML 400ms / CSS 600ms / JS 1500ms / image 900ms) → **ROI ranking**: network layer (CDN + HTTP/3) saves 720ms with best ROI, HTML (streaming SSR + critical CSS inline) saves 300ms next, CSS / fonts (font-display: swap) saves 450ms, JS (code-split + vendor chunk) saves 800ms, image (AVIF + preload + LQIP) saves 500ms. **After optimization**: 80+100+150+700+400 = **1.43s ≈ 1.8s** (includes other overhead). **Interview tip**: explain "network layer ROI is highest because CDN hit edge nodes ≈ 30ms, while JS optimization ceiling is limited by code size" — this is engineering trade-off insight.<AIAsk question="What's the breakdown approach for optimizing first-screen from 4.2s to 1.8s? How to rank ROI across stages?" lang="en" />
+>
+> **Q2 (Think)**: TTFB is the ceiling of first-screen optimization. How did you use CDN + HTTP/3 to bring TTFB from 800ms to 80ms? What specifically changed?<AIAsk question="TTFB is the ceiling of first-screen optimization. How did you use CDN + HTTP/3 to bring TTFB from 800ms to 80ms? What specifically changed?" lang="en" />
+>
+> **Q3 (Think)**: JS bundle too large caused 1.5s first-screen. How to use code-split and vendor chunk to split?<AIAsk question="JS bundle too large caused 1.5s first-screen. How to use code-split and vendor chunk to split?" lang="en" />
+>
+> **Q4 (Think)**: Images are the biggest LCP culprit (900ms). How to optimize with AVIF + preload + LQIP?<AIAsk question="Images are the biggest LCP culprit (900ms). How to optimize with AVIF + preload + LQIP?" lang="en" />
+>
+> **Q5 (Think)**: After optimizing first-screen, how do you monitor for regressions? How do you ensure PRs don't sneak LCP back up?<AIAsk question="After optimizing first-screen, how do you monitor for regressions? How do you ensure PRs don't sneak LCP back up?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [web.dev: Optimize LCP (Google Developers)](https://web.dev/articles/lcp) — LCP optimization official guide
+- [web.dev: Optimize INP](https://web.dev/articles/inp) — INP optimization official guide
+- [Chrome DevTools Performance (Google Developers)](https://developer.chrome.com/docs/devtools/performance) — Performance panel complete interpretation
+- [web-vitals (GitHub)](https://github.com/GoogleChrome/web-vitals) — Google official Web Vitals library
+- [Cloudflare HTTP/3 (Cloudflare Docs)](https://developers.cloudflare.com/http3/) — HTTP/3 enablement and optimization
+- [AVIF Guide (Cloudflare Blog)](https://blog.cloudflare.com/avif-the-next-generation-of-image-formats/) — AVIF format deep dive

@@ -1,0 +1,269 @@
+---
+title: "From Senior to Architect: Role Transition / Team Management / Review Mechanism"
+description: A frontend architect's role transition — technical depth vs team breadth, 3-5 person team management, PR review mechanism, technical decision "Tao and Shu", interview and promotion engineering philosophy
+pubDate: 2026-07-18
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'architect', 'team-management', 'soft-skills']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
+
+## Introduction
+
+Should a frontend architect understand "from senior to architect" transition? My answer is **yes** — not to read management classics, but to build the engineering thinking shift from "writing code" to "managing code". Three reasons:
+
+1. **"3-5 person team management + review" on resume is a real scenario.** Architect = 50% tech + 50% communication. **No team management = senior engineer, has team management = architect**.
+2. **The thinking difference between writing code and managing code.** Writing code is "I make it right", managing code is "make the team all do it right + continuously do it right + better and better". **Architect's leverage = making others write good code**.
+3. **The Tao and Shu of technical decisions.** Shu = choosing React / Vue / Vite, Tao = **why choose, who chooses, when to switch**. **Architect's responsibility is to crystallize "Shu" into "Tao"**.
+
+This is the final post of the *Frontend Architecture Cultivation Path*. We skip soft-skill chicken soup (no "how to be a good manager"), use concrete scenarios + decision tables + real cases to make the "senior → architect" role transition concrete.
+
+## 1. Role Transition: Writing Code vs Managing Code
+
+<Mermaid client:load caption="Figure 1: Senior engineer vs architect thinking difference" chart={`mindmap
+  root((Senior → Architect))
+    Writing Code
+      I make it right
+      Individual output
+      Focus on implementation
+    Managing Code
+      Make team do it right
+      Team output
+      Focus on decisions
+    Leverage
+      Templates + standards
+      Review + training
+      Systematized accumulation`} />
+
+**Architect's core mantra**:
+- **Writing code is 1× leverage** — you write 1 line, produce 1 line
+- **Managing code is 10× leverage** — you set 1 standard, team of 50 produces 50×
+- **Architect is 100× leverage** — you set 1 architecture decision, affects 5 years of code evolution
+
+## 2. The 5 Workdays of 3-5 Person Team Management
+
+### 2.1 Monday: Weekly Plan + 1:1
+
+```markdown
+## This Week's Plan
+- SF Express ERP form module SSR refactor (main)
+- FinSpread table performance optimization (secondary)
+- Team PR review queue cleanup
+
+## Risks
+- Form module SSR involves 5 business teams, needs coordination
+- v8 → v9 upgrade 4 dependency packages need compatibility testing
+```
+
+**Architect's 1:1 template**:
+
+```markdown
+## 1:1 — with [name]
+### Last Week
+- Completed form module component split
+- Resolved FinSpread large table stuttering
+
+### This Week
+- Form SSR refactor phase 1
+- v8 → v9 dependency upgrade POC
+
+### Blockers
+- Business side UI design disagreement on form refactor
+- Missing 1 TS type auto-generation tool
+
+### Team / Personal Growth
+- Next week share: FinSpread performance optimization experience
+- Personal: review React 19 RSC
+```
+
+**Architect's mantra**: **1:1 is not review, it's "knowing the person"**. **Ask about personal growth more than tasks** — **members who leave after 3 years will remember who helped them grow**.
+
+### 2.2 Wednesday: PR Centralized Review
+
+```markdown
+## PR Queue (7 items)
+- #1234 form: field validation (medium)
+- #1235 FinSpread: column virtualization (urgent)
+- #1236 auth: OAuth integration (simple)
+- ...
+
+## Review Priority
+1. Urgent + blocking others → first
+2. New member PR → spend more time
+3. Repeated pattern PRs → abstract standard / template
+```
+
+**Architect's review five dimensions**:
+1. **Architectural consistency** — naming / patterns / boundaries match existing code
+2. **Error handling** — try/catch / boundaries / error messages
+3. **Testability** — core logic has unit tests
+4. **Observability** — key paths have tracing / logging
+5. **Maintainability** — clear naming / proper comments
+
+### 2.3 Friday: Retrospective + Next Week
+
+```markdown
+## This Week Retrospective
+- Done: form SSR refactor phase 1 (80% progress)
+- Risk: dependency upgrade hit v8 breaking change, postponed
+- Team growth: 2 new members onboarded, 1 senior mentoring
+
+## Next Week Plan
+- Form SSR phase 2
+- v8 → v9 upgrade delayed 1 week
+- Prepare monthly tech share
+```
+
+## 3. The Tao and Shu of Technical Decisions
+
+### 3.1 Shu: Choose React / Vue / Vite / Rspack
+
+**Shu level**:
+- Choose React vs Vue (framework)
+- Choose Vite vs Rspack (build)
+- Choose TanStack Table vs Element Plus (table)
+- Choose React Hook Form vs Formik (form)
+
+**Shu's answer**:
+- **Architect doesn't do it personally** — business side has preferences + team has accumulation
+- **Architect gives "decision framework"** — not the answer
+
+### 3.2 Tao: When to Choose What
+
+**Tao level**:
+- **Choose now** — current project's optimum
+- **Choose in 6 months** — team maintainability
+- **Choose in 3 years** — long-term tech debt
+
+**Tao's decision tree**:
+
+```
+Question: Should we use micro-frontend?
+
+Short-term (project):
+  Small project = no, monorepo + route lazy loading is enough
+  Large project = 50+ developers to consider
+
+Mid-term (team):
+  Team size < 5 = no
+  Team size 5-20 = depending
+  Team size > 20 = strongly recommend
+
+Long-term (tech debt):
+  Single repo 10K lines = no problem
+  Single repo 50K lines = consider micro-frontend
+  Single repo 200K lines = must micro-frontend
+```
+
+**Architect's mantra**: **Tao is the decision framework, Shu is the current answer**. **Only knowing Shu = following, knowing Tao = leading**.
+
+## 4. Interview and Promotion Engineering Philosophy
+
+### 4.1 Senior Engineer Interview
+
+```
+Technical depth:
+  1. Own project details (what tech, why choose)
+  2. Performance data (from X optimized to Y)
+  3. Debugging case (how to locate online bug)
+  4. Architecture understanding (MVVM / Fiber / Module Federation)
+  5. Tool proficiency (wrote several open source / tool chains)
+```
+
+### 4.2 Architect Interview
+
+```
+Technical breadth:
+  1. Multi-language / multi-framework experience (React + Vue + Angular)
+  2. Cross-domain knowledge (frontend + DevOps + security + performance)
+  3. Team management (team size / review mechanism / new member training)
+  4. Business impact (how much business value performance optimization brings)
+  5. Decision ability (why choose A not B / when to switch)
+```
+
+**Architect vs senior engineer interview difference**:
+
+| Dimension | Senior Engineer | Architect |
+|---|---|---|
+| **Depth** | 1 domain deep | Multi-domain + breadth |
+| **Impact** | Self / 1 project | Team / multi-project / cross-team |
+| **Decision** | "Use X framework" | "Why use / when to switch" |
+| **Management** | Individual output | Team output / new member training |
+| **Business** | "Built X feature" | "X optimization brought Y revenue" |
+
+### 4.3 Promotion Engineering Philosophy
+
+**Architect is not "person who does better", but "person who does more important things"**.
+
+```
+Level 1 (P5): Write code
+  "I'll write this component"
+Level 2 (P6): Project level
+  "I'll design this project"
+Level 3 (P7): Team level
+  "I'll set this team's tech direction"
+Level 4 (P8): Department level
+  "I'll set this department's tech strategy"
+Level 5 (P9): Cross-department / industry level
+  "I'll see industry tech trends"
+```
+
+**Architect's mantra**: **Promotion is not "do more", but "do more important"**. **100 components in 3 months** ≠ **architect**, **1 5-year tech direction in 3 months** = **architect**.
+
+## 5. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't shoulder all decisions yourself.** **Architect isn't omnipotent** — **architect without team = senior engineer + self-delusion**.
+2. **Don't forget to write code.** **Architect out of frontline = decision distortion**. **Keep 30% time writing code** — **hands dirty, mind clear**.
+3. **Don't prove others wrong in review.** **Review is "help the team do it right", not "prove I know"**. **Saying "this could be better" is more effective than "this is wrong"**.
+4. **Don't make the team wait for your decision.** **Architect slow response = team inefficiency**. **1-day SLA** to give clear decisions, **async doesn't block sync**.
+5. **Don't let tech debt grow geometrically.** **Architect's responsibility includes controlling tech debt** — **3-month big refactor**, **6-month architecture upgrade**.
+
+## Summary
+
+Six key facts that thread the "senior → architect" role transition together:
+
+- **Leverage thinking**: writing code 1× / managing code 10× / architect 100×.
+- **1:1 + PR review + weekly retrospective** are the standard rhythm for 3-5 person team.
+- **Tao vs Shu**: Tao is the decision framework, Shu is the current answer.
+- **Interview difference**: senior tests depth, architect tests breadth + team impact + decision ability.
+- **Promotion path**: P5 write code → P6 project → P7 team → P8 department → P9 industry.
+- **Architect's responsibility**: make team do it right + keep 30% time writing code + control tech debt.
+
+---
+
+**Congratulations!** 🎉 The entire "Frontend Architecture Cultivation Path" 30 posts are complete. **From browser rendering to AI era new approaches**, **the architect's full-stack knowledge system** is built.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What's the core difference between senior engineer and architect? What's the thinking shift from writing code to managing code?
+>
+> **A**: **Core difference = leverage**. **Senior engineer** writes code themselves, 1× leverage; **architect** makes the team write good code, 100× leverage. **Thinking shift point**: **from "I make it right" to "let the team all do it right"**. Specific manifestations: ① **Focus** from "I implement" to "team decision" — choosing React / Vue is no longer "I like" but "team accumulation"; ② **Time allocation** — senior 80% code 20% review, architect 30% code 70% decision / review / training; ③ **Leverage** — write 1 line vs set 1 standard; ④ **Metrics** — senior looks at "how much I completed", architect looks at "how much team completed + business impact".<AIAsk question="What's the core difference between senior engineer and architect? What's the thinking shift from writing code to managing code?" lang="en" />
+>
+> **Q2 (Think)**: What should be discussed in 1:1 for 3-5 person team management? Why isn't it a review?
+>
+> **A**: **1:1 is not review, it's "knowing the person"**. **Should discuss**: ① **Personal growth** — what do you want to learn in the next year? What do you need me to help with? — **Members who leave after 3 years will remember who helped them grow**; ② **Blockers** — what are you stuck on now? What can I help solve? ③ **Team feedback** — where do you think the team can be better? (give the team a chance to speak) ④ **Next quarter planning** — projects / learning directions you want to do. **Don't discuss**: ① task progress (covered in weekly meeting); ② performance evaluation (in performance review); ③ technical details (deep dive is review). **Mantra**: **Ask "you" 3× more than "tasks"**.<AIAsk question="What should be discussed in 1:1 for 3-5 person team management? Why isn't it a review?" lang="en" />
+>
+> **Q3 (Think)**: How to distinguish the Tao and Shu of technical decisions? Should architects only do "Tao" or "Tao + Shu"?
+>
+> **A**: **Tao = decision framework** ("when to choose what" + "why"); **Shu = current answer** ("choose React not Vue"). **Architect should do both** — **pure Tao (no code) = out of frontline, decision distortion; pure Shu (write code) = senior engineer + self-delusion**. **Real ratio**: **30% code** + **70% decision / review / training**. **Tao vs Shu judgment**: **can write ADR = Tao**; **can commit code = Shu**. **Architect does both** — **writing code keeps feel, making decisions is real work**.<AIAsk question="How to distinguish the Tao and Shu of technical decisions? Should architects only do 'Tao' or 'Tao + Shu'?" lang="en" />
+>
+> **Q4 (Think)**: What's the core difference between architect interview and senior engineer interview? What to show when promoting?
+>
+> **A**: **Core difference**: ① **Depth** — senior 1 domain deep, architect multi-domain + breadth; ② **Impact** — senior self / 1 project, architect team / multi-project / cross-team; ③ **Decision** — senior "use X framework", architect "why use / when to switch"; ④ **Management** — senior individual output, architect team output + new member training; ⑤ **Business** — senior "built X feature", architect "X optimization brought Y revenue". **Promotion show**: ① **Cross-domain breadth** — React + Vue + Angular all have production experience; ② **Business value** — specific revenue impact of performance optimization; ③ **Decision ability** — explain "why choose A not B" + "when to switch"; ④ **Team contribution** — how many people trained / what standards crystallized; ⑤ **Strategic vision** — judgment of industry 3-5 year trends.<AIAsk question="What's the core difference between architect interview and senior engineer interview? What to show when promoting?" lang="en" />
+>
+> **Q5 (Think)**: As an architect, how do you maintain 30% code time while also doing decision / review / training in the team?
+>
+> **A**: **Time allocation**: **Monday** — weekly plan + 1:1 (2h); **Tuesday / Thursday** — write code (2×3h); **Wednesday** — PR centralized review (3h) + write code (2h); **Friday** — retrospective + next week plan + write code (4h). **Key techniques**: ① **Batched PR review** — Wednesday centralized, avoid daily interruptions; ② **1:1 Monday** — 1 week 1 time, 30min, templated; ③ **Write code for "core modules"** — not edge components, only framework / tools / key business; ④ **Decision** — async communication, clear reply within 1 day; ⑤ **Training** — Code Review + tech share + 1:1 guidance three-piece set. **Effect**: 30% code = maintain feel, 70% decision = team leverage, 3-5 person team stable output.<AIAsk question="As an architect, how do you maintain 30% code time while also doing decision / review / training in the team?" lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
+
+## References
+
+- [The Manager's Path (Camille Fournier)](https://www.amazon.com/Managers-Path-Technical-Leadership/dp/149197389X) — classic tech management book
+- [Staff Engineer (Tanya Reilly)](https://www.amazon.com/Staff-Engineer-Leadership-distilled/dp/1736417916) — senior engineer to architect transition guide
+- [An Elegant Puzzle (Will Larson)](https://www.amazon.com/Elegant-Puzzle-Systems-Engineering/dp/173344718X) — systems thinking management book
+- [The Pragmatic Engineer Newsletter](https://newsletter.pragmaticengineer.com/) — architect career development reference
+- [Software Engineering at Google (Titus Winters)](https://www.amazon.com/Software-Engineering-Google/dp/1732203845) — Google engineering practices
+- [The Staff Engineer's Path (Tanya Reilly)](https://www.amazon.com/Staff-Engineers-Path/dp/1098114736) — Staff engineer growth path

@@ -1,0 +1,352 @@
+---
+title: "前端框架演变与 MVVM 思想史：从 jQuery 到 React 19"
+description: 前端架构师的框架史通识——Backbone / Knockout / AngularJS 到 React / Vue / Angular / Solid 的演化逻辑，MVVM / Flux / Signal 三种核心思想的对比
+pubDate: 2026-07-18
+tags: ['前端架构修仙路', '前端架构', '框架史', 'mvvm', 'react', 'vue']
+---
+
+import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
+
+## 前言
+
+做前端架构的人要不要懂框架演变史？我的回答是 **要**——不是去背"哪年谁发布"，而是建立"为什么是这个样子而不是另一样"的工程判断力。原因有三：
+
+1. **框架选型不靠博客文章**。React / Vue / Angular / Solid 各自解决不同问题。**理解每种框架的设计动机**，才能判断"我的项目该选谁"。
+2. **未来 5 年的趋势藏在历史里**。Hooks / Composition API / Signals 的演化路径，揭示了前端架构正在向"细粒度响应式 + 编译期优化"收敛。
+3. **跨年代技术栈需要历史视角**。简历里出现 Vue 2 / Vue 3 / React 16 / React 18 同时存在的情况，**不懂历史就只是工具切换，懂历史才是"我们为什么换了"**。
+
+这一篇是『前端架构修仙路』筑基期的开篇。我跳过每个框架的"特性罗列"（那些留给后续几篇深度文），用架构图 + 思想史 + 选型决策表，把 jQuery → Backbone → Knockout → AngularJS → React → Vue → Solid 的演化主线讲透。下一篇深度聊 React 19 / Fiber / Concurrent。
+
+## 一、前端框架 20 年演化时间线
+
+<Mermaid client:load caption="图 1：前端框架 20 年演化时间线" chart={`timeline
+  title Front-end Framework Evolution
+  2006 : jQuery DOM 操作事实标准
+  2010 : Backbone + Underscore MV* 起步
+  2010 : Knockout.js Observable + 双向绑定
+  2012 : AngularJS 1.x 完整 MVW 框架
+  2013 : React 1.x Virtual DOM + 单向数据流
+  2014 : Vue 1.x 渐进式框架
+  2016 : Angular 2 (rewrite) + TypeScript-first
+  2019 : Vue 3 + Composition API
+  2022 : React 18 + Server Components
+  2023 : Solid 1.0 细粒度响应式
+  2024 : React 19 + Compiler + Server Actions
+  2025 : Vue 3.5 + Vapor (no-VDOM)`} />
+
+## 二、三个原始问题：为什么需要框架
+
+在 jQuery 时代（2006-2012），前端代码长这样：
+
+```javascript
+// jQuery: 命令式 DOM 操作
+$('#userList').empty();
+users.forEach(u => {
+  const $li = $('<li>').text(u.name).attr('data-id', u.id);
+  $li.on('click', () => showDetail(u.id));
+  $('#userList').append($li);
+});
+```
+
+**三大痛点**：
+
+1. **状态同步**：用户改了数据 → 要手动 DOM 操作同步给 UI → 容易漏
+2. **代码组织**：所有逻辑都在 DOM 操作里，**复杂应用难以维护**
+3. **团队协作**：没有清晰的架构边界，**多人改一个文件就冲突**
+
+**框架的本质**：把"状态 → UI"的同步过程**自动化**，让开发者只关心"状态是什么"。
+
+## 三、MVVM 思想：让 Model 和 View 双向同步
+
+MVVM（Model-View-ViewModel）由 Microsoft 在 WPF / Silverlight 时代提出，是**前端框架第一个被广泛采用的设计模式**。
+
+### 3.1 三个角色
+
+<Mermaid client:load caption="图 2：MVVM 三角色" chart={`flowchart LR
+  M[Model<br/>业务数据] <-->|双向绑定| VM[ViewModel<br/>状态 + 逻辑]
+  VM -->|渲染| V[View<br/>UI]
+  V -->|用户交互| VM`} />
+
+- **Model**：业务数据（用户、订单、状态）
+- **ViewModel**：状态 + 业务逻辑（Vue 的 `data()` + `methods`、React 的组件 state + handler）
+- **View**：UI（DOM / Template）
+
+### 3.2 Knockout.js 的先驱工作（2010）
+
+Knockout.js 是**第一个把 MVVM 完整搬到浏览器的框架**：
+
+```javascript
+// Knockout: 声明式绑定
+function UserViewModel() {
+  this.name = ko.observable('Alice');  // 状态 = observable
+  this.greeting = ko.computed(() => `Hello, ${this.name()}!`);
+}
+
+ko.applyBindings(new UserViewModel());
+// <input data-bind="value: name">  // 自动响应
+// <span data-bind="text: greeting">
+```
+
+**贡献**：证明了"框架可以**声明式**地把数据映射到 UI"。**缺陷**：纯 runtime 跟踪，**没有编译期优化**，大列表性能差。
+
+### 3.3 AngularJS 1.x 的扩展（2012）
+
+AngularJS 把 MVVM 扩展成 **MVW（Model-View-Whatever）**：
+
+```javascript
+// AngularJS 1.x: 双向绑定 + DI + 路由
+angular.module('app', [])
+  .controller('UserCtrl', function($scope) {
+    $scope.name = 'Alice';
+    $scope.greeting = () => `Hello, ${$scope.name}!`;
+  });
+// <div ng-controller="UserCtrl">
+//   <input ng-model="name">
+//   <span>{{ greeting() }}</span>
+// </div>
+```
+
+**贡献**：把"模块化、依赖注入、路由、表单校验"整套企业级方案带进前端。**缺陷**：脏检查（dirty checking）机制让 500+ 字段的大表单卡顿；**学习曲线陡**。
+
+## 四、React 的革命：Virtual DOM + 单向数据流（2013）
+
+React 没有继承 MVVM，而是提出**全新的范式**：**UI = f(state)**。
+
+### 4.1 核心思想
+
+```jsx
+// React: UI 是状态的纯函数
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <p>{count}</p>
+      <button onClick={() => setCount(count + 1)}>+</button>
+    </div>
+  );
+}
+```
+
+**关键洞察**：UI 完全由 state 决定；state 改变 → React 自动重新渲染对应部分。开发者**不需要手动操作 DOM**。
+
+### 4.2 Virtual DOM：性能的关键
+
+直接操作真实 DOM 很慢（每次改动触发 layout / paint）。React 引入 **Virtual DOM**：
+
+1. 状态变化 → 生成新 Virtual DOM 树
+2. **Diff 算法**对比新旧树（O(n)）
+3. 把变化的部分批量更新到真实 DOM
+
+**贡献**：声明式 + 高性能。**缺陷**：Virtual DOM 有运行时开销（Diff / 序列化），社区一直有"没 Virtual DOM 是否更快"的讨论。
+
+### 4.3 单向数据流：Flux / Redux
+
+React 自带 state，但**跨组件状态共享**是个问题。Flux 架构 + Redux 给出答案：
+
+```javascript
+// Redux: 单一数据源 + 纯函数 reducer + 单向数据流
+const initial = { count: 0 };
+function reducer(state = initial, action) {
+  switch (action.type) {
+    case 'INC': return { count: state.count + 1 };
+    default: return state;
+  }
+}
+
+const store = createStore(reducer);
+store.dispatch({ type: 'INC' });
+console.log(store.getState());  // { count: 1 }
+```
+
+**贡献**：让"状态变化可预测、可调试（time-travel debugging）"。**缺陷**：样板代码多，**Redux 团队自己后来说"太多人用了"**，现代推荐 Zustand / Jotai。
+
+## 五、Vue 的渐进式哲学（2014）
+
+Vue 的设计动机和 React **完全不同**——**Vue 想做一个"渐进式"框架**：可以从 CDN 引入一个 `<script>` 用，也可以全家桶搭大型应用。
+
+### 5.1 模板语法：HTML-first
+
+```vue
+<!-- Vue: 模板语法对设计师 / 后端友好 -->
+<template>
+  <div>
+    <p>{{ greeting }}</p>
+    <button @click="count++">{{ count }}</button>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+const count = ref(0);
+const greeting = computed(() => `Hello, ${count.value}`);
+</script>
+```
+
+**核心差异**：
+- React 用 **JSX**（JS 里写 HTML）
+- Vue 用 **SFC**（.vue 文件，HTML/CSS/JS 三段）
+- Vue 模板**编译成 render function**，有编译期优化空间
+
+### 5.2 响应式：基于 Proxy 的依赖追踪（Vue 3）
+
+Vue 3 用 **Proxy** 拦截属性访问，自动追踪依赖：
+
+```javascript
+// Vue 3 响应式核心
+const obj = reactive({ count: 0 });
+effect(() => {
+  console.log(obj.count);  // 依赖追踪:count
+});
+obj.count = 1;  // 自动触发 effect
+```
+
+**vs React**：React 用 **显式 setState** 触发更新；Vue 用 **隐式依赖追踪**。**生产影响**：
+- React 哲学：状态改变 = 你说了算
+- Vue 哲学：状态改变 = 框架自动发现
+
+## 六、Angular 2 的 TypeScript-first 重生（2016）
+
+AngularJS 1.x 的脏检查模式**性能天花板太低**，Google 决定重写。Angular 2.0（后来简称 Angular）：
+
+- 全面 TypeScript
+- **依赖注入**作为一等公民
+- **RxJS** 作为异步原语
+- **Zone.js** 自动追踪变化
+
+**核心哲学**：**"约定优于配置"**——大型团队需要清晰的架构边界，Angular 用强约束提供这个。
+
+```typescript
+// Angular: 模块化 + DI + RxJS
+@Component({
+  selector: 'app-user',
+  template: `<p>{{ name$ | async }}</p>`,
+})
+export class UserComponent {
+  name$ = this.http.get<User>('/api/user').pipe(map(u => u.name));
+  constructor(private http: HttpClient) {}
+}
+```
+
+**贡献**：企业级架构 + 强类型 + 完整工具链（CLI / Testing / i18n）。**缺陷**：学习曲线最陡，**bundle size 最大**（200KB+），**冷启动慢**。
+
+## 七、Hooks 革命：函数式组件的主流化（2019）
+
+React 16.8 引入 Hooks，**彻底改变了 React 的写法**：
+
+```jsx
+// Hooks 前: class component 写 state
+class Counter extends React.Component {
+  state = { count: 0 };
+  render() {
+    return <button onClick={() => this.setState({ count: this.state.count + 1 })}>{this.state.count}</button>;
+  }
+}
+
+// Hooks 后: 函数式 + 状态逻辑复用
+function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
+}
+```
+
+**Hooks 解决了什么问题**：
+
+1. **状态逻辑复用**：`useState` / `useEffect` 可以提取到自定义 hook（class component 的 HOC 太绕）
+2. **避免 `this`**：函数式心智 + 闭包，更符合 JS 习惯
+3. **Tree-shaking 友好**：函数组件不挂载 class 字段，bundle 更小
+
+**Vue 3 的 Composition API**（2020）是同样的回应——Vue 3 既有 Options API（声明式）又有 Composition API（函数式），**两种风格并存**。
+
+## 八、Server Components：渲染再次跨边界（2022-2024）
+
+React Server Components（RSC）2022 在 React 18 引入，2024 的 Next.js 14 / React 19 落地。它**重新划分了"客户端 vs 服务端"的边界**：
+
+```
+React 19 渲染模式:
+  - Server Components (RSC): 只在服务端跑,不发送 JS 到客户端
+  - Client Components ('use client'): 服务端渲染 HTML + 客户端 hydration
+  - Server Actions: 服务端函数,客户端可直接调用
+```
+
+**架构师意义**：组件首次可以**真的只跑在服务端**（不传 JS 也能交互，因为交互通过 Server Action 走网络）。**bundle size 可以做到极小**。
+
+Vue 3.5 的 Vapor mode（2025）和 Solid Start 走类似路径。**这是未来 5 年最确定的趋势**。
+
+## 九、Signals：细粒度响应式的回归（2023-2024）
+
+Solid.js / Qwik / Vue 3.5（Vapor）走的是**"不要 Virtual DOM"** 的路线：
+
+```javascript
+// Solid: 细粒度响应式 + 无 Virtual DOM
+const [count, setCount] = createSignal(0);
+return <button onClick={() => setCount(count() + 1)}>{count()}</button>;
+// 只更新 count 这个 DOM 文本节点,不解 diff
+```
+
+**核心优势**：
+- **没有 Virtual DOM 序列化 / Diff 开销**
+- **精确更新**：state 改变只更新用到的 DOM 节点
+- **Bundle size 极小**：Solid 7KB vs React 45KB
+
+**生产数据**：某 list 重渲染场景，Solid 比 React 快 3-10 倍（无虚拟 DOM 开销）。
+
+## 十、框架选型决策表
+
+| 项目场景 | 推荐 | 理由 |
+|---|---|---|
+| 企业级大型中后台（>100 页面） | **Vue 3 / Angular** | 学习曲线适中 / 强约定，团队规模化友好 |
+| 创业项目快速迭代 | **React / Vue 3** | 生态最丰富，组件库最全 |
+| 性能敏感（动画 / 大量数据） | **Solid** | 无 VDOM 开销，bundle 小 |
+| SEO + SSR 优先 | **Next.js (React) / Nuxt (Vue)** | 内置 SSR / SSG / ISR |
+| AI / Server 优先（API 为主） | **Next.js 15 App Router / Solid Start** | RSC + Server Actions |
+| 跨端（移动 / 桌面） | **React Native / Taro / Flutter** | 跨端框架原生支持 |
+| 老 jQuery / Backbone 项目维护 | **Vue 3（渐进式）** | 可以局部替换，不强推全家桶 |
+
+**架构师心法**：**框架是工具，不是信仰**。**Vue / React / Angular / Solid 都能写出好代码；选错的代价是开发效率 + 招聘难度 + 长期维护成本**。
+
+## 十一、踩坑提醒（资深架构师请重点看）
+
+1. **不要盲目追新框架**。新框架（Solid / Qwik）的优势在大规模项目中才能体现，小项目反而是负担。**React / Vue 选主流版本，5 年内不会过时**。
+2. **不要把所有状态都放进全局 store**。Redux 解决的是跨组件状态共享，**能用 useState / ref 解决的不要 Redux**——这是 80% 的项目过度工程。
+3. **不要混淆响应式原理**。React 用 **setState 触发 re-render**；Vue 用 **依赖追踪**；Angular 用 **Zone.js**。**面试 / 排查 bug 时必须能区分**。
+4. **不要在 Vue / React 之间反复横跳**。混用会增加团队负担，**一套技术栈走到底**比"用最好的"更重要。
+5. **不要忽略"框架之外"的部分**。构建工具 / 状态管理 / 路由 / 表单 / 测试 / 部署——框架只占整体工程的 30%。**架构师的能力是整合，不是选型**。
+
+## 总结
+
+这一篇用 6 个关键事实把框架演变史串起来：
+
+- **20 年主线**：jQuery（命令式 DOM）→ MVVM（数据驱动）→ React/Vue（声明式 + 响应式）→ RSC/Signals（编译期 + 细粒度）。
+- **MVVM 是第一个广泛采用的设计模式**，Knockout / AngularJS 是先驱。
+- **React 的革命**：UI = f(state) + Virtual DOM + 单向数据流。
+- **Vue 的渐进式**：模板语法 + 响应式追踪 + Options/Composition 双 API。
+- **Hooks 与 Composition API**：函数式组件统一，状态逻辑可复用。
+- **RSC / Signals**：未来 5 年的趋势——编译期优化 + 细粒度响应式。
+
+**下一篇**：React 19 深度——Fiber 协调器、Hooks 内部、Concurrent 渲染，从原理到性能。
+
+## 5 道重点面试问题方向
+
+> **Q1（答案）**：React / Vue / Angular 三大框架的核心心智模型分别是什么？为什么它们选择了不同的设计？
+>
+> **A**：**React** 是「**UI = f(state)**」——单向数据流，函数式思维，性能可控需要手动 `memo / useMemo`。**Vue** 是「**响应式数据代理**」——基于 `Proxy` 自动追踪依赖，写起来最自然。**Angular** 是「**依赖注入 + Zone.js 自动脏检查**」——大企业级约定优于配置，长期可维护。**React 革命**：跳出 MVVM 范式，用"UI 是状态的纯函数"简化心智。**Vue 渐进式**：用模板语法降低门槛，响应式追踪降低心智负担。**Angular 工业级**：用强约束 + DI + RxJS 给大型团队架构边界。**面试要点**：把这三者讲成 3 种*处理 UI 与状态关系*的不同哲学，而不是"谁更好用"。真正的回答深度是：你能讲清 Angular DI 的树形结构 / React Fiber 的双缓冲协调 / Vue 3 的 `effect` 调度器。<AIAsk question="React / Vue / Angular 三大框架的核心心智模型分别是什么？为什么它们选择了不同的设计？" />
+>
+> **Q2（思考）**：Knockout.js / AngularJS 1.x 提出的 MVVM 模式在 2010 年很火，但现在主流框架都不再强调 MVVM 了。为什么？<AIAsk question="Knockout.js / AngularJS 1.x 提出的 MVVM 模式在 2010 年很火，但现在主流框架都不再强调 MVVM 了。为什么？" />
+>
+> **Q3（思考）**：React 的 Virtual DOM 解决了什么问题？Solid / Qwik 等新框架为什么认为「没有 Virtual DOM 更快」？<AIAsk question="React 的 Virtual DOM 解决了什么问题？Solid / Qwik 等新框架为什么认为「没有 Virtual DOM 更快」？" />
+>
+> **Q4（思考）**：React Hooks 和 Vue Composition API 都在 2019-2020 年推出，它们的设计动机和解决的问题是不是一样？请对比说明。<AIAsk question="React Hooks 和 Vue Composition API 都在 2019-2020 年推出，它们的设计动机和解决的问题是不是一样？请对比说明。" />
+>
+> **Q5（思考）**：React Server Components / Vue Vapor / Solid Start 这些「编译期框架」代表了什么趋势？你在 2024 年的新项目里会选哪种？<AIAsk question="React Server Components / Vue Vapor / Solid Start 这些「编译期框架」代表了什么趋势？你在 2024 年的新项目里会选哪种？" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
+
+## 参考资料
+
+- [The History of React (Lee Byron)](https://www.youtube.com/watch?v=VVyhFxoFsf8) — React 早期核心成员讲历史
+- [Vue.js: The Documentary](https://www.youtube.com/watch?v=OrxmtDwSgWQ) — Vue 创立十周年纪录片
+- [Angular: Past, Present, and Future (Igor Minar)](https://www.youtube.com/watch?v=VVJ7nskTuSA) — Angular 团队创始成员讲历史
+- [Solid.js: Reactivity & Performance (Ryan Carniato)](https://www.youtube.com/watch?v=SOe_aIDecm4) — Solid 作者讲细粒度响应式
+- [Patterns.dev: Web App Architecture](https://www.patterns.dev/) — 现代前端架构模式
+- [JavaScript Framework History (risingstars.js.org)](https://risingstars.js.org/) — 历年 JS 框架生态报告
