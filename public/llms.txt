@@ -42,6 +42,7 @@
 > Same series in English at `https://lovanya.github.io/en/blog/frontend-architecture-cultivation-path`.
 
 - [前端架构修仙路 —— 总纲导论（序章）](https://lovanya.github.io/blog/frontend-architecture-cultivation-path): 系列导论 + 修仙境界隐喻 + 5 大阶梯导览 + 3 种阅读路径 + 简历技术栈 vs 全系列对照表 + 5 道面试问题方向 (2026-07-18)
+- [浏览器如何渲染出一个网页：从 URL 到像素的完整链路](https://lovanya.github.io/blog/how-browser-renders-page): 关键渲染路径 + 网络层 TTFB + 阻塞规则 + 合成层 + Web Vitals + 顺丰 ERP 4.2s→1.8s 首屏优化实战拆解 (2026-07-18)
 
 ### 练气期 · 基础功法（6 篇）
 入门修士根基。看不懂底层，框架学再多也是空中楼阁。#1–#6（浏览器 / CSS·HTML5 / JS 底层 / HTTP / 安全 / TS）

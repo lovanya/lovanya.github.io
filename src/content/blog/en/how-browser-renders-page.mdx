@@ -1,0 +1,177 @@
+---
+title: "How Browsers Render a Page: The Full Pipeline from URL to Pixels"
+description: A frontend architect's crash course on browser rendering — network layer, critical rendering path, compositor layers, and Web Vitals. The theoretical foundation behind going from 4.2s to 1.8s LCP.
+pubDate: 2026-07-17
+tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'browser', 'rendering', 'performance']
+---
+
+import Mermaid from '../../../components/Blog/Mermaid';
+
+## Introduction
+
+Should a frontend architect understand browser rendering? My answer is **yes** — not to derive the source of a CSS engine, but to build intuition for what actually happens during a page visit. Three reasons:
+
+1. **Performance optimization demands it.** The 4.2s → 1.8s LCP improvement on my resume wasn't framework tricks — it was breaking down every millisecond between the DNS lookup and the compositor paint. Without the rendering pipeline as a mental model, you're just tuning the framework layer blindly.
+2. **Production debugging demands it.** When a user reports a 3-second white screen or stuttering scroll, understanding the pipeline lets you locate the failing stage in five minutes — network, parse, layout, or composite.
+3. **Vendor pitches stop fooling you.** SSR / SSG / ISR / edge rendering / streaming HTML — each name is a different cut-point in the rendering timeline. Without the underlying model, you just parrot blog posts.
+
+This is the opening post of the *Frontend Architecture Cultivation Path* series. We skip the bytecode internals of CSS engines and the optimization passes of V8 (those get their own deep dives), and lean on architecture diagrams, real performance numbers, and production debugging cases to make the full pipeline concrete. The next post covers CSS / HTML5 advanced topics and the box model.
+
+## 1. From URL to First Byte: The Network Layer
+
+The moment the user hits Enter in the address bar until the browser receives the first byte (TTFB, Time To First Byte), four stages must complete:
+
+<Mermaid client:load caption="Figure 1: URL to first byte — the network layer" chart={`flowchart LR
+  U[User hits Enter<br/>in address bar] --> DNS[DNS resolution<br/>Browser → OS → router → ISP<br/>Local cache hit ≈ 0ms]
+  DNS --> TCP[TCP 3-way handshake<br/>~1 RTT]
+  TCP --> TLS[TLS handshake<br/>HTTPS ~2 RTT<br/>HTTP/3 ~0 RTT]
+  TLS --> REQ[HTTP request<br/>First HTML byte returns]
+  REQ --> TTFB[TTFB ≈<br/>DNS + TCP + TLS + REQ]`} />
+
+**Real-world latency distribution** (cold load on 4G mobile, no cache):
+
+| Stage | Typical latency | Optimization |
+|---|---|---|
+| DNS | 50–200ms | `dns-prefetch`, HTTP/3 (QUIC), browser/OS cache |
+| TCP | 1 RTT ≈ 80–200ms | Persistent connections, TLS 1.3, QUIC |
+| TLS | 1–2 RTT ≈ 80–400ms | TLS 1.3, OCSP stapling, session resumption |
+| Request → First Byte | 100–500ms | Edge CDN (Cloudflare/Fastly hit ≈ 30ms), server pre-render |
+
+**The most important architectural insight**: TTFB is the **ceiling** of front-end optimization. No matter how hard the front-end works, it can't beat the network floor. In the SF Express ERP 4.2s LCP case, the first cut was CDN + HTTP/3, dropping TTFB from 800ms to 80ms.
+
+## 2. Critical Rendering Path (CRP)
+
+Once the browser has the HTML bytes, the rendering pipeline runs through these stages:
+
+<Mermaid client:load caption="Figure 2: Browser critical rendering path" chart={`flowchart LR
+  HTML[HTML bytes] --> DOM[DOM Tree<br/>HTML parsing]
+  CSS[CSS bytes] --> CSSOM[CSSOM<br/>CSS parsing]
+  JS[JavaScript] -->|blocks| HTML
+  DOM --> RT[Render Tree<br/>DOM + CSSOM]
+  CSSOM --> RT
+  RT --> LAYOUT[Layout<br/>Reflow]
+  LAYOUT --> PAINT[Paint<br/>drawing]
+  PAINT --> COMPOSITE[Composite<br/>+ rasterize]
+  COMPOSITE --> SCREEN[Screen pixels]`} />
+
+Each stage blocks the next. The next stage depends on the previous stage's output. That's why "first paint time" is a phased metric, not a single number.
+
+### 2.1 DOM Tree
+
+The HTML byte stream goes through the HTML parser. When it hits `<script>`, parsing stops immediately and the script executes (unless `async`/`defer`). CSS is downloaded asynchronously. This is why `<script>` blocks DOM parsing — the browser can't be sure the script won't call `document.write()`.
+
+### 2.2 CSSOM Tree
+
+The CSS byte stream goes through the CSS parser to produce the CSSOM. CSS parsing itself is fast, but downloading the CSS file blocks rendering — the browser doesn't dare layout before it knows what the CSS looks like.
+
+### 2.3 Render Tree
+
+DOM + CSSOM become the Render Tree. **Note**: invisible elements like `<head>`'s `meta` and `<script>` don't enter the Render Tree. `display: none` elements also don't enter the Render Tree (but `visibility: hidden` does — it occupies space but doesn't paint).
+
+### 2.4 Layout (Reflow)
+
+Each node on the Render Tree computes its geometric position (x, y, width, height) per the box model. Layout is **recursive + tree-walking** — parent layout must finish before children layout can begin; root layout finishes before any node is done.
+
+### 2.5 Paint
+
+Each node's actual pixels are drawn (color, text, borders, shadows, gradients). The output is a **paint records list** (Display List), not a bitmap.
+
+### 2.6 Composite
+
+Different layers (compositor layers) are combined into the final image and sent to the GPU. This is usually **the cheapest step** — as long as layout and paint didn't trigger, rasterization is GPU-bound.
+
+## 3. Who Blocks Whom: A Cheat Sheet
+
+This is a high-frequency interview question and must be memorized for performance work:
+
+| Resource | Blocks | Doesn't block |
+|---|---|---|
+| `<script>` (default) | HTML parsing, DOM construction, render after CSSOM | Doesn't block download (`<script src>` is parallel) |
+| `<script defer>` | Parsing (executes in order before `DOMContentLoaded`) | — |
+| `<script async>` | Parsing (executes immediately when downloaded, order not guaranteed) | — |
+| `<link rel="stylesheet">` | Rendering (waits for CSSOM) | Doesn't block DOM parsing, but blocks subsequent JS (JS may read computed style) |
+| `<link rel="preload">` | Nothing — just hints the browser to download early | — |
+| `<img>` | Doesn't block parsing, doesn't block rendering | Joins layout only after download |
+
+**Most common pitfall**: a heavy synchronous `<script>` at the top of `<head>`. HTML parsing stops, CSS doesn't trigger layout in parallel — your first paint is delayed by 1 second because of a 200KB vendor.js. This is why mainstream frameworks (Next.js / Nuxt / Astro) default to putting `<script>` at the end of `<body>` or with `defer`.
+
+## 4. Compositor Layers and Hardware Acceleration: Which Operations Are Cheapest?
+
+The browser splits the page into several compositor layers; each is independently rasterized and composited by the GPU. **Key insight: only transform and opacity changes can skip Layout + Paint and go straight to Composite.**
+
+```typescript
+// ✅ Goes through composite — 60fps smooth
+button.style.transform = 'translateX(100px)';
+button.style.opacity = '0.5';
+
+// ❌ Goes through layout + paint — may drop frames on large lists
+button.style.left = '100px';        // triggers reflow
+button.style.width = '200px';       // triggers reflow
+button.style.background = 'red';    // triggers paint (no layout impact)
+```
+
+**This rule directly determines animation library choice**: all modern animation libraries (Framer Motion, GSAP, Vue Transition) drive animations with transform / opacity by default. If you see `left` / `top` / `width` being updated at high frequency, that's a performance bug.
+
+**The SF Express ERP FinSpread large-spreadsheet column drag uses this trick** — dragging columns changes `transform: translate3d()`, skipping layout/paint and keeping 60fps.
+
+## 5. Web Vitals: How to Measure, How to Read
+
+Three core metrics from [Web Vitals](https://web.dev/articles/lcp):
+
+| Metric | Full name | Threshold (good / poor) | Stage measured |
+|---|---|---|---|
+| **LCP** | Largest Contentful Paint | ≤2.5s / >4s | When the largest above-the-fold content appears |
+| **INP** | Interaction to Next Paint | ≤200ms / >500ms | Interaction responsiveness (replaced FID) |
+| **CLS** | Cumulative Layout Shift | ≤0.1 / >0.25 | Visual stability |
+
+**Performance timeline to read alongside**:
+
+<Mermaid client:load caption="Figure 3: FCP / LCP / TTI key moments" chart={`flowchart LR
+  T0[Navigation start] --> TTFB[TTFB<br/>First byte]
+  TTFB --> FCP[FCP<br/>First Contentful Paint<br/>any content first appears]
+  FCP --> LCP[LCP<br/>Largest content appears<br/>core target ≤ 2.5s]
+  LCP --> TTI[TTI<br/>Time to Interactive<br/>main thread idle ≥5s]
+  TTI --> IDLE[Steadily interactive]`} />
+
+**The 4.2s → 1.8s breakdown** (SF Express ERP real case): from LCP 4.2s to 1.8s isn't one trick — it's the sum of every stage:
+
+| Stage | 4.2s baseline | 1.8s target | Key action |
+|---|---|---|---|
+| TTFB | 800ms | 80ms | CDN + HTTP/3 + edge cache |
+| HTML download | 400ms | 100ms | Streaming SSR + shrink first-screen HTML |
+| CSS / fonts | 600ms | 150ms | `font-display: swap` + inline critical CSS |
+| JS execution | 1500ms | 700ms | Code splitting + vendor chunk split + tree-shaking |
+| First-screen images | 900ms | 400ms | `<link rel=preload>` + AVIF + LQIP placeholder |
+| LCP render | 4.2s | **1.8s** | Sum of the five items above |
+
+**Architect-level judgment**: if LCP is much larger than the sum of TTFB + HTML + CSS + JS, the problem is most likely the network layer or resource size. If LCP is close to the sum, the problem is the rendering pipeline or main-thread blocking.
+
+## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
+
+1. **Don't slap `async` on every `<script>`.** `async` loses execution order — multiple vendor scripts will race for the DOM. **The only safe usage**: completely independent scripts (analytics SDKs).
+2. **Don't trust that `display: none` truly "doesn't render".** It only excludes from the Render Tree, but child component mount logic and effects still execute (since React 18, only lazy init approaches this).
+3. **Don't pile everything onto transform to avoid reflow.** Each transform promotes a new compositor layer — **thousands of layers explode VRAM**. Chrome DevTools Layers panel shows layer count.
+4. **Don't conflate FP / FCP / LCP.** FP (First Paint) is when the browser paints any pixel; FCP is the first meaningful content (text/image); LCP is the largest content. FCP might be 1s while LCP is still 4s — don't report FP as your first-screen metric.
+5. **Streaming SSR is not silver bullet.** React 18 / Next.js App Router streaming requires Node 18+ server, client-side fetch priority scheduling, and degradation for older browsers. Evaluate ops cost before adopting.
+
+## Summary
+
+Six key facts that thread the browser rendering pipeline together:
+
+- **Network layer** is the ceiling of first-screen optimization. TTFB is the hard limit.
+- **Critical Rendering Path**: DOM + CSSOM → Render Tree → Layout → Paint → Composite. Each stage depends on the previous.
+- **Block rules**: default `<script>` blocks HTML parsing, `<link rel=stylesheet>` blocks rendering. `defer` / `async` / `preload` are the escape hatches.
+- **Compositor layers**: only transform and opacity can skip Layout + Paint — the core of animation optimization.
+- **Web Vitals**: LCP / INP / CLS are core metrics. FCP / FP are long obsolete.
+- **4.2s → 1.8s** isn't one trick — it's the combined governance of network, resource size, rendering pipeline, and main thread.
+
+**Next post**: CSS / HTML5 advanced — box model, Flex, Grid, container queries. Expanding today's rendering pipeline's "paint stage" into the visual layer fundamentals.
+
+## References
+
+- [Critical Rendering Path (Google Developers)](https://developer.chrome.com/docs/performance/insights/rendering) — official step-by-step breakdown of the CRP
+- [Web Vitals (web.dev)](https://web.dev/articles/lcp) — official definitions and thresholds for LCP/INP/CLS
+- [Rendering Performance (Google Developers)](https://developer.chrome.com/docs/performance/insights/rendering) — paint / composite / layer deep dive
+- [High Performance Browser Networking (Ilya Grigorik)](https://hpbn.co/) — classic reference for the full network layer
+- [GPU Accelerated Compositing in Chrome (HTML5 Rocks)](https://www.html5rocks.com/en/tutorials/speed/layers/) — origin article on compositor layers and hardware acceleration
+- [HTTP/3 Explained (Daniel Stenberg, Mozilla)](https://http3-explained.haxx.se/) — standard explanation of HTTP/3 and QUIC
