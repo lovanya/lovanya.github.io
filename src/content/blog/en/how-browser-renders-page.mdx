@@ -6,6 +6,7 @@ tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'brows
 ---
 
 import Mermaid from '../../../components/Blog/Mermaid';
+import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
@@ -166,6 +167,24 @@ Six key facts that thread the browser rendering pipeline together:
 - **4.2s → 1.8s** isn't one trick — it's the combined governance of network, resource size, rendering pipeline, and main thread.
 
 **Next post**: CSS / HTML5 advanced — box model, Flex, Grid, container queries. Expanding today's rendering pipeline's "paint stage" into the visual layer fundamentals.
+
+## 5 Key Interview Question Tracks
+
+> This section maps one-to-one with the article: every key fact above is the answer material for at least one question below. **Q1 ships with a complete answer as a model**; the other four are for you to think through — each one is followed by an AI assistant button for a one-click detailed answer.
+
+> **Q1 (Answer)**: What stages does a browser go through from entering a URL to rendering the page? Which stages can be optimized on the front-end?
+>
+> **A**: Two layers — **the network layer** (DNS → TCP → TLS → HTTP response → TTFB) and **the rendering layer** (HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **What the front-end can optimize**: ① Network: CDN + HTTP/3 + edge cache to compress TTFB from hundreds of ms to tens of ms. ② HTML: shrink first-screen markup + streaming SSR for earlier first bytes. ③ CSS / fonts: inline critical CSS + `font-display: swap` to unblock rendering. ④ JS: code splitting + tree-shaking so the main thread goes idle fast. ⑤ Images: `<link rel=preload>` + AVIF + LQIP placeholders. **Interview tip**: naming a quantifiable metric per stage (ms or %) sounds far more professional than saying "we optimized the network" in general terms.<AIAsk question="What stages does a browser go through from entering a URL to rendering the page? Which stages can be optimized on the front-end?" lang="en" />
+>
+> **Q2 (Think)**: What commonly triggers Reflow and Repaint in browser rendering? How do you avoid them at the code level?<AIAsk question="What commonly triggers Reflow and Repaint in browser rendering? How do you avoid them at the code level?" lang="en" />
+>
+> **Q3 (Think)**: Why don't transform / opacity animations trigger reflow or paint? What's the compositor layer mechanism behind them?<AIAsk question="Why don't transform / opacity animations trigger reflow or paint? What's the compositor layer mechanism behind them?" lang="en" />
+>
+> **Q4 (Think)**: What do the performance metrics LCP, FCP, FP, TTFB, and TTI each measure? Which one gives the biggest user-experience win when optimized?<AIAsk question="What do the performance metrics LCP, FCP, FP, TTFB, and TTI each measure? Which one gives the biggest user-experience win when optimized?" lang="en" />
+>
+> **Q5 (Think)**: In production, how did you take a 4.2s first-screen down to 1.8s? Walk through the per-stage latency breakdown and matching optimizations.<AIAsk question="In production, how did you take a 4.2s first-screen down to 1.8s? Walk through the per-stage latency breakdown and matching optimizations." lang="en" />
+
+> 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 
 ## References
 

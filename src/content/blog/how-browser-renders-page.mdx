@@ -6,6 +6,7 @@ tags: ['前端架构修仙路', '前端架构', '浏览器', '渲染', '性能']
 ---
 
 import Mermaid from '../../components/Blog/Mermaid';
+import AIAsk from '../../components/Blog/AIAsk.astro';
 
 ## 前言
 
@@ -166,6 +167,24 @@ Web Vitals（[官方定义](https://web.dev/articles/lcp)）三个核心：
 - **4.2s → 1.8s** 不是一招魔法，是网络 + 资源 + 渲染流水线 + 主线程的综合治理。
 
 **下一篇**：CSS / HTML5 进阶——盒模型 / Flex / Grid / 容器查询。把今天渲染流水线的"绘制阶段"展开到视觉层基础。
+
+## 5 道重点面试问题方向
+
+> 这一节和正文一对一呼应：上面讲的每个关键事实，都是下面某道题的答案素材。**Q1 给完整答案作为示范**，剩下 4 道留给你思考——每道题后都接了 AI 助手按钮，可以一键拿到详细答案。
+
+> **Q1（答案）**：浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？
+>
+> **A**：**网络层**（DNS → TCP → TLS → HTTP 响应 → TTFB）+ **渲染层**（HTML 解析 → DOM Tree → CSS 解析 → CSSOM → Render Tree → Layout → Paint → Composite → 屏幕像素）。**前端能优化的**：① 网络层走 CDN + HTTP/3 + 边缘缓存把 TTFB 从几百 ms 压到几十 ms；② HTML 体积 + 流式 SSR 让首字节更快到达；③ CSS / 字体关键路径 inline + `font-display: swap` 减少阻塞；④ JS 用代码分割 + tree-shaking 让主线程尽快空闲；⑤ 图片用 `preload` + AVIF + LQIP 占位。**面试要点**：把每阶段说出一个可量化的指标（毫秒或百分比），比泛泛而谈"网络优化"专业得多。<AIAsk question="浏览器从输入 URL 到页面呈现经历了哪些阶段？哪些阶段可以被前端优化？" />
+>
+> **Q2（思考）**：浏览器渲染过程中触发 Reflow（回流）和 Repaint（重绘）的常见原因有哪些？如何从代码层面避免？<AIAsk question="浏览器渲染过程中触发 Reflow（回流）和 Repaint（重绘）的常见原因有哪些？如何从代码层面避免？" />
+>
+> **Q3（思考）**：transform / opacity 动画为什么不会触发 reflow/paint？背后的合成层机制是什么？<AIAsk question="transform / opacity 动画为什么不会触发 reflow/paint？背后的合成层机制是什么？" />
+>
+> **Q4（思考）**：LCP、FCP、FP、TTFB、TTI 这些性能指标分别衡量什么？优化哪个指标对用户体验收益最大？<AIAsk question="LCP、FCP、FP、TTFB、TTI 这些性能指标分别衡量什么？优化哪个指标对用户体验收益最大？" />
+>
+> **Q5（思考）**：在生产环境里，你是怎么把一个首屏 4.2s 的页面优化到 1.8s 的？请说具体每阶段的耗时拆解和对应优化手段。<AIAsk question="在生产环境里，你是怎么把一个首屏 4.2s 的页面优化到 1.8s 的？请说具体每阶段的耗时拆解和对应优化手段。" />
+
+> 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
 
 ## 参考资料
 
