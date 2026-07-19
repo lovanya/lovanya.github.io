@@ -206,7 +206,7 @@ const FinanceApp = React.lazy(() => import('finance/App'));
 >
 > **Q4(思考)**:qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?
 >
-> **A**:**iframe 沙箱**:100% JS / CSS 隔离(独立 window/document),**性能损耗 5-15%**(iframe 创建 + postMessage 通信);**JS 沙箱(MF)**:99% 隔离(Proxy 拦截 + scoped CSS),**性能损耗 < 1%**(共享 runtime + 零序列化)。**选型**:**强隔离 + 跨框架** 用 iframe,**同框架 + 共享运行时** 用 JS 沙箱。**生产数据**:qiankun 多子应用 + 跨框架,首屏 **1500ms**;MF 同框架,首屏 **800ms**。<AIAsk question="qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?" />
+> **A**:**iframe 沙箱**:100% JS / CSS 隔离（独立 window/document),**性能损耗 5-15%**(iframe 创建 + postMessage 通信);**JS 沙箱(MF)**:99% 隔离(Proxy 拦截 + scoped CSS),**性能损耗 < 1%**(共享 runtime + 零序列化)。**选型**:**强隔离 + 跨框架** 用 iframe,**同框架 + 共享运行时** 用 JS 沙箱。**生产数据**:qiankun 多子应用 + 跨框架,首屏 **1500ms**;MF 同框架,首屏 **800ms**。<AIAsk question="qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?" />
 >
 > **Q5(思考)**:你在顺丰 ERP 项目里是怎么从单仓 monorepo 迁移到 Module Federation 的?踩过哪些坑?
 >

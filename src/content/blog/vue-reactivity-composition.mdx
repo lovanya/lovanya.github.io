@@ -188,7 +188,7 @@ watchEffect(() => {
   console.log(`count is ${count.value}`);  // 依赖 count
 });
 
-// 停止监听(防止泄漏)
+// 停止监听（防止泄漏)
 const stop = watch(...);
 stop();  // 主动停止
 ```

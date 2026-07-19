@@ -76,7 +76,7 @@ import { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';
 function sendToAnalytics(metric) {
   // 上报到 Sentry 或自建监控
   Sentry.setMeasurement(metric.name, metric.value, 'millisecond');
-  // 同时上报到业务后台(做 P75 / P90 统计)
+  // 同时上报到业务后台（做 P75 / P90 统计)
   navigator.sendBeacon('/api/metrics', JSON.stringify({
     name: metric.name,
     value: metric.value,
@@ -116,7 +116,7 @@ record({
       uploadBatch(events.splice(0));
     }
   },
-  // 不录敏感输入框(密码 / 信用卡)
+  // 不录敏感输入框（密码 / 信用卡)
   maskInputOptions: {
     password: true,
     'input[type="password"]': true,

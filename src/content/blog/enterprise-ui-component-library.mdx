@@ -107,7 +107,7 @@ const buttonTokens = {
 <Select value={val} onChange={setVal} size="small" disabled />
 <DatePicker value={val} onChange={setVal} size="small" disabled />
 
-// ❌ 不一致(灾难)
+// ❌ 不一致（灾难)
 <Input val={val} onChangeVal={setVal} small />
 <Select v={val} onSel={setSel} size="small" />
 <DatePicker val={val} onDateChange={setVal} />
@@ -155,7 +155,7 @@ export const Secondary: Story = {
 
 ```
 major: 破坏性变更(API 不兼容)
-minor: 新功能(向后兼容)
+minor: 新功能（向后兼容)
 patch: Bug 修复
 ```
 
@@ -255,11 +255,11 @@ transform: (file, api) => {
 >
 > **Q4(思考)**:WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?
 >
-> **A**:**WCAG 2.1 AA 是企业级组件库的入场券**——政府 / 医疗 / 银行客户必查,**不合规不能上他们的项目**。**必做项**:① **颜色对比度 ≥ 4.5:1**(普通文字) / ≥ 3:1(大文字);② **键盘可访问** — Tab / Shift+Tab / Enter / Space / Esc / 方向键都要支持;③ **aria 属性** — aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid;④ **focus ring 可见** — 键盘焦点不能消失(不要 `outline: none`);⑤ **屏幕阅读器测试** — 用 VoiceOver / NVDA 实际测试。<AIAsk question="WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?" />
+> **A**:**WCAG 2.1 AA 是企业级组件库的入场券**——政府 / 医疗 / 银行客户必查,**不合规不能上他们的项目**。**必做项**:① **颜色对比度 ≥ 4.5:1**(普通文字) / ≥ 3:1(大文字);② **键盘可访问** — Tab / Shift+Tab / Enter / Space / Esc / 方向键都要支持;③ **aria 属性** — aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid;④ **focus ring 可见** — 键盘焦点不能消失（不要 `outline: none`);⑤ **屏幕阅读器测试** — 用 VoiceOver / NVDA 实际测试。<AIAsk question="WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?" />
 >
 > **Q5(思考)**:你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?
 >
-> **A**:**iView(柔宇,30+ 组件)**:① **Design Token 一定要 day 1 设计** — 后期加 Token = 重写 50 个组件;② **Vue 2 → Vue 3 迁移** 踩坑多,Composition API + `<script setup>` 让 30 个组件代码减半。**FinUI(顺丰,50+ 组件)**:① **API 一致性 PR review 必查** — v2 改 size prop 后被投诉"为什么 table 不支持",重写 30 个组件对齐;② **大表格 FinSpread**(300 列 × 500 行)用虚拟滚动 + 列虚拟化,从 800ms 优化到 50ms;③ **跨客户主题定制** 用 Design Token 体系,**3 天切换品牌色**。**共同教训**:**Breaking change 必预告 + codemod 自动化**——**信任建立一次需要 3 年,毁掉一次只要 1 个 release**。<AIAsk question="你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?" />
+> **A**:**iView(柔宇,30+ 组件)**:① **Design Token 一定要 day 1 设计** — 后期加 Token = 重写 50 个组件;② **Vue 2 → Vue 3 迁移** 踩坑多,Composition API + `<script setup>` 让 30 个组件代码减半。**FinUI(顺丰,50+ 组件)**:① **API 一致性 PR review 必查** — v2 改 size prop 后被投诉"为什么 table 不支持",重写 30 个组件对齐;② **大表格 FinSpread**(300 列 × 500 行）用虚拟滚动 + 列虚拟化,从 800ms 优化到 50ms;③ **跨客户主题定制** 用 Design Token 体系,**3 天切换品牌色**。**共同教训**:**Breaking change 必预告 + codemod 自动化**——**信任建立一次需要 3 年,毁掉一次只要 1 个 release**。<AIAsk question="你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?" />
 
 > 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
 

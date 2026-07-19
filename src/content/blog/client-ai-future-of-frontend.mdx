@@ -203,11 +203,11 @@ function OrderList() {
 
 > **Q1(答案)**:AI 时代前端架构的三个层级是什么?为什么不能「所有 AI 任务都上云」?
 >
-> **A**:**三个层级**:① **云端 LLM**(OpenAI / Anthropic / Gemini) — 模型最强,成本按量;② **端侧 LLM**(Web LLM / Chrome 内置 AI) — 浏览器内运行,零后端,隐私保护;③ **Edge LLM**(Cloudflare Workers AI / Vercel AI Edge) — 边缘节点,低延迟。**为什么不能全上云**:① **隐私** — 敏感数据(医疗 / 金融)用云端违法;② **成本** — GPT-4 1 万次 ≈ $50,**Chrome AI 零成本**;③ **延迟** — 云端 500ms+ 往返,端侧 < 100ms;④ **离线** — 飞机 / 地铁 / 海外场景需要。<AIAsk question="AI 时代前端架构的三个层级是什么?为什么不能「所有 AI 任务都上云」?" />
+> **A**:**三个层级**:① **云端 LLM**(OpenAI / Anthropic / Gemini) — 模型最强,成本按量;② **端侧 LLM**(Web LLM / Chrome 内置 AI) — 浏览器内运行,零后端,隐私保护;③ **Edge LLM**(Cloudflare Workers AI / Vercel AI Edge) — 边缘节点,低延迟。**为什么不能全上云**:① **隐私** — 敏感数据（医疗 / 金融）用云端违法;② **成本** — GPT-4 1 万次 ≈ $50,**Chrome AI 零成本**;③ **延迟** — 云端 500ms+ 往返,端侧 < 100ms;④ **离线** — 飞机 / 地铁 / 海外场景需要。<AIAsk question="AI 时代前端架构的三个层级是什么?为什么不能「所有 AI 任务都上云」?" />
 >
 > **Q2(思考)**:Web LLM 和 Chrome 内置 AI 怎么选?什么时候用哪个?
 >
-> **A**:**Web LLM (transformers.js)**:① **可换模型** — 任何 Hugging Face 上的模型都支持;② **跨浏览器** — 所有现代浏览器;③ **bundle size** 较大(模型 100MB+)。**Chrome 内置 AI (Gemini Nano)**:① **零成本** — 浏览器自带,零下载;② **零延迟** — 不用下载模型,本地推理;③ **只在 Chrome** — Safari / Firefox 不支持。**选型**:**多模型 + 跨浏览器** 用 transformers.js;**只 Chrome + 性能敏感** 用 Built-in AI;**Safari / 移动端** 必须用 Web LLM。<AIAsk question="Web LLM 和 Chrome 内置 AI 怎么选?什么时候用哪个?" />
+> **A**:**Web LLM (transformers.js)**:① **可换模型** — 任何 Hugging Face 上的模型都支持;② **跨浏览器** — 所有现代浏览器;③ **bundle size** 较大（模型 100MB+)。**Chrome 内置 AI (Gemini Nano)**:① **零成本** — 浏览器自带,零下载;② **零延迟** — 不用下载模型,本地推理;③ **只在 Chrome** — Safari / Firefox 不支持。**选型**:**多模型 + 跨浏览器** 用 transformers.js;**只 Chrome + 性能敏感** 用 Built-in AI;**Safari / 移动端** 必须用 Web LLM。<AIAsk question="Web LLM 和 Chrome 内置 AI 怎么选?什么时候用哪个?" />
 >
 > **Q3(思考)**:Speculative Decoding 的工作原理是什么?TTFT 为什么能优化 10 倍?
 >
@@ -215,11 +215,11 @@ function OrderList() {
 >
 > **Q4(思考)**:CopilotKit 是什么?怎么用它快速集成 AI Copilot?
 >
-> **A**:**CopilotKit** 是开源的 AI Copilot 框架,**3 个核心组件**:① **CopilotChat** — 浮窗 AI 聊天 UI,**10 行代码集成**;② **CopilotTextarea** — 文本框 AI 补全(类似 GitHub Copilot);③ **CopilotActions** — 业务 AI 动作,LLM 调函数渲染 UI。**集成 3 步**:① 装 `@copilotkit/react-core` + `@copilotkit/react-ui`;② `<CopilotKit runtimeUrl="/api/copilotkit">` 包裹应用;③ 加 `<CopilotChat>` UI 组件 + 注册 actions。**生产案例**:ERP 接入 CopilotKit,**用户说"查询上个月订单"** → 后端 LLM 调 `queryOrders` 函数 → 返回数据 + 渲染到表格 —— **业务方零开发**。<AIAsk question="CopilotKit 是什么?怎么用它快速集成 AI Copilot?" />
+> **A**:**CopilotKit** 是开源的 AI Copilot 框架,**3 个核心组件**:① **CopilotChat** — 浮窗 AI 聊天 UI,**10 行代码集成**;② **CopilotTextarea** — 文本框 AI 补全（类似 GitHub Copilot);③ **CopilotActions** — 业务 AI 动作,LLM 调函数渲染 UI。**集成 3 步**:① 装 `@copilotkit/react-core` + `@copilotkit/react-ui`;② `<CopilotKit runtimeUrl="/api/copilotkit">` 包裹应用;③ 加 `<CopilotChat>` UI 组件 + 注册 actions。**生产案例**:ERP 接入 CopilotKit,**用户说"查询上个月订单"** → 后端 LLM 调 `queryOrders` 函数 → 返回数据 + 渲染到表格 —— **业务方零开发**。<AIAsk question="CopilotKit 是什么?怎么用它快速集成 AI Copilot?" />
 >
 > **Q5(思考)**:你作为前端架构师,是怎么判断一个 AI 任务该上云、端侧、还是 Edge?举一个真实案例?
 >
-> **A**:**决策框架**:① **敏感数据** → 端侧 (GDPR / HIPAA);② **延迟敏感** → Edge;③ **通用任务 + 大模型** → 云端;④ **离线** → 端侧。**真实案例**:**顺丰 ERP AI 助手**:① 通用查询(订单 / 客户)— 云端 GPT-4o(mini 版控制成本);② 财务报表分析(敏感)— 端侧 LLM(数据不出公司);③ AI 补全输入框(低延迟)— Edge (Cloudflare AI,5ms);④ 翻译文档(离线)— 端侧 transformers.js。**结果**:成本降低 60%(端侧分担 30% 任务),合规性满足(敏感数据不出域),延迟 < 100ms(Edge 主导)。<AIAsk question="你作为前端架构师,是怎么判断一个 AI 任务该上云、端侧、还是 Edge?举一个真实案例?" />
+> **A**:**决策框架**:① **敏感数据** → 端侧 (GDPR / HIPAA);② **延迟敏感** → Edge;③ **通用任务 + 大模型** → 云端;④ **离线** → 端侧。**真实案例**:**顺丰 ERP AI 助手**:① 通用查询（订单 / 客户)— 云端 GPT-4o(mini 版控制成本);② 财务报表分析（敏感)— 端侧 LLM(数据不出公司);③ AI 补全输入框（低延迟)— Edge (Cloudflare AI,5ms);④ 翻译文档（离线)— 端侧 transformers.js。**结果**:成本降低 60%(端侧分担 30% 任务),合规性满足（敏感数据不出域),延迟 < 100ms(Edge 主导)。<AIAsk question="你作为前端架构师,是怎么判断一个 AI 任务该上云、端侧、还是 Edge?举一个真实案例?" />
 
 > 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
 

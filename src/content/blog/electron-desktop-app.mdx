@@ -81,7 +81,7 @@ ipcMain.handle('read-file', async (event, path) => {
 });
 
 ipcMain.handle('usb-connect', async (event, vendorId) => {
-  // USB 设备连接逻辑(主进程)
+  // USB 设备连接逻辑（主进程)
   return await usbHandler.connect(vendorId);
 });
 
