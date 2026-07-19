@@ -57,27 +57,46 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
         </div>
 
         {/* Tag filter chips — angular, cosmic-tech feel. Inactive chips use a
-            muted accent (opacity + /20 border) so the active one stands out. */}
+            muted accent (opacity + /20 border) so the active one stands out.
+            Collapsed to 2 rows by default; toggle to expand. */}
         {allTags.length > 0 && (
-          <div class="flex flex-wrap items-center justify-center" style="gap: var(--space-2);">
-            <button
-              type="button"
-              data-tag=""
-              class="blog-tag-chip text-xs font-mono transition-colors border bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30"
-              style="padding: 4px 10px; border-radius: 4px;"
+          <div class="flex flex-col items-center" style="gap: var(--space-2);">
+            <div
+              id="blog-tag-grid"
+              class="flex flex-wrap items-center justify-center overflow-hidden transition-[max-height] duration-300 ease-out"
+              data-collapsed="true"
+              style="gap: var(--space-2); max-height: 64px;"
             >
-              All ({posts.length})
-            </button>
-            {allTags.map((tag) => (
               <button
                 type="button"
-                data-tag={tag}
-                class="blog-tag-chip text-xs font-mono transition-colors border hover:opacity-100"
-                style="padding: 4px 10px; border-radius: 4px; color: var(--color-accent); opacity: 0.6; border-color: var(--color-accent);"
+                data-tag=""
+                class="blog-tag-chip text-xs font-mono transition-colors border bg-[var(--color-accent)]/15 text-[var(--color-accent)] border-[var(--color-accent)]/30"
+                style="padding: 4px 10px; border-radius: 4px;"
               >
-                {tag} ({tagCounts[tag]})
+                All ({posts.length})
               </button>
-            ))}
+              {allTags.map((tag) => (
+                <button
+                  type="button"
+                  data-tag={tag}
+                  class="blog-tag-chip text-xs font-mono transition-colors border hover:opacity-100"
+                  style="padding: 4px 10px; border-radius: 4px; color: var(--color-accent); opacity: 0.6; border-color: var(--color-accent);"
+                >
+                  {tag} ({tagCounts[tag]})
+                </button>
+              ))}
+            </div>
+            <button
+              id="blog-tag-toggle"
+              type="button"
+              class="text-xs font-mono opacity-60 hover:opacity-100 transition-opacity"
+              style="padding: 2px 8px; color: var(--color-accent); background: transparent; border: 0; cursor: pointer;"
+              aria-expanded="false"
+              aria-controls="blog-tag-grid"
+            >
+              <span id="blog-tag-toggle-label">Show all tags ({allTags.length})</span>
+              <span class="inline-block ml-1 transition-transform" id="blog-tag-toggle-icon">▾</span>
+            </button>
           </div>
         )}
 
@@ -170,6 +189,78 @@ const tagCounts = allTags.reduce<Record<string, number>>((acc, tag) => {
         }
       });
     };
+
+    // Tag grid collapse / expand
+    const tagGrid = document.getElementById('blog-tag-grid') as HTMLDivElement | null;
+    const tagToggle = document.getElementById('blog-tag-toggle');
+    const tagToggleLabel = document.getElementById('blog-tag-toggle-label');
+    const tagToggleIcon = document.getElementById('blog-tag-toggle-icon');
+
+    if (tagGrid && tagToggle && tagToggleLabel && tagToggleIcon) {
+      const computeCollapsedHeight = () => {
+        const chip = tagGrid.querySelector<HTMLElement>('.blog-tag-chip');
+        if (!chip) return 64;
+        const rowH = chip.offsetHeight + 8;
+        return rowH * 2;
+      };
+      const computeExpandedHeight = () => tagGrid.scrollHeight;
+
+      const updateToggleLabel = () => {
+        const isCollapsed = tagGrid.dataset.collapsed !== 'false';
+        if (isCollapsed) {
+          tagToggleLabel.textContent = `Show all tags (${tagGrid.children.length})`;
+          tagToggleIcon.textContent = '▾';
+          tagToggle.setAttribute('aria-expanded', 'false');
+        } else {
+          tagToggleLabel.textContent = 'Collapse';
+          tagToggleIcon.textContent = '▴';
+          tagToggle.setAttribute('aria-expanded', 'true');
+        }
+      };
+
+      const expandIfActiveHidden = () => {
+        if (!state.tag) return;
+        const activeChip = tagGrid.querySelector<HTMLElement>(
+          `.blog-tag-chip[data-tag="${state.tag}"]`,
+        );
+        if (!activeChip) return;
+        const gridRect = tagGrid.getBoundingClientRect();
+        const chipRect = activeChip.getBoundingClientRect();
+        if (chipRect.top >= gridRect.bottom || chipRect.bottom <= gridRect.top) {
+          tagGrid.style.maxHeight = computeExpandedHeight() + 'px';
+          tagGrid.dataset.collapsed = 'false';
+          updateToggleLabel();
+        }
+      };
+
+      tagToggle.addEventListener('click', () => {
+        const isCollapsed = tagGrid.dataset.collapsed !== 'false';
+        if (isCollapsed) {
+          tagGrid.style.maxHeight = computeExpandedHeight() + 'px';
+          tagGrid.dataset.collapsed = 'false';
+        } else {
+          tagGrid.style.maxHeight = computeCollapsedHeight() + 'px';
+          tagGrid.dataset.collapsed = 'true';
+        }
+        updateToggleLabel();
+      });
+
+      window.addEventListener('resize', () => {
+        if (tagGrid.dataset.collapsed === 'true') {
+          tagGrid.style.maxHeight = computeCollapsedHeight() + 'px';
+        } else {
+          tagGrid.style.maxHeight = computeExpandedHeight() + 'px';
+        }
+      });
+
+      chips.forEach((chip) => {
+        chip.addEventListener('click', () =>
+          setTimeout(expandIfActiveHidden, 0),
+        );
+      });
+
+      updateToggleLabel();
+    }
 
     const updateActiveTagLabel = () => {
       if (state.tag) {
