@@ -51,14 +51,17 @@ function injectFollowupButtons(text: string): string {
   const after = result.substring(sectionEnd);
 
   const processed = section.replace(
-    /^(\s*)(\*\*?)([^\n]+?[？?])(\*\*?)(\s*)$/gm,
-    (line, indent, bOpen, question, bClose, tail) => {
-      const trimmed = question.trim();
-      if (!trimmed) return line;
-      // 跳过思路提示行
-      if (/^(思路|提示|参考|补充|备注|说明)[：:]/.test(trimmed)) return line;
-      const safe = escape(trimmed);
-      return `${indent}<button type="button" class="ai-followup-btn" data-fuq-q="${safe}"><strong>${safe}</strong></button>${tail}`;
+    /^(\s*(?:[-*]|\d+\.)\s+|\s*)([^\n]+?)\s*$/gm,
+    (line, indent, raw) => {
+      // 去掉加粗标记后再判断
+      const cleaned = raw.replace(/\*\*/g, '').trim();
+      if (!cleaned) return line;
+      // 必须是问句（结尾含 ？/? 或中间有问号）
+      if (!/[？?]/.test(cleaned)) return line;
+      // 跳过思路/提示等说明行
+      if (/^(思路|提示|参考|补充|备注|说明|面试官)[：:]/.test(cleaned)) return line;
+      const safe = escape(cleaned);
+      return `${indent}<button type="button" class="ai-followup-btn" data-fuq-q="${safe}"><strong>${safe}</strong></button>`;
     }
   );
 
