@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand Web Components? My answer is **yes** — not to use Lit / Stencil, but to build the engineering judgment of "the core abstraction layer of cross-framework component libraries". Three reasons:
+Should a frontend architect understand Web Components? My answer is **yes**— not to use Lit / Stencil, but to build the engineering judgment of "the core abstraction layer of cross-framework component libraries". Three reasons:
 
-1. **The 8 cross-Vue/React universal components on resume is scarce experience.** The core of cross-framework component libraries is Web Components + framework wrapper, **understanding this lets you design framework-independent components**.
-2. **Web Components is a browser standard.** Unlike React-only React, **Custom Elements run in all frameworks** — Vue / React / Angular / Solid / Svelte can all consume.
-3. **The next 5 years' cross-platform component library trend.** Lit 3.0 / Lit SSR / Web Components + Signals / cross-framework component library design, **all underneath is Web Components**.
+1. **The 8 cross-Vue/React universal components is scarce experience.**The core of cross-framework component libraries is Web Components + framework wrapper, **understanding this lets you design framework-independent components**.
+2. **Web Components is a browser standard.**Unlike React-only React, **Custom Elements run in all frameworks**— Vue / React / Angular / Solid / Svelte can all consume.
+3. **The next 5 years' cross-platform component library trend.**Lit 3.0 / Lit SSR / Web Components + Signals / cross-framework component library design, **all underneath is Web Components**.
 
 This is post #20 of the *Frontend Architecture Cultivation Path* series. We skip Lit's specific API (no `LitElement` inheritance details), use architecture diagrams + design philosophy + real cases to make Web Components' three core technologies + 8 cross-framework components design concrete. The next post deep-dives into front-end monitoring.
 
@@ -146,7 +146,7 @@ class SmartTable extends HTMLElement {
 
 ## 5. 8 Cross-Vue/React Universal Components Design Philosophy
 
-The resume line **"8 cross-Vue/React universal components"** — the core architecture is **Web Components abstraction + framework wrapper**:
+Take **8 cross-Vue/React universal components** as an example—the core architecture is **Web Components abstraction + framework wrapper**:
 
 ```mermaid
 graph TD
@@ -156,23 +156,23 @@ graph TD
 ```
 
 **Architect's mantra**:
-- **Web Components write core logic** (state management, DOM operations, event distribution)
-- **Framework wrappers only do adaptation** (props ↔ attribute mapping, events ↔ callback mapping)
-- **Business code uses framework wrappers** (DX + type inference)
+- **Web Components write core logic**(state management, DOM operations, event distribution)
+- **Framework wrappers only do adaptation**(props ↔ attribute mapping, events ↔ callback mapping)
+- **Business code uses framework wrappers**(DX + type inference)
 
 ## 6. Lit / Stencil / Self-Implementation Selection
 
 | Solution | Pros | Cons |
 |---|---|---|
-| **Lit** | Modern, TS-friendly, active ecosystem | Learning curve |
-| **Stencil** | Compile-time optimization, multi-framework output | Complex config |
-| **Self-implement HTMLElement** | Zero deps, flexible | Lots of work |
-| **Vue / React wrap Web Components** | Reuse existing components | Still one per framework |
+| **Lit**| Modern, TS-friendly, active ecosystem | Learning curve |
+| **Stencil**| Compile-time optimization, multi-framework output | Complex config |
+| **Self-implement HTMLElement**| Zero deps, flexible | Lots of work |
+| **Vue / React wrap Web Components**| Reuse existing components | Still one per framework |
 
 **Architect's decision**:
-- **New project, efficiency focused** → Lit
-- **Existing Vue / React component library** → Stencil compile output
-- **Extreme performance / zero deps** → Native HTMLElement
+- **New project, efficiency focused**→ Lit
+- **Existing Vue / React component library**→ Stencil compile output
+- **Extreme performance / zero deps**→ Native HTMLElement
 
 ## 7. Production Practice: FinUI Cross-Framework Component Library
 
@@ -181,22 +181,22 @@ graph LR
   A[Requirement<br/>FinUI component library<br/>Vue 3 + React dual version] --> B[Core implementation<br/>Lit writes Web Component]
   B --> C[Vue 3 wrapper<br/>finui-vue / v-model + TS types]
   B --> D[React wrapper<br/>finui-react / forwardRef + types]
-  C --> E[SF Express ERP<br/>finui.example.com]
-  D --> F[Rouyu admin<br/>rouyu.example.com]
+  C --> E[large ERP<br/>finui.example.com]
+  D --> F[ admin<br/>rouyu.example.com]
 ```
 
 **Production data**:
-- **8 cross-framework universal components** (SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor)
-- **Vue 3 + React dual version sync** (change core once, both auto-sync)
-- **60% maintenance cost saved** (no need to write one for Vue, one for React)
+- **8 cross-framework universal components**(SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor)
+- **Vue 3 + React dual version sync**(change core once, both auto-sync)
+- **60% maintenance cost saved**(no need to write one for Vue, one for React)
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't let events inside Shadow DOM not bubble.** Default events inside Shadow DOM **don't bubble to outside** — add `composed: true`.
-2. **Don't use global CSS to select inside Shadow DOM.** Shadow DOM isolation is this — can't use `.my-component .button` to cross boundaries. **Expose CSS Variables** to allow changes (`--button-bg`).
-3. **Don't let framework wrappers directly use attributes.** **`null` gets stringified** — must use `getAttribute()` to check null.
-4. **Don't use framework state management in Web Components.** **Web Components are framework-agnostic** — use native `observedAttributes`, don't mix Redux / Pinia / Zustand.
-5. **Don't ignore SSR.** Web Components default to CSR, **SSR needs lit-ssr / similar solutions**. SEO scenarios must configure.
+1. **Don't let events inside Shadow DOM not bubble.**Default events inside Shadow DOM **don't bubble to outside**— add `composed: true`.
+2. **Don't use global CSS to select inside Shadow DOM.**Shadow DOM isolation is this — can't use `.my-component .button` to cross boundaries. **Expose CSS Variables**to allow changes (`--button-bg`).
+3. **Don't let framework wrappers directly use attributes.** **`null` gets stringified**— must use `getAttribute()` to check null.
+4. **Don't use framework state management in Web Components.** **Web Components are framework-agnostic**— use native `observedAttributes`, don't mix Redux / Pinia / Zustand.
+5. **Don't ignore SSR.**Web Components default to CSR, **SSR needs lit-ssr / similar solutions**. SEO scenarios must configure.
 
 ## Summary
 
@@ -209,7 +209,7 @@ Six key facts that thread Web Components together:
 - **Cross-framework component library**: Web Components core + framework wrapper, **8 universal components save 60% maintenance**.
 - **Selection decision**: new project Lit / existing library Stencil / zero-dep native HTMLElement.
 
-**Next post**: Front-end monitoring system — error / performance / behavior monitoring, SF Express + Rouyu two monitoring practice summaries.
+**Next post**: Front-end monitoring system — error / performance / behavior monitoring, multi-project two monitoring practice summaries.
 
 ## 5 Key Interview Question Tracks
 
@@ -217,11 +217,11 @@ Six key facts that thread Web Components together:
 
 > **Q1 (Answer)**: What are Web Components' three core technologies? Why are Web Components the core abstraction for cross-framework component libraries?
 >
-> **A**: Three core technologies: ① **Custom Elements** — `customElements.define` registers custom HTML tags, usable in Vue / React / Angular / Solid; ② **Shadow DOM** — component internal DOM / style isolation, won't conflict with external CSS; ③ **HTML Templates + Slot** — cross-framework consistent content distribution mechanism. **Why it's cross-framework core abstraction**: Web Components is a **W3C standard**, natively supported by all modern browsers, **not bound to any framework**. **The 8 cross-Vue/React universal components on resume's core architecture is**: Web Components writes core logic + Vue/React wrapper does adaptation — change core once, two frameworks sync, 60% maintenance cost saved.<AIAsk question="What are Web Components' three core technologies? Why are Web Components the core abstraction for cross-framework component libraries?" lang="en" />
+> **A**: Three core technologies: ① **Custom Elements**— `customElements.define` registers custom HTML tags, usable in Vue / React / Angular / Solid; ② **Shadow DOM**— component internal DOM / style isolation, won't conflict with external CSS; ③ **HTML Templates + Slot**— cross-framework consistent content distribution mechanism. **Why it's cross-framework core abstraction**: Web Components is a **W3C standard**, natively supported by all modern browsers, **not bound to any framework**. **The 8 cross-Vue/React universal components's core architecture is**: Web Components writes core logic + Vue/React wrapper does adaptation — change core once, two frameworks sync, 60% maintenance cost saved.<AIAsk question="What are Web Components' three core technologies? Why are Web Components the core abstraction for cross-framework component libraries?" lang="en" />
 >
 > **Q2 (Think)**: How does Shadow DOM's style isolation work? How to allow external modification of certain styles inside a Web Component?
 >
-> **A**: Shadow DOM implements style isolation through **CSS isolated scopes** — internal CSS only affects inside Shadow DOM, doesn't leak outside. **For external modifications** use **CSS Variables** — component defines `var(--button-bg)`, external `style="--button-bg: red"` can change. **Practice**: a cross-framework component library exposes all colors / spacing / fonts as CSS Variables, business can theme customize without breaking encapsulation.<AIAsk question="How does Shadow DOM's style isolation work? How to allow external modification of certain styles inside a Web Component?" lang="en" />
+> **A**: Shadow DOM implements style isolation through **CSS isolated scopes**— internal CSS only affects inside Shadow DOM, doesn't leak outside. **For external modifications**use **CSS Variables**— component defines `var(--button-bg)`, external `style="--button-bg: red"` can change. **Practice**: a cross-framework component library exposes all colors / spacing / fonts as CSS Variables, business can theme customize without breaking encapsulation.<AIAsk question="How does Shadow DOM's style isolation work? How to allow external modification of certain styles inside a Web Component?" lang="en" />
 >
 > **Q3 (Think)**: What are Custom Elements' lifecycles? How to listen to attribute changes?
 >
@@ -229,11 +229,11 @@ Six key facts that thread Web Components together:
 >
 > **Q4 (Think)**: How does Web Components' event bubbling differ from React / Vue's event systems?
 >
-> **A**: Web Components event bubbling is affected by **Shadow DOM boundary** — **events inside Shadow DOM don't bubble to outside by default**. Solutions: ① Event `composed: true` lets event **penetrate Shadow DOM boundary**; ② Event `bubbles: true` lets event bubble. **Practice**: click button inside component, `composed: true` lets outside listen. **Production case**: SmartTable internal row click event, `composed: true` bubbles to Vue / React wrapper, business code uses `@row-click` / `onRowClick` to listen, **completely framework-agnostic**.<AIAsk question="How does Web Components' event bubbling differ from React / Vue's event systems?" lang="en" />
+> **A**: Web Components event bubbling is affected by **Shadow DOM boundary**— **events inside Shadow DOM don't bubble to outside by default**. Solutions: ① Event `composed: true` lets event **penetrate Shadow DOM boundary**; ② Event `bubbles: true` lets event bubble. **Practice**: click button inside component, `composed: true` lets outside listen. **Production case**: SmartTable internal row click event, `composed: true` bubbles to Vue / React wrapper, business code uses `@row-click` / `onRowClick` to listen, **completely framework-agnostic**.<AIAsk question="How does Web Components' event bubbling differ from React / Vue's event systems?" lang="en" />
 >
 > **Q5 (Think)**: In your FinUI cross-framework component library, how did you design 8 universal components? How exactly does Web Components core + framework wrapper division of labor work?
 >
-> **A**: **8 universal components = SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor**. **Division of labor**: Web Components writes **core logic** — Shadow DOM encapsulation + Custom Elements registration + observedAttributes props listening + slot content distribution; framework wrappers only do **adaptation** — Vue uses `defineComponent + v-model` / React uses `forwardRef + useImperativeHandle`. **Practice data**: change core once, Vue 3 + React dual version sync, save 60% maintenance cost — Vue team uses `finui-vue`, React team uses `finui-react`, component library team only maintains one Lit core.<AIAsk question="In your FinUI cross-framework component library, how did you design 8 universal components? How exactly does Web Components core + framework wrapper division of labor work?" lang="en" />
+> **A**: **8 universal components = SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor**. **Division of labor**: Web Components writes **core logic**— Shadow DOM encapsulation + Custom Elements registration + observedAttributes props listening + slot content distribution; framework wrappers only do **adaptation**— Vue uses `defineComponent + v-model` / React uses `forwardRef + useImperativeHandle`. **Practice data**: change core once, Vue 3 + React dual version sync, save 60% maintenance cost — Vue team uses `finui-vue`, React team uses `finui-react`, component library team only maintains one Lit core.<AIAsk question="In your FinUI cross-framework component library, how did you design 8 universal components? How exactly does Web Components core + framework wrapper division of labor work?" lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

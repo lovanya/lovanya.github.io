@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect master CSS? My answer is **yes** — not memorizing every property, but building engineering intuition for the four abstraction layers: box model, flex, grid, and container queries. Three reasons:
+Should a frontend architect master CSS? My answer is **yes**— not memorizing every property, but building engineering intuition for the four abstraction layers: box model, flex, grid, and container queries. Three reasons:
 
-1. **80% of admin panel complexity is layout.** ERP, FinUI, CRM — these form-heavy scenarios end up a mess with `float` and `position: absolute`. **Touch one form item and the entire page shifts.** Flex + Grid are the industrial answer.
-2. **Container queries are a responsive paradigm shift.** Media query (viewport-based) approaches break down when "the same component library serves both admin PC and mobile" — a card needs different layouts in a narrow sidebar versus a wide main column. **Container queries** let components respond to their own parent.
-3. **The real performance ceiling is here.** `will-change`, `contain`, `content-visibility` — these modern CSS performance properties aren't driven by JS but by the CSS engine's own judgment. Half the time spent in SF Express ERP's 12min→3min build optimization went into style scoping.
+1. **80% of admin panel complexity is layout.**ERP, FinUI, CRM — these form-heavy scenarios end up a mess with `float` and `position: absolute`. **Touch one form item and the entire page shifts.**Flex + Grid are the industrial answer.
+2. **Container queries are a responsive paradigm shift.**Media query (viewport-based) approaches break down when "the same component library serves both admin PC and mobile" — a card needs different layouts in a narrow sidebar versus a wide main column. **Container queries**let components respond to their own parent.
+3. **The real performance ceiling is here.**`will-change`, `contain`, `content-visibility` — these modern CSS performance properties aren't driven by JS but by the CSS engine's own judgment. Half the time spent in large ERP's 12min→3min build optimization went into style scoping.
 
 This is post #2 of the *Frontend Architecture Cultivation Path* series. We skip beginner tutorials (no explaining what `display: block` means) and use architecture diagrams, real code, and performance numbers to make the four layers concrete. The next post covers the JavaScript runtime (V8 / GC / event loop).
 
@@ -45,7 +45,7 @@ The box model is the foundation of every CSS layout. But 90% of engineers haven'
 
 ### 1.1 Margin Collapse: The Most Treacherous Box Model Pitfall
 
-**Two adjacent blocks' vertical margins merge, taking the larger value.** This isn't a bug — it's spec — but it's wildly counter-intuitive when writing component libraries:
+**Two adjacent blocks' vertical margins merge, taking the larger value.**This isn't a bug — it's spec — but it's wildly counter-intuitive when writing component libraries:
 
 ```html
 <div class="parent">
@@ -72,7 +72,7 @@ The box model is the foundation of every CSS layout. But 90% of engineers haven'
 
 ### 1.2 Formatting Context: BFC Solves All "Why Did My Margin Fly Off"
 
-A **Block Formatting Context (BFC)** is an independent rendering region in the page — internal elements don't affect outside, outside doesn't affect inside. **Ways to trigger BFC**:
+A **Block Formatting Context (BFC)**is an independent rendering region in the page — internal elements don't affect outside, outside doesn't affect inside. **Ways to trigger BFC**:
 
 | Method | Frequency |
 |---|---|
@@ -126,7 +126,7 @@ The core of Flex is two axes:
 .layout-aside { width: 320px; flex-shrink: 0; }
 ```
 
-**The most critical detail `min-width: 0`** — Flex children default to `min-width: auto` (i.e. minimum content width), tables / long text / nested flex containers can blow past container width. **Production code must add `min-width: 0`**.
+**The most critical detail `min-width: 0`**— Flex children default to `min-width: auto` (i.e. minimum content width), tables / long text / nested flex containers can blow past container width. **Production code must add `min-width: 0`**.
 
 ### 2.3 The `gap` Property: Flex / Grid's Killer Feature
 
@@ -155,7 +155,7 @@ The core of Flex is two axes:
 
 ## 3. Grid: Two-Dimensional Layout and Component-Level Responsiveness
 
-Flex solves one-dimensional problems (one row / one column). **Grid solves two-dimensional problems** (rows + columns controlled together). They're not "replacing each other" — they're "two different tools in the toolbox".
+Flex solves one-dimensional problems (one row / one column). **Grid solves two-dimensional problems**(rows + columns controlled together). They're not "replacing each other" — they're "two different tools in the toolbox".
 
 ### 3.1 Classic Grid Templates
 
@@ -177,7 +177,7 @@ Flex solves one-dimensional problems (one row / one column). **Grid solves two-d
 .dashboard-aside   { grid-area: aside; }
 ```
 
-`grid-template-areas` is **Grid's most powerful feature** — express layout with an ASCII canvas directly, readability beats line/column numbers by N times. **All page-level layouts in production component libraries should use this**.
+`grid-template-areas` is **Grid's most powerful feature**— express layout with an ASCII canvas directly, readability beats line/column numbers by N times. **All page-level layouts in production component libraries should use this**.
 
 ### 3.2 Auto-Responsive Grid: `auto-fit` + `minmax`
 
@@ -196,7 +196,7 @@ Flex solves one-dimensional problems (one row / one column). **Grid solves two-d
 - `auto-fill`: column count adapts to container width, empty slots preserved
 - `minmax(280px, 1fr)`: each column at least 280px, maximum distributed by proportion
 
-**Combined with container queries** (next section) you can do "component-level responsive" — the same card is 1 column in a 1280px desktop sidebar but 3 columns in a 1920px main area.
+**Combined with container queries**(next section) you can do "component-level responsive" — the same card is 1 column in a 1280px desktop sidebar but 3 columns in a 1920px main area.
 
 ### 3.3 Flex vs Grid Selection Cheat Sheet
 
@@ -214,7 +214,7 @@ Flex solves one-dimensional problems (one row / one column). **Grid solves two-d
 
 ## 4. Container Queries: Let Components Respond to Their Own Parent
 
-**This is the most important CSS evolution of the past 5 years.** The problem with media query: components can only respond to viewport size — **but the same component needs different layouts in different parent containers** — viewport is 1920px desktop, but a sidebar is only 240px.
+**This is the most important CSS evolution of the past 5 years.**The problem with media query: components can only respond to viewport size — **but the same component needs different layouts in different parent containers**— viewport is 1920px desktop, but a sidebar is only 240px.
 
 ### 4.1 Container Query Basics
 
@@ -246,7 +246,7 @@ Flex solves one-dimensional problems (one row / one column). **Grid solves two-d
 
 ### 4.2 Container Query Units: `cqw` / `cqh` / `cqi` / `cqb`
 
-**Corresponds to viewport units** (`vw` / `vh`), but relative to the **nearest container query container**:
+**Corresponds to viewport units**(`vw` / `vh`), but relative to the **nearest container query container**:
 
 ```css
 .card-title {
@@ -255,7 +255,7 @@ Flex solves one-dimensional problems (one row / one column). **Grid solves two-d
 }
 ```
 
-`cqi` / `cqb` are relative to inline / block dimensions, `cqw` / `cqh` are relative to width / height. **This has been standard in new component libraries since 2023** (Material You, Polaris, Adobe Spectrum).
+`cqi` / `cqb` are relative to inline / block dimensions, `cqw` / `cqh` are relative to width / height. **This has been standard in new component libraries since 2023**(Material You, Polaris, Adobe Spectrum).
 
 ### 4.3 Browser Support (2024 Status)
 
@@ -282,7 +282,7 @@ Modern CSS performance optimization has graduated from "minify the CSS file" to 
 }
 ```
 
-**Production usage**: every card in long lists / large tables adds `contain: content`, so the browser optimizes each card's rendering independently. In SF Express ERP's 800+ page tables, adding `contain: layout` to table rows **reduced scroll jank rate by 60%**.
+**Production usage**: every card in long lists / large tables adds `contain: content`, so the browser optimizes each card's rendering independently. In large ERP's 800+ page tables, adding `contain: layout` to table rows **reduced scroll jank rate by 60%**.
 
 ### 5.2 `content-visibility`: Skip Off-Screen Rendering
 
@@ -293,7 +293,7 @@ Modern CSS performance optimization has graduated from "minify the CSS file" to 
 }
 ```
 
-**Effect**: content below the fold (out-of-viewport) **doesn't participate in rendering at all** — not parsed, not laid out, not painted, only rendered when scrolled into view. **Admin pages have 50-70% content below the fold** — this trick can drop first-render from 2000ms to 500ms.
+**Effect**: content below the fold (out-of-viewport) **doesn't participate in rendering at all**— not parsed, not laid out, not painted, only rendered when scrolled into view. **Admin pages have 50-70% content below the fold**— this trick can drop first-render from 2000ms to 500ms.
 
 **Production case**: an admin page with 60 table rows applied `content-visibility: auto` — INP dropped from 250ms to 80ms. **Prerequisite**: must set `contain-intrinsic-size` (placeholder height) or the page jumps on scroll.
 
@@ -318,11 +318,11 @@ Modern CSS performance optimization has graduated from "minify the CSS file" to 
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't mix Grid and Flex on the same dimension.** Using Grid for column alignment on admin list items breaks things — `gap` behaves differently in different scenarios. **Decide the overall layout (Grid) first, then think about sub-item arrangement (Flex)**.
-2. **`flex: 1` is NOT `flex-grow: 1`.** `flex: 1` is `flex: 1 1 0%`, **the basis is 0** — which is exactly "distribute remaining space by proportion". `flex-grow: 1` paired with `flex-basis: auto` is "proportion by content", usually not what you want.
-3. **Don't write percentage widths on Grid children.** Grid already distributes column widths via `grid-template-columns`; writing `width: 50%` on a child breaks the layout. For width alignment, use `justify-self: stretch` or `grid-column: span N`.
-4. **Container queries need "the parent declares itself a container".** Many devs try `@container (min-width: 400px)` and it doesn't work, only to find the parent didn't write `container-type: inline-size`. **This is pitfall #1**.
-5. **Don't use `position: absolute` for small layouts.** Absolute positioning is flexible but breaks document flow, isn't responsive-friendly, isn't accessibility-friendly. **If Flex / Grid can solve it, don't reach for absolute.**
+1. **Don't mix Grid and Flex on the same dimension.**Using Grid for column alignment on admin list items breaks things — `gap` behaves differently in different scenarios. **Decide the overall layout (Grid) first, then think about sub-item arrangement (Flex)**.
+2. **`flex: 1` is NOT `flex-grow: 1`.**`flex: 1` is `flex: 1 1 0%`, **the basis is 0**— which is exactly "distribute remaining space by proportion". `flex-grow: 1` paired with `flex-basis: auto` is "proportion by content", usually not what you want.
+3. **Don't write percentage widths on Grid children.**Grid already distributes column widths via `grid-template-columns`; writing `width: 50%` on a child breaks the layout. For width alignment, use `justify-self: stretch` or `grid-column: span N`.
+4. **Container queries need "the parent declares itself a container".**Many devs try `@container (min-width: 400px)` and it doesn't work, only to find the parent didn't write `container-type: inline-size`. **This is pitfall #1**.
+5. **Don't use `position: absolute` for small layouts.**Absolute positioning is flexible but breaks document flow, isn't responsive-friendly, isn't accessibility-friendly. **If Flex / Grid can solve it, don't reach for absolute.**
 
 ## Summary
 

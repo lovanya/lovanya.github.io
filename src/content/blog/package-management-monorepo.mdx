@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂包管理？我的回答是 **要**——不是去背 npm install 命令，而是建立"依赖关系图如何影响项目结构和发布流程"的工程判断。原因有三：
 
-1. **简历里 ERP Monorepo 是真实项目**。5+ 子包（ui / utils / eslint-config / ts-config / cli）的架构，**单仓多包** 是中后台标准答案。
+1. **ERP Monorepo 是真实项目**。5+ 子包（ui / utils / eslint-config / ts-config / cli）的架构，**单仓多包**是中后台标准答案。
 2. **版本管理决定发版安全**。手动 `npm version` + `npm publish` 容易出错，**Changesets 把"修改了什么 → 应该发什么版本 → 自动写 changelog"自动化**。
 3. **磁盘 + 安装速度是隐性生产力**。某 5 项目 monorepo 用 npm install 占 12GB，**pnpm + 硬链接只占 3GB**，CI 时间从 8min 降到 2min。
 
@@ -25,7 +25,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 | npm | 慢 | **大**（每个项目独立副本） | workspaces | 嵌套 | 早期嵌套，npm 3+ 扁平 |
 | yarn | 中 | 大 | workspaces | 嵌套 | 扁平 |
 | yarn pnp | 快 | **零**（无 node_modules） | 有限支持 | 不用 node_modules | 不用 |
-| **pnpm** | **快**（多线程 + 硬链接） | **极小**（所有包共享 store） | **优秀** | **符号链接 + 硬链接** | 按需 hoist |
+| **pnpm**| **快**（多线程 + 硬链接） | **极小**（所有包共享 store） | **优秀**| **符号链接 + 硬链接**| 按需 hoist |
 
 **pnpm 三大优势**：
 
@@ -62,9 +62,9 @@ packages:
 ```
 
 **架构师心法**：
-- **apps/** 是发布产物（admin / mobile app）
-- **packages/** 是内部库（被 apps 引用）
-- **tools/** 是构建 / 部署工具
+- **apps/**是发布产物（admin / mobile app）
+- **packages/**是内部库（被 apps 引用）
+- **tools/**是构建 / 部署工具
 
 ## 三、Changesets：语义化版本 + Changelog 自动化
 
@@ -114,7 +114,7 @@ Add virtual scroll support
 #    - git tag + npm publish
 ```
 
-**生产案例**：顺丰 ERP 用 Changesets 后，**发版错误率从每月 1-2 次降到 0**——版本号、changelog、tag 全自动。
+**生产案例**：大型 ERP 用 Changesets 后，**发版错误率从每月 1-2 次降到 0**——版本号、changelog、tag 全自动。
 
 ## 四、Turborepo：增量构建 + 远程缓存
 
@@ -161,14 +161,14 @@ Turborepo 是 Vercel 出的 monorepo 任务编排器：
 
 ## 五、Monorepo 工具横向对比
 
-| 维度 | Lerna | Nx | Rush | **Turborepo** |
+| 维度 | Lerna | Nx | Rush | **Turborepo**|
 |---|---|---|---|---|
-| 学习曲线 | 中 | 陡 | 陡 | **低** |
-| 增量构建 | ❌ 弱 | ✅ 强 | ✅ 强 | ✅ **好** |
-| 远程缓存 | 需付费 | ✅ | ✅ | ✅ **Vercel 免费层** |
-| 任务编排 | ✅ | ✅ 强 | ✅ 强 | ✅ **简单** |
-| Vite 兼容 | ✅ | ✅ | ✅ | ✅ **完美** |
-| 社区规模 | 中 | 大 | 中 | **增长快** |
+| 学习曲线 | 中 | 陡 | 陡 | **低**|
+| 增量构建 | ❌ 弱 | ✅ 强 | ✅ 强 | ✅ **好**|
+| 远程缓存 | 需付费 | ✅ | ✅ | ✅ **Vercel 免费层**|
+| 任务编排 | ✅ | ✅ 强 | ✅ 强 | ✅ **简单**|
+| Vite 兼容 | ✅ | ✅ | ✅ | ✅ **完美**|
+| 社区规模 | 中 | 大 | 中 | **增长快**|
 
 **架构师决策**：
 - **小 monorepo（< 10 包）**：Turborepo
@@ -193,13 +193,13 @@ Turborepo 是 Vercel 出的 monorepo 任务编排器：
 - **Turborepo 增量构建**：基于依赖图 + git diff 只构建受影响的包,远程缓存让 CI 提速 10 倍。
 - **决策树**：小 monorepo Turborepo / 中大 Nx / 超大 Nx。
 
-**下一篇**：前端工程化体系——CI/CD / 规范 / 评审 / 团队沉淀,顺丰 + 柔宇两段工程化经验。
+**下一篇**：前端工程化体系——CI/CD / 规范 / 评审 / 团队沉淀, + 两段工程化经验。
 
 ## 5 道重点面试问题方向
 
 > **Q1（答案）**：pnpm 相比 npm / yarn 的核心优势是什么？为什么 monorepo 强烈推荐用 pnpm？
 >
-> **A**：pnpm 三大核心优势：① **硬链接节省磁盘** —— 所有项目共享全局 store（~/.pnpm-store/）,同版本依赖只存一份,某 5 项目 monorepo 用 pnpm 从 12GB 降到 3GB;② **符号链接保结构** —— node_modules/foo 是符号链接到全局 store,保留 ESM 解析的嵌套结构;③ **严格的依赖隔离** —— 包不能"意外"访问未声明的依赖,避免 npm 的幽灵依赖问题。**monorepo 强烈推荐**:因为硬链接在多个 workspace 共享同一版本时**磁盘和安装时间都是 O(1)**。<AIAsk question="pnpm 相比 npm / yarn 的核心优势是什么？为什么 monorepo 强烈推荐用 pnpm？" />
+> **A**：pnpm 三大核心优势：① **硬链接节省磁盘**—— 所有项目共享全局 store（~/.pnpm-store/）,同版本依赖只存一份,某 5 项目 monorepo 用 pnpm 从 12GB 降到 3GB;② **符号链接保结构**—— node_modules/foo 是符号链接到全局 store,保留 ESM 解析的嵌套结构;③ **严格的依赖隔离**—— 包不能"意外"访问未声明的依赖,避免 npm 的幽灵依赖问题。**monorepo 强烈推荐**:因为硬链接在多个 workspace 共享同一版本时**磁盘和安装时间都是 O(1)**。<AIAsk question="pnpm 相比 npm / yarn 的核心优势是什么？为什么 monorepo 强烈推荐用 pnpm？" />
 >
 > **Q2（思考）**：Changesets 的工作流是什么？它解决了版本管理的哪些痛点？<AIAsk question="Changesets 的工作流是什么？它解决了版本管理的哪些痛点？" />
 >

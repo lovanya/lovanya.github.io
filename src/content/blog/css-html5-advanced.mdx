@@ -14,7 +14,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 1. **中后台 80% 的页面复杂度都在布局**。ERP、FinUI、CRM 这些表单密集场景，用 `float` / `position: absolute` 写出来一团乱麻，**改一个表单项整页错位**。Flex + Grid 是工业级答案。
 2. **容器查询是响应式断代**。过去靠媒体查询（viewport-based）的方案在"中后台 PC 端 + 移动端共享组件库"场景下几乎不可用——一个卡片在窄侧栏和宽主区里要不同布局。**容器查询**让组件响应它自己的父容器。
-3. **性能优化的真正门槛**。`will-change`、`contain`、`content-visibility` 这些现代 CSS 性能属性不靠 JS 控制，靠 CSS 引擎判断。顺丰 ERP 12min→3min 构建优化里有一半时间在调样式作用域。
+3. **性能优化的真正门槛**。`will-change`、`contain`、`content-visibility` 这些现代 CSS 性能属性不靠 JS 控制，靠 CSS 引擎判断。大型 ERP 12min→3min 构建优化里有一半时间在调样式作用域。
 
 这一篇是『前端架构修仙路』的第 2 篇。我跳过基础教程（不解释什么是 `display: block`），用架构图 + 真实代码 + 性能数据，把盒模型、Flex、Grid、容器查询四个层讲透。下一篇聊 JavaScript 底层（V8 / GC / 事件循环）。
 
@@ -72,7 +72,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 ### 1.2 格式化上下文：BFC 解决一切"为什么我的 margin 飞了"
 
-**Block Formatting Context（BFC）** 是页面中独立的渲染区域，内部元素不影响外部，外部不影响内部。**触发 BFC 的方式**：
+**Block Formatting Context（BFC）**是页面中独立的渲染区域，内部元素不影响外部，外部不影响内部。**触发 BFC 的方式**：
 
 | 方式 | 常用度 |
 |---|---|
@@ -130,7 +130,7 @@ Flex 布局的核心是两根轴：
 
 ### 2.3 gap 属性：Flex / Grid 的杀手级特性
 
-**2020 年之前** Flex 没有 gap，要用 margin hack：
+**2020 年之前**Flex 没有 gap，要用 margin hack：
 
 ```css
 /* 旧写法：margin 负值补偿 */
@@ -282,7 +282,7 @@ Flex 解决一维问题（一行 / 一列）。**Grid 解决二维问题**（行
 }
 ```
 
-**生产用法**：长列表 / 大表格的每个卡片加 `contain: content`，让浏览器对每个卡片独立渲染优化。顺丰 ERP 800+ 页面里表格行加 `contain: layout` 后，**滚动掉帧率降低 60%**。
+**生产用法**：长列表 / 大表格的每个卡片加 `contain: content`，让浏览器对每个卡片独立渲染优化。大型 ERP 800+ 页面里表格行加 `contain: layout` 后，**滚动掉帧率降低 60%**。
 
 ### 5.2 content-visibility：跳过屏幕外渲染
 
@@ -319,7 +319,7 @@ Flex 解决一维问题（一行 / 一列）。**Grid 解决二维问题**（行
 ## 六、踩坑提醒（资深架构师请重点看）
 
 1. **不要混用 Grid 和 Flex 在同一维度**。中后台列表项用 Grid 写列对齐会出大事——`gap` 在不同情况下行为不一样，**先决定整体布局（Grid）再考虑子项排版（Flex）**。
-2. **`flex: 1` 不等于 `flex-grow: 1`**。`flex: 1` 是 `flex: 1 1 0%`，**基准宽度为 0**——这正是你要的"按比例分配剩余空间"。`flex-grow: 1` 配 `flex-basis: auto` 是"按内容比例"，通常不是你想要的。
+2. **`flex: 1` 不等于 `flex-grow: 1`**。`flex: 1` 是 `flex: 1 1 0%`，**基准宽度为 0**——这正是"按比例分配剩余空间"的核心设计。`flex-grow: 1` 配 `flex-basis: auto` 是"按内容比例"，通常并非期望效果。
 3. **不要在 Grid 子项上写百分比宽度**。Grid 已经按 `grid-template-columns` 分配列宽，子项再 `width: 50%` 反而会破坏布局。要做宽度对齐用 `justify-self: stretch` 或 `grid-column: span N`。
 4. **容器查询要"为父容器设置"**。很多人试了 `@container (min-width: 400px)` 没生效，结果发现父级没写 `container-type: inline-size`。**这是头号踩坑点**。
 5. **不要用 `position: absolute` 做小布局**。绝对定位虽然灵活，但脱离文档流、对响应式不友好、对辅助技术不友好。**能用 Flex / Grid 解决就别用 absolute**。

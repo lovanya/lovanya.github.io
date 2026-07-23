@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂构建工具？我的回答是 **要**——不是去读 Webpack 源码，而是建立"为什么构建时间从 12min 降到 3min"的工程判断。原因有三：
 
-1. **简历里那个 12min→3min 构建优化是硬数据**。顺丰 ERP 重构用真实数字证明了工程价值——**不是聊性能，是把工具链配对**。
+1. **那个 12min→3min 构建优化是硬数据**。大型 ERP 重构用真实数字证明了工程价值——**不是聊性能，是把工具链配对**。
 2. **构建工具演进 = 前端架构演进史**。从 Webpack 到 Vite 到 Rspack，每一步都揭示"前端到底在变快什么"。
 3. **大型项目必须选对构建工具**。Webpack 适合复杂定制，Vite 适合开发体验，Rspack 适合追求 Webpack 兼容 + 极快速度。**选错工具 = 团队每天浪费 30min 等待构建**。
 
@@ -34,7 +34,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 3. **Dependency Graph**：解析 import / require，建模块依赖图
 4. **Bundle**：拼接代码、tree-shake 死代码、code-split 拆 chunk、压缩
 
-**架构师心法**：**bundler 性能的核心瓶颈** = JS 单线程解析 + 大量插件 hook。**Rust 重写（SWC / esbuild / Turbopack / Rspack）= 绕开 JS 性能瓶颈**。
+**架构师心法**：**bundler 性能的核心瓶颈**= JS 单线程解析 + 大量插件 hook。**Rust 重写（SWC / esbuild / Turbopack / Rspack）= 绕开 JS 性能瓶颈**。
 
 ## 二、Webpack 5：成熟但慢
 
@@ -48,7 +48,7 @@ Webpack 5 用 **JS 单线程解析**所有模块 → 慢但**生态最丰富**�
 - 长期积累的优化（持久化缓存、tree-shaking、sideEffects）
 
 **痛点**：
-- **冷启动慢**：顺丰 ERP 12min → 主要是 Webpack 冷启动 + 大量 Loader 解析
+- **冷启动慢**：大型 ERP 12min → 主要是 Webpack 冷启动 + 大量 Loader 解析
 - **HMR 慢**：每次修改要重新解析整个模块图
 - **配置文件臃肿**：500 行 webpack.config.js 是常态
 
@@ -80,7 +80,7 @@ module.exports = {
 };
 ```
 
-**生产案例**：顺丰 ERP 用这 4 个优化把构建从 12min 降到 4min——**但仍不够快**，才有了 Vite / Rspack 的尝试。
+**生产案例**：大型 ERP 用这 4 个优化把构建从 12min 降到 4min——**但仍不够快**，才有了 Vite / Rspack 的尝试。
 
 ## 三、Vite 5：原生 ESM + esbuild 的双引擎
 
@@ -103,7 +103,7 @@ Vite dev server:
 
 ### 3.2 生产用 Rollup
 
-Vite 在 **build 模式**下用 **Rollup** 打包（生态成熟，tree-shaking 强）：
+Vite 在 **build 模式**下用 **Rollup**打包（生态成熟，tree-shaking 强）：
 
 ```
 Vite build:
@@ -138,7 +138,7 @@ export default defineConfig({
 
 ### 4.1 核心创新
 
-**ByteDance 2023 开源的 Rspack** 用 **Rust 重写**整个 bundler，**保持 Webpack 兼容**。
+**ByteDance 2023 开源的 Rspack**用 **Rust 重写**整个 bundler，**保持 Webpack 兼容**。
 
 ```
 Rspack vs Webpack:
@@ -163,13 +163,13 @@ Rspack vs Webpack:
 
 | 维度 | Rspack | Vite |
 |---|---|---|
-| 配置兼容 | **完全兼容 Webpack** | 不兼容，需要迁移 |
-| Dev 冷启动 | 1-3s | **500ms** |
-| 生产构建 | **5-10× Webpack** | 接近 Rollup 速度 |
-| HMR | 200ms | **100ms** |
-| 生态 | **1000+ Webpack 插件复用** | 自家插件生态（较新） |
+| 配置兼容 | **完全兼容 Webpack**| 不兼容，需要迁移 |
+| Dev 冷启动 | 1-3s | **500ms**|
+| 生产构建 | **5-10× Webpack**| 接近 Rollup 速度 |
+| HMR | 200ms | **100ms**|
+| 生态 | **1000+ Webpack 插件复用**| 自家插件生态（较新） |
 | 学习曲线 | **零**（Webapcker 用户无缝） | 需重新学约定 |
-| 适用场景 | **Webpack 老项目想提速** | 新项目追求 dev 体验 |
+| 适用场景 | **Webpack 老项目想提速**| 新项目追求 dev 体验 |
 
 **架构师规则**：
 - **新项目**：用 Vite（dev 体验最好）
@@ -180,12 +180,12 @@ Rspack vs Webpack:
 
 ### 5.1 核心创新
 
-**Turbopack（2023 开源）** 用 Rust 写，**专为增量构建设计**——只编译修改的文件，**编译速度比 Webpack 快 700 倍**（Vercel 官方数据）。
+**Turbopack（2023 开源）**用 Rust 写，**专为增量构建设计**——只编译修改的文件，**编译速度比 Webpack 快 700 倍**（Vercel 官方数据）。
 
 ### 5.2 状态
 
 - **Next.js 15+ 已默认集成**（生产模式）
-- **独立 bundler** 还在 preview
+- **独立 bundler**还在 preview
 - 与 Webpack **不直接兼容**，需用 Next.js 间接迁移
 
 ### 5.3 选型决策
@@ -196,10 +196,10 @@ Rspack vs Webpack:
 
 | 工具 | 实现 | 冷启动 | 生产构建 | HMR | 生态 | 学习成本 |
 |---|---|---|---|---|---|---|
-| **Webpack 5** | JS | 12min（大型项目） | 12min | 4s | **最丰富** | 高 |
-| **Vite 5** | ESM + esbuild | **500ms** | 3min（Rollup） | **100ms** | 中 | **低** |
-| **Rspack 3** | Rust | 1.5min | **1.5min** | 200ms | Webpack 兼容 | **零**（Webpack 用户） |
-| **Turbopack** | Rust | 1s | 1min | 100ms | Next.js 生态 | 低 |
+| **Webpack 5**| JS | 12min（大型项目） | 12min | 4s | **最丰富**| 高 |
+| **Vite 5**| ESM + esbuild | **500ms**| 3min（Rollup） | **100ms**| 中 | **低**|
+| **Rspack 3**| Rust | 1.5min | **1.5min**| 200ms | Webpack 兼容 | **零**（Webpack 用户） |
+| **Turbopack**| Rust | 1s | 1min | 100ms | Next.js 生态 | 低 |
 
 **架构师决策树**：
 
@@ -282,7 +282,7 @@ const { foo } = require('./foo'); // ❌ CJS, 不可 tree-shake
 
 > **Q1（答案）**：Webpack 5 / Vite 5 / Rspack 3 三个构建工具的核心区别是什么？分别适合什么场景？
 >
-> **A**：**Webpack 5** 是 JS 单线程 bundler,生态最丰富(1000+ 插件),**冷启动慢**但**复杂项目配置能力最强**。**Vite 5** 用原生 ESM + esbuild,**dev 冷启动 500ms**(无论项目多大),生产用 Rollup,**新项目首选**。**Rspack 3** 用 Rust 重写,**完全兼容 Webpack 配置**,**5-10× 提速**,**Webpack 老项目迁移零成本**。**决策**:新项目用 Vite;Webpack 老项目想提速用 Rspack;Next.js 项目用 Turbopack。<AIAsk question="Webpack 5 / Vite 5 / Rspack 3 三个构建工具的核心区别是什么？分别适合什么场景？" />
+> **A**：**Webpack 5**是 JS 单线程 bundler,生态最丰富(1000+ 插件),**冷启动慢**但**复杂项目配置能力最强**。**Vite 5**用原生 ESM + esbuild,**dev 冷启动 500ms**(无论项目多大),生产用 Rollup,**新项目首选**。**Rspack 3**用 Rust 重写,**完全兼容 Webpack 配置**,**5-10× 提速**,**Webpack 老项目迁移零成本**。**决策**:新项目用 Vite;Webpack 老项目想提速用 Rspack;Next.js 项目用 Turbopack。<AIAsk question="Webpack 5 / Vite 5 / Rspack 3 三个构建工具的核心区别是什么？分别适合什么场景？" />
 >
 > **Q2（思考）**：Vite 5 的 dev 冷启动为什么能快到 500ms？它和 Webpack 在 dev 模式下的核心差异是什么？<AIAsk question="Vite 5 的 dev 冷启动为什么能快到 500ms？它和 Webpack 在 dev 模式下的核心差异是什么？" />
 >
@@ -290,7 +290,7 @@ const { foo } = require('./foo'); // ❌ CJS, 不可 tree-shake
 >
 > **Q4（思考）**：Rspack 凭什么能做到 Webpack 配置完全兼容 + 5-10× 提速？Rust 替代 JS 的具体收益在哪？<AIAsk question="Rspack 凭什么能做到 Webpack 配置完全兼容 + 5-10× 提速？Rust 替代 JS 的具体收益在哪？" />
 >
-> **Q5（思考）**：你在顺丰 ERP 项目里是怎么把构建时间从 12min 优化到 3min 的？请说具体每一步的耗时拆解和对应优化。<AIAsk question="你在顺丰 ERP 项目里是怎么把构建时间从 12min 优化到 3min 的？请说具体每一步的耗时拆解和对应优化。" />
+> **Q5（思考）**：你在大型 ERP 项目里是怎么把构建时间从 12min 优化到 3min 的？请说具体每一步的耗时拆解和对应优化。<AIAsk question="你在大型 ERP 项目里是怎么把构建时间从 12min 优化到 3min 的？请说具体每一步的耗时拆解和对应优化。" />
 
 > 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
 

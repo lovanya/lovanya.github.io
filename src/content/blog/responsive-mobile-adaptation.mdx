@@ -51,7 +51,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 - `user-scalable=no`：禁止缩放（**强 A11y 反模式**，谨慎使用）
 - `viewport-fit=cover`：让页面延伸到 iPhone 刘海/灵动岛区域（**iOS 11+ 必需**）
 
-**架构师规则**：**只用 `width=device-width, initial-scale=1.0, viewport-fit=cover`** 三件套**。其他参数不要碰（尤其是 `user-scalable=no`，是 A11y 反模式）。
+**架构师规则**：**只用 `width=device-width, initial-scale=1.0, viewport-fit=cover`**三件套**。其他参数不要碰（尤其是 `user-scalable=no`，是 A11y 反模式）。
 
 ## 二、rem 适配方案：经典的移动端方案
 
@@ -327,7 +327,7 @@ window.addEventListener('orientationchange', () => {
 - **vw 方案**：纯 CSS 平滑响应，配合 `postcss-px-to-viewport` 自动转换。
 - **1px 边框**：DPR > 1 时用 `transform: scaleY(0.333)`，视觉上是细线。
 - **安全区域**：`env(safe-area-inset-*)` + `viewport-fit=cover`，iPhone 刘海/灵动岛适配。
-- **横竖屏切换**：orientationchange 后 **setTimeout 100ms** 重算 rem。
+- **横竖屏切换**：orientationchange 后 **setTimeout 100ms**重算 rem。
 - **容器查询**：组件级响应式，**移动端 H5 弹窗/主区共享组件的杀手武器**。
 - **A11y 反模式**：`user-scalable=no` 默认禁用缩放，**WCAG 2.1 禁止**。
 

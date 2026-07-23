@@ -10,17 +10,17 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect master TypeScript? My answer is **yes** — not to derive TypeScript Compiler source, but to build the engineering intuition of "use types to block runtime errors at compile time". Three reasons:
+Should a frontend architect master TypeScript? My answer is **yes**— not to derive TypeScript Compiler source, but to build the engineering intuition of "use types to block runtime errors at compile time". Three reasons:
 
-1. **Large projects depend on TS as gatekeeper.** 800+ page ERP without TS — every new field is P0 bug risk; with TS, **80% of field typos, null handling omissions, API field type drift are caught at the `tsc` stage**.
-2. **Type gymnastics aren't showing off, they're abstraction tools.** `Partial<T>` / `Pick<T, K>` / `ReturnType<typeof fn>` are the building blocks of design reuse; writing conditional types + `infer` is a must for building frameworks / SDKs.
-3. **tsconfig directly determines the dev experience.** `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` — whether these switches are on determines the team's code rigor baseline.
+1. **Large projects depend on TS as gatekeeper.**800+ page ERP without TS — every new field is P0 bug risk; with TS, **80% of field typos, null handling omissions, API field type drift are caught at the `tsc` stage**.
+2. **Type gymnastics aren't showing off, they're abstraction tools.**`Partial<T>` / `Pick<T, K>` / `ReturnType<typeof fn>` are the building blocks of design reuse; writing conditional types + `infer` is a must for building frameworks / SDKs.
+3. **tsconfig directly determines the dev experience.**`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` — whether these switches are on determines the team's code rigor baseline.
 
 This is post #6 of the *Frontend Architecture Cultivation Path* series. We skip TypeScript compiler internals (no AST / checker deep dive), use real-world cases + step-by-step type derivations + configuration tables to make generics / conditional types / `infer` / template literal types concrete. The next post enters the Foundation Building period, covering front-end framework evolution and MVVM history.
 
 ## 1. Why Architects Must Use TypeScript: Real Production Data
 
-All ERP / FinUI / Electron projects on my resume depend heavily on TypeScript. **Why not JS?** Three comparisons:
+All ERP / FinUI / Electron projects  depend heavily on TypeScript. **Why not JS?**Three comparisons:
 
 | Dimension | JavaScript | TypeScript |
 |---|---|---|
@@ -30,7 +30,7 @@ All ERP / FinUI / Electron projects on my resume depend heavily on TypeScript. *
 | Team collaboration | Verbal conventions | Types ARE documentation |
 | Long-term maintenance | More chaotic over time | Type net keeps code "self-constrained" |
 
-**Production case**: SF Express ERP's 200+ table column definitions, **after migrating to TS, field typo rate dropped from 0.5% to 0** — because every `<TableColumn prop="xxx" />` requires `xxx` to be declared in the `Columns` type.
+**Production case**: large ERP's 200+ table column definitions, **after migrating to TS, field typo rate dropped from 0.5% to 0**— because every `<TableColumn prop="xxx" />` requires `xxx` to be declared in the `Columns` type.
 
 ## 2. TypeScript Type System Overview
 
@@ -99,7 +99,7 @@ function List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {
 />
 ```
 
-Once `T` is inferred as `User` from `items`, **`renderItem` and `keyExtractor` automatically get `User` types** — this is what plain React can't do.
+Once `T` is inferred as `User` from `items`, **`renderItem` and `keyExtractor` automatically get `User` types**— this is what plain React can't do.
 
 ## 4. Conditional Types: if-else in the Type System
 
@@ -132,7 +132,7 @@ type User = ExtractData<UserResp>;  // { id: number; name: string }
 
 ### 4.3 `infer`: Declare Local Variables in Conditional Types
 
-`infer` is the **killer feature** of conditional types — **infer and capture** sub-types from generics.
+`infer` is the **killer feature**of conditional types — **infer and capture**sub-types from generics.
 
 ```typescript
 // Extract function return type
@@ -290,7 +290,7 @@ t('home.welcome', 'zh');   // ❌ TS error: namespace must be common/blog/admin
 
 ## 8. Pattern: Discriminated Union
 
-**The TS pattern architects should master most** — better than class hierarchy for expressing state:
+**The TS pattern architects should master most**— better than class hierarchy for expressing state:
 
 ```typescript
 // ❌ Anti-pattern: optional fields scattered
@@ -330,23 +330,23 @@ function handle(result: ApiResult) {
 
 ## 9. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't abuse `any`.** `any` makes TS meaningless — `tsconfig` adds `"noImplicitAny": true` as the baseline.
-2. **Don't force type assertions with `as`.** `as` is the "escape hatch" to bypass TS — use only when truly necessary. **The real solution is to add type definitions**, not `as unknown as User`.
-3. **Don't let `enum` appear at cross-package boundaries.** `enum` compiles to reverse-mapped objects; bugs at cross-package usage. **Use `as const` + literal union types instead**.
-4. **Don't mix `interface` and `type` doing the same thing.** Team convention: `interface` only for React props / public APIs (extensible); `type` for type computation (not extensible).
-5. **Don't ignore TS compile errors.** "Project runs fine" is an anti-pattern — **every accumulated TS error doubles future refactoring cost**.
+1. **Don't abuse `any`.**`any` makes TS meaningless — `tsconfig` adds `"noImplicitAny": true` as the baseline.
+2. **Don't force type assertions with `as`.**`as` is the "escape hatch" to bypass TS — use only when truly necessary. **The real solution is to add type definitions**, not `as unknown as User`.
+3. **Don't let `enum` appear at cross-package boundaries.**`enum` compiles to reverse-mapped objects; bugs at cross-package usage. **Use `as const` + literal union types instead**.
+4. **Don't mix `interface` and `type` doing the same thing.**Team convention: `interface` only for React props / public APIs (extensible); `type` for type computation (not extensible).
+5. **Don't ignore TS compile errors.**"Project runs fine" is an anti-pattern — **every accumulated TS error doubles future refactoring cost**.
 
 ## Summary
 
 Nine key facts that thread TypeScript advanced topics together:
 
 - **TS is essential for large projects**: field typo rate from 0.5% → 0, refactoring finds 100% of all references.
-- **Generics + constraints + `extends`** are the foundation of type parameterization.
-- **Conditional types + `infer`** let you do "if-else" in the type system — the killer weapon for framework authors.
-- **Mapped types** (Partial / Pick / Omit) are the standard tools for batch transforming objects.
-- **Template literal types** make string-level type safety (CSS units, API paths, i18n keys).
-- **tsconfig strict switches** determine the team's code rigor baseline.
-- **Discriminated Union** replaces class hierarchy for state expression.
+- **Generics + constraints + `extends`**are the foundation of type parameterization.
+- **Conditional types + `infer`**let you do "if-else" in the type system — the killer weapon for framework authors.
+- **Mapped types**(Partial / Pick / Omit) are the standard tools for batch transforming objects.
+- **Template literal types**make string-level type safety (CSS units, API paths, i18n keys).
+- **tsconfig strict switches**determine the team's code rigor baseline.
+- **Discriminated Union**replaces class hierarchy for state expression.
 - **`any` / `as` / `enum` are the three poisons**, team discipline must explicitly forbid them.
 
 **Next post**: Foundation Building opener — front-end framework evolution and MVVM history, from Backbone / Knockout to React / Vue / Angular's evolutionary logic.
@@ -357,7 +357,7 @@ Nine key facts that thread TypeScript advanced topics together:
 
 > **Q1 (Answer)**: What are TypeScript generics, conditional types, and the `infer` keyword? Give a real project example for each.
 >
-> **A**: **Generics** are type parameterization — `<T>` lets functions / interfaces / classes accept any type without losing type info. **Conditional types** `T extends U ? X : Y` are if-else at the type level, used for type distribution and mapping. **`infer`** declares a local variable in conditional types, capturing a sub-type from a generic — typical uses are extracting function return types (`ReturnType<T>`), Promise inner types (`Awaited<T>`), array element types. **Real-world case**: React component `<List<T>>` uses generics so `items` / `renderItem` / `keyExtractor` types are linked; framework's "component props change with `as` attribute" uses `infer` to extract corresponding element props from `keyof JSX.IntrinsicElements`.<AIAsk question="What are TypeScript generics, conditional types, and the infer keyword? Give a real project example for each." lang="en" />
+> **A**: **Generics**are type parameterization — `<T>` lets functions / interfaces / classes accept any type without losing type info. **Conditional types**`T extends U ? X : Y` are if-else at the type level, used for type distribution and mapping. **`infer`**declares a local variable in conditional types, capturing a sub-type from a generic — typical uses are extracting function return types (`ReturnType<T>`), Promise inner types (`Awaited<T>`), array element types. **Real-world case**: React component `<List<T>>` uses generics so `items` / `renderItem` / `keyExtractor` types are linked; framework's "component props change with `as` attribute" uses `infer` to extract corresponding element props from `keyof JSX.IntrinsicElements`.<AIAsk question="What are TypeScript generics, conditional types, and the infer keyword? Give a real project example for each." lang="en" />
 >
 > **Q2 (Think)**: What are the pitfalls of TypeScript's `enum`? Why recommend `as const` + literal union types instead?<AIAsk question="What are the pitfalls of TypeScript's enum? Why recommend as const + literal union types instead?" lang="en" />
 >

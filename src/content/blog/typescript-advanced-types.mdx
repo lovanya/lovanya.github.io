@@ -20,7 +20,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 ## 一、为什么架构师必须用 TypeScript：来自生产的真实数据
 
-简历里所有 ERP / FinUI / Electron 项目都重度依赖 TypeScript。**为什么不用 JS**？三个对比：
+所有 ERP / FinUI / Electron 项目都重度依赖 TypeScript。**为什么不用 JS**？三个对比：
 
 | 维度 | JavaScript | TypeScript |
 |---|---|---|
@@ -30,7 +30,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 | 团队协作 | 口头约定 | 类型即文档 |
 | 长期维护 | 越改越乱 | 类型网让代码"自我约束" |
 
-**生产案例**：顺丰 ERP 200+ 表格列定义，**迁移到 TS 后字段拼写错误率从 0.5% 降到 0**——因为每个 `<TableColumn prop="xxx" />` 的 `xxx` 必须在 `Columns` 类型里声明过。
+**生产案例**：大型 ERP 200+ 表格列定义，**迁移到 TS 后字段拼写错误率从 0.5% 降到 0**——因为每个 `<TableColumn prop="xxx" />` 的 `xxx` 必须在 `Columns` 类型里声明过。
 
 ## 二、TypeScript 类型系统全景
 
@@ -341,12 +341,12 @@ function handle(result: ApiResult) {
 这一篇用 9 个关键事实把 TypeScript 进阶串起来：
 
 - **TS 是大型项目必备**：字段错误率从 0.5% → 0，重构命名 100% 找出所有引用。
-- **泛型 + 约束 + `extends`** 是类型参数化的基石。
-- **条件类型 + `infer`** 让你在类型系统里做"if-else"，是写框架的杀手武器。
+- **泛型 + 约束 + `extends`**是类型参数化的基石。
+- **条件类型 + `infer`**让你在类型系统里做"if-else"，是写框架的杀手武器。
 - **映射类型**（Partial / Pick / Omit）是批量转换对象的标准工具。
 - **模板字面量类型**让字符串级类型安全（CSS 单位、API 路径、i18n key）。
 - **tsconfig 严格开关**决定团队代码的严谨基线。
-- **Discriminated Union** 替代 class hierarchy 表达状态。
+- **Discriminated Union**替代 class hierarchy 表达状态。
 - **`any` / `as` / `enum` 是三大毒药**，团队纪律要明确禁用。
 
 **下一篇**：筑基期开篇——前端框架演变与 MVVM 思想史，从 Backbone / Knockout 到 React / Vue / Angular 的演化逻辑。
@@ -355,7 +355,7 @@ function handle(result: ApiResult) {
 
 > **Q1（答案）**：TypeScript 的泛型、条件类型、`infer` 关键字分别是什么？请给一个实际项目里使用它们的例子。
 >
-> **A**：**泛型**是类型参数化——`<T>` 让函数 / 接口 / 类接受任意类型而不丢类型信息。**条件类型** `T extends U ? X : Y` 是类型层面的 if-else，常用于类型分发和映射。**`infer`** 在条件类型里声明局部变量，从泛型里捕获子类型——典型用法是提取函数返回值（`ReturnType<T>`）、Promise 内部类型（`Awaited<T>`）、数组元素类型。**实战案例**：React 组件 `<List<T>>` 用泛型让 `items` / `renderItem` / `keyExtractor` 类型联动；框架的"组件 props 根据 `as` 属性变化"用 `infer` 从 `keyof JSX.IntrinsicElements` 提取对应元素 props。<AIAsk question="TypeScript 的泛型、条件类型、infer 关键字分别是什么？请给一个实际项目里使用它们的例子。" />
+> **A**：**泛型**是类型参数化——`<T>` 让函数 / 接口 / 类接受任意类型而不丢类型信息。**条件类型**`T extends U ? X : Y` 是类型层面的 if-else，常用于类型分发和映射。**`infer`**在条件类型里声明局部变量，从泛型里捕获子类型——典型用法是提取函数返回值（`ReturnType<T>`）、Promise 内部类型（`Awaited<T>`）、数组元素类型。**实战案例**：React 组件 `<List<T>>` 用泛型让 `items` / `renderItem` / `keyExtractor` 类型联动；框架的"组件 props 根据 `as` 属性变化"用 `infer` 从 `keyof JSX.IntrinsicElements` 提取对应元素 props。<AIAsk question="TypeScript 的泛型、条件类型、infer 关键字分别是什么？请给一个实际项目里使用它们的例子。" />
 >
 > **Q2（思考）**：TypeScript 的 `enum` 有什么坑？为什么推荐用 `as const` + 字面量联合类型替代？<AIAsk question="TypeScript 的 enum 有什么坑？为什么推荐用 as const + 字面量联合类型替代？" />
 >

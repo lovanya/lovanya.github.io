@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand framework evolution history? My answer is **yes** — not to memorize "which year who released what", but to build the engineering judgment of "why this design, not the other". Three reasons:
+Should a frontend architect understand framework evolution history? My answer is **yes**— not to memorize "which year who released what", but to build the engineering judgment of "why this design, not the other". Three reasons:
 
-1. **Framework selection doesn't rely on blog articles.** React / Vue / Angular / Solid each solve different problems. **Understanding each framework's design motivation** lets you judge "which one does my project need".
-2. **The next 5 years' trends hide in history.** The evolutionary path of Hooks / Composition API / Signals reveals front-end architecture is converging toward "fine-grained reactivity + compile-time optimization".
-3. **Cross-era tech stacks need historical perspective.** A resume that lists Vue 2 / Vue 3 / React 16 / React 18 simultaneously — **without historical understanding, it's just switching tools; with history, it's "why we switched"**.
+1. **Framework selection doesn't rely on blog articles.**React / Vue / Angular / Solid each solve different problems. **Understanding each framework's design motivation**lets you judge "which one does my project need".
+2. **The next 5 years' trends hide in history.**The evolutionary path of Hooks / Composition API / Signals reveals front-end architecture is converging toward "fine-grained reactivity + compile-time optimization".
+3. **Cross-era tech stacks need historical perspective.**A track record that lists Vue 2 / Vue 3 / React 16 / React 18 simultaneously — **without historical understanding, it's just switching tools; with history, it's "why we switched"**.
 
 This is the opening post of the *Foundation Building* period. We skip "feature listing" of each framework (those go in the subsequent deep-dive posts) and use architecture diagrams + history of ideas + selection tables to make jQuery → Backbone → Knockout → AngularJS → React → Vue → Solid's main evolution thread concrete. The next post goes deep on React 19 / Fiber / Concurrent.
 
@@ -55,7 +55,7 @@ users.forEach(u => {
 2. **Code organization**: all logic in DOM operations, **complex applications hard to maintain**
 3. **Team collaboration**: no clear architectural boundaries, **multiple people editing one file → conflicts**
 
-**The essence of frameworks**: **automate** the "state → UI" sync process, so developers only care about "what the state is".
+**The essence of frameworks**: **automate**the "state → UI" sync process, so developers only care about "what the state is".
 
 ## 3. MVVM: Model-View Two-Way Sync
 
@@ -88,7 +88,7 @@ ko.applyBindings(new UserViewModel());
 // <span data-bind="text: greeting">
 ```
 
-**Contribution**: proved "frameworks can **declaratively** map data to UI". **Flaw**: pure runtime tracking, **no compile-time optimization**, large lists have poor performance.
+**Contribution**: proved "frameworks can **declaratively**map data to UI". **Flaw**: pure runtime tracking, **no compile-time optimization**, large lists have poor performance.
 
 ### 3.3 AngularJS 1.x's Expansion (2012)
 
@@ -135,14 +135,14 @@ function Counter() {
 Directly operating real DOM is slow (each change triggers layout / paint). React introduces **Virtual DOM**:
 
 1. State change → generate new Virtual DOM tree
-2. **Diff algorithm** compares old and new trees (O(n))
+2. **Diff algorithm**compares old and new trees (O(n))
 3. Batch update changed parts to real DOM
 
 **Contribution**: declarative + high performance. **Flaw**: Virtual DOM has runtime overhead (Diff / serialization), community has debated "is no Virtual DOM faster".
 
 ### 4.3 One-Way Data Flow: Flux / Redux
 
-React ships state but **cross-component state sharing** is hard. Flux architecture + Redux gives the answer:
+React ships state but **cross-component state sharing**is hard. Flux architecture + Redux gives the answer:
 
 ```javascript
 // Redux: single source of truth + pure function reducer + one-way data flow
@@ -163,7 +163,7 @@ console.log(store.getState());  // { count: 1 }
 
 ## 5. Vue's Progressive Philosophy (2014)
 
-Vue's design motivation was **completely different from React** — **Vue wanted to be a "progressive" framework**: from a CDN `<script>` tag to a full large-scale application.
+Vue's design motivation was **completely different from React**— **Vue wanted to be a "progressive" framework**: from a CDN `<script>` tag to a full large-scale application.
 
 ### 5.1 Template Syntax: HTML-first
 
@@ -184,13 +184,13 @@ const greeting = computed(() => `Hello, ${count.value}`);
 ```
 
 **Core differences**:
-- React uses **JSX** (HTML inside JS)
-- Vue uses **SFC** (.vue files, HTML/CSS/JS three sections)
+- React uses **JSX**(HTML inside JS)
+- Vue uses **SFC**(.vue files, HTML/CSS/JS three sections)
 - Vue templates **compile into render functions**, leaving room for compile-time optimization
 
 ### 5.2 Reactivity: Proxy-based Dependency Tracking (Vue 3)
 
-Vue 3 uses **Proxy** to intercept property access and auto-track dependencies:
+Vue 3 uses **Proxy**to intercept property access and auto-track dependencies:
 
 ```javascript
 // Vue 3 reactivity core
@@ -201,7 +201,7 @@ effect(() => {
 obj.count = 1;  // auto-trigger effect
 ```
 
-**vs React**: React uses **explicit setState** to trigger updates; Vue uses **implicit dependency tracking**. **Production impact**:
+**vs React**: React uses **explicit setState**to trigger updates; Vue uses **implicit dependency tracking**. **Production impact**:
 - React philosophy: state change = you decide
 - Vue philosophy: state change = framework discovers
 
@@ -210,11 +210,11 @@ obj.count = 1;  // auto-trigger effect
 AngularJS 1.x's dirty-checking pattern had **too low a performance ceiling**, Google decided to rewrite. Angular 2.0 (later simply Angular):
 
 - Full TypeScript
-- **Dependency injection** as a first-class citizen
-- **RxJS** as the async primitive
-- **Zone.js** auto-tracks changes
+- **Dependency injection**as a first-class citizen
+- **RxJS**as the async primitive
+- **Zone.js**auto-tracks changes
 
-**Core philosophy**: **"convention over configuration"** — large teams need clear architectural boundaries, Angular provides this through strong constraints.
+**Core philosophy**: **"convention over configuration"**— large teams need clear architectural boundaries, Angular provides this through strong constraints.
 
 ```typescript
 // Angular: modularity + DI + RxJS
@@ -228,7 +228,7 @@ export class UserComponent {
 }
 ```
 
-**Contribution**: enterprise-grade architecture + strong typing + complete toolchain (CLI / Testing / i18n). **Flaw**: steepest learning curve, **largest bundle size** (200KB+), **slow cold start**.
+**Contribution**: enterprise-grade architecture + strong typing + complete toolchain (CLI / Testing / i18n). **Flaw**: steepest learning curve, **largest bundle size**(200KB+), **slow cold start**.
 
 ## 7. The Hooks Revolution: Mainstreaming Functional Components (2019)
 
@@ -256,7 +256,7 @@ function Counter() {
 2. **Avoid `this`**: functional mindset + closures, more idiomatic JS
 3. **Tree-shaking friendly**: function components don't mount class fields, smaller bundle
 
-**Vue 3's Composition API** (2020) is the same response — Vue 3 has both Options API (declarative) and Composition API (functional), **both styles coexist**.
+**Vue 3's Composition API**(2020) is the same response — Vue 3 has both Options API (declarative) and Composition API (functional), **both styles coexist**.
 
 ## 8. Server Components: Rendering Crosses Boundaries Again (2022-2024)
 
@@ -269,13 +269,13 @@ React 19 rendering modes:
   - Server Actions: server functions, callable directly from client
 ```
 
-**Architectural meaning**: components can **truly run only on server** for the first time (interactivity via Server Action over network). **Bundle size can be minimal**.
+**Architectural meaning**: components can **truly run only on server**for the first time (interactivity via Server Action over network). **Bundle size can be minimal**.
 
 Vue 3.5 Vapor mode (2025) and Solid Start walk similar paths. **This is the most certain trend for the next 5 years**.
 
 ## 9. Signals: Fine-Grained Reactivity Returns (2023-2024)
 
-Solid.js / Qwik / Vue 3.5 (Vapor) take the **"no Virtual DOM"** path:
+Solid.js / Qwik / Vue 3.5 (Vapor) take the **"no Virtual DOM"**path:
 
 ```javascript
 // Solid: fine-grained reactivity + no Virtual DOM
@@ -295,23 +295,23 @@ return <button onClick={() => setCount(count() + 1)}>{count()}</button>;
 
 | Project scenario | Recommendation | Reason |
 |---|---|---|
-| Enterprise large admin panel (>100 pages) | **Vue 3 / Angular** | Moderate learning curve / strong conventions, team scaling friendly |
-| Startup fast iteration | **React / Vue 3** | Richest ecosystem, most complete component library |
-| Performance sensitive (animation / lots of data) | **Solid** | No VDOM overhead, small bundle |
-| SEO + SSR priority | **Next.js (React) / Nuxt (Vue)** | Built-in SSR / SSG / ISR |
-| AI / Server first (API-centric) | **Next.js 15 App Router / Solid Start** | RSC + Server Actions |
-| Cross-platform (mobile / desktop) | **React Native / Taro / Flutter** | Native cross-platform support |
-| Old jQuery / Backbone project maintenance | **Vue 3 (progressive)** | Can replace locally, no full-stack required |
+| Enterprise large admin panel (>100 pages) | **Vue 3 / Angular**| Moderate learning curve / strong conventions, team scaling friendly |
+| Startup fast iteration | **React / Vue 3**| Richest ecosystem, most complete component library |
+| Performance sensitive (animation / lots of data) | **Solid**| No VDOM overhead, small bundle |
+| SEO + SSR priority | **Next.js (React) / Nuxt (Vue)**| Built-in SSR / SSG / ISR |
+| AI / Server first (API-centric) | **Next.js 15 App Router / Solid Start**| RSC + Server Actions |
+| Cross-platform (mobile / desktop) | **React Native / Taro / Flutter**| Native cross-platform support |
+| Old jQuery / Backbone project maintenance | **Vue 3 (progressive)**| Can replace locally, no full-stack required |
 
 **Architect's mantra**: **Frameworks are tools, not faith**. **Vue / React / Angular / Solid can all write good code; the cost of choosing wrong is dev efficiency + hiring difficulty + long-term maintenance**.
 
 ## 11. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't blindly chase new frameworks.** New frameworks (Solid / Qwik) only shine in large-scale projects; small projects just carry extra weight. **React / Vue mainstream versions won't be outdated in 5 years**.
-2. **Don't put all state in global store.** Redux solves cross-component state sharing; **what useState / ref can solve, don't Redux** — 80% of projects over-engineer here.
-3. **Don't confuse reactivity principles.** React uses **setState to trigger re-render**; Vue uses **dependency tracking**; Angular uses **Zone.js**. **Must distinguish in interviews / debugging**.
-4. **Don't ping-pong between Vue / React.** Mixing increases team burden; **one stack through to the end** matters more than "the best one".
-5. **Don't ignore "outside the framework" parts.** Build tools / state management / routing / forms / testing / deployment — framework is only 30% of overall engineering. **Architect's capability is integration, not selection**.
+1. **Don't blindly chase new frameworks.**New frameworks (Solid / Qwik) only shine in large-scale projects; small projects just carry extra weight. **React / Vue mainstream versions won't be outdated in 5 years**.
+2. **Don't put all state in global store.**Redux solves cross-component state sharing; **what useState / ref can solve, don't Redux**— 80% of projects over-engineer here.
+3. **Don't confuse reactivity principles.**React uses **setState to trigger re-render**; Vue uses **dependency tracking**; Angular uses **Zone.js**. **Must distinguish in interviews / debugging**.
+4. **Don't ping-pong between Vue / React.**Mixing increases team burden; **one stack through to the end**matters more than "the best one".
+5. **Don't ignore "outside the framework" parts.**Build tools / state management / routing / forms / testing / deployment — framework is only 30% of overall engineering. **Architect's capability is integration, not selection**.
 
 ## Summary
 
@@ -332,7 +332,7 @@ Six key facts that thread framework evolution together:
 
 > **Q1 (Answer)**: What are the core mental models of React / Vue / Angular? Why did they choose different designs?
 >
-> **A**: **React** is "**UI = f(state)**" — one-way data flow, functional thinking, performance control needs manual `memo / useMemo`. **Vue** is "**Reactive Data Proxy**" — based on `Proxy` auto-tracking dependencies, most natural to write. **Angular** is "**Dependency Injection + Zone.js auto dirty-checking**" — enterprise convention over configuration, long-term maintainable. **React's revolution**: stepped out of the MVVM paradigm, simplified thinking with "UI is a pure function of state". **Vue's progressive**: lowered the bar with template syntax, reduced mental burden with reactive tracking. **Angular industrial-grade**: gave large teams architectural boundaries via strong constraints + DI + RxJS. **Interview tip**: frame these three as 3 different philosophies of handling UI-state relationships, not "which is better". The real answer depth: you can articulate Angular DI's tree structure / React Fiber's double-buffering / Vue 3's `effect` scheduler.<AIAsk question="What are the core mental models of React / Vue / Angular? Why did they choose different designs?" lang="en" />
+> **A**: **React**is "**UI = f(state)**" — one-way data flow, functional thinking, performance control needs manual `memo / useMemo`. **Vue**is "**Reactive Data Proxy**" — based on `Proxy` auto-tracking dependencies, most natural to write. **Angular**is "**Dependency Injection + Zone.js auto dirty-checking**" — enterprise convention over configuration, long-term maintainable. **React's revolution**: stepped out of the MVVM paradigm, simplified thinking with "UI is a pure function of state". **Vue's progressive**: lowered the bar with template syntax, reduced mental burden with reactive tracking. **Angular industrial-grade**: gave large teams architectural boundaries via strong constraints + DI + RxJS. **Interview tip**: frame these three as 3 different philosophies of handling UI-state relationships, not "which is better". The real answer depth: you can articulate Angular DI's tree structure / React Fiber's double-buffering / Vue 3's `effect` scheduler.<AIAsk question="What are the core mental models of React / Vue / Angular? Why did they choose different designs?" lang="en" />
 >
 > **Q2 (Think)**: The MVVM pattern proposed by Knockout.js / AngularJS 1.x was popular in 2010, but mainline frameworks no longer emphasize MVVM. Why?<AIAsk question="The MVVM pattern proposed by Knockout.js / AngularJS 1.x was popular in 2010, but mainline frameworks no longer emphasize MVVM. Why?" lang="en" />
 >

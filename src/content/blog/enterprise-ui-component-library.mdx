@@ -12,9 +12,9 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂组件库设计？我的回答是 **要**——不是去抄 Element Plus / Ant Design，而是建立"50 个组件怎么保持 API 一致性、视觉统一性、可维护性"的工程哲学。原因有三：
 
-1. **简历里 iView / FinUI 是真实项目**。**设计 Token 体系 / 主题定制 / 文档化** 决定组件库能用多久。
-2. **组件库是团队的"基础设施"**。50 个业务方依赖你的组件库，**改一个 API = 改 50 个项目的代码**。**架构师必须有"破坏性变更控制"思维**。
-3. **可访问性 / 国际化 / 暗色模式** 是组件库的必答题，不是选答题。**Element Plus v3 / Ant Design v5 都在强调这几点**。
+1. **iView / FinUI 是真实项目**。**设计 Token 体系 / 主题定制 / 文档化**决定组件库能用多久。
+2. **组件库是团队的"基础设施"**。50 个业务方依赖该组件库，**改一个 API = 改 50 个项目的代码**。**架构师必须有"破坏性变更控制"思维**。
+3. **可访问性 / 国际化 / 暗色模式**是组件库的必答题，不是选答题。**Element Plus v3 / Ant Design v5 都在强调这几点**。
 
 这一篇是『前端架构修仙路』的第 23 篇。我跳过具体组件 API（不讲 Button 怎么写），用设计哲学 + 真实经验 + 决策表，把 Token 体系 / 主题 / 文档 / API 一致性 / 版本管理讲透。下一篇深度聊中后台开发模式。
 
@@ -199,22 +199,22 @@ transform: (file, api) => {
 ```
 
 **WCAG 2.1 AA 必填项**：
-- **颜色对比度** ≥ 4.5:1（普通文字）/ 3:1（大文字）
+- **颜色对比度**≥ 4.5:1（普通文字）/ 3:1（大文字）
 - **键盘可访问**：Tab 顺序合理 / Enter / Space / Esc / 方向键
 - **aria-label / aria-describedby**：屏幕阅读器可读
 - **focus ring 可见**：键盘焦点不能消失
 
 ## 七、生产实战：iView / FinUI 设计经验
 
-**iView（柔宇时期）**：
+**iView（时期）**：
 - 2016 年开始维护，**30+ 组件**
 - 2018 年 v3.0 重构为 Vue 单文件组件
 - 2024 年迁移到 Vue 3 + Composition API
 - **核心经验**：**Design Token 一定要从 day 1 设计**——后期加 Token 体系 = 重写 50 个组件
 
-**FinUI（顺丰时期）**：
+**FinUI（时期）**：
 - 50+ 组件 + 业务组件库
-- **大表格** FinSpread（已并入 FinUI）
+- **大表格**FinSpread（已并入 FinUI）
 - **主题定制**支持多家客户品牌色
 - **核心经验**：**API 一致性 PR review 必查**——v2 改 size prop 后被投诉"为什么 table 不支持"，团队**重写 30 个组件对齐 API**
 
@@ -223,7 +223,7 @@ transform: (file, api) => {
 1. **不要从 day 1 就建 100 个组件**。**先做 5-10 个核心组件**(Button / Input / Select / Table / Form),**业务用起来后再加**。
 2. **不要用同一个 prop 名表达不同含义**。`size="small"` 在 Button 是 padding,在 Table 是字体大小——**应该分开命名**(Button 用 `size`,Table 用 `density`)。
 3. **不要忽略 A11y**。**WCAG 2.1 AA 是企业级组件库的入场券**——政府 / 医疗 / 银行客户必查。
-4. **不要让 breaking change 太突然**。**提前 1 个 minor 版本预告 + 提供 codemod** + 文档示例,让用户有时间迁移。
+4. **不要让 breaking change 太突然**。**提前 1 个 minor 版本预告 + 提供 codemod**+ 文档示例,让用户有时间迁移。
 5. **不要忘记 bundle size**。**每个组件都要 tree-shakable**——按需引入 `import { Button } from 'finui'` 而不是 `import * from 'finui'`。
 
 ## 总结
@@ -247,19 +247,19 @@ transform: (file, api) => {
 >
 > **Q2(思考)**:API 一致性 vs 单组件完美,哪个更重要?怎么保证 50 个组件 API 一致?
 >
-> **A**:**API 一致性 > 单组件完美**。**反例**:某组件库 v2 各组件 props 命名混乱(Input 用 `val` / Select 用 `v` / DatePicker 用 `value`),**团队学习成本 × 50**。**保证一致性的方法**:① **PR review 必查** — 新组件必须和已有组件 props 命名一致;② **codemod 工具自动对齐** — 旧组件被新组件风格统一;③ **API 文档化** — 内部 wiki 列出所有组件的 props / 事件命名;④ **设计 Token 体系约束** — 让"颜色 / 间距"无法自定义,强制走 Token。<AIAsk question="API 一致性 vs 单组件完美,哪个更重要?怎么保证 50 个组件 API 一致?" />
+> **A**:**API 一致性 > 单组件完美**。**反例**:某组件库 v2 各组件 props 命名混乱(Input 用 `val` / Select 用 `v` / DatePicker 用 `value`),**团队学习成本 × 50**。**保证一致性的方法**:① **PR review 必查**— 新组件必须和已有组件 props 命名一致;② **codemod 工具自动对齐**— 旧组件被新组件风格统一;③ **API 文档化**— 内部 wiki 列出所有组件的 props / 事件命名;④ **设计 Token 体系约束**— 让"颜色 / 间距"无法自定义,强制走 Token。<AIAsk question="API 一致性 vs 单组件完美,哪个更重要?怎么保证 50 个组件 API 一致?" />
 >
 > **Q3(思考)**:Breaking Change 怎么处理?Codemod 的作用是什么?
 >
-> **A**:**Breaking change = 用户升级成本**。**正确处理**:① **提前预告** — 在下个 minor 版本文档标注"v3.0 will change X";② **提供 codemod 工具** — 用户跑 `npx @finui/codemod v2-to-v3` 自动迁移;③ **保留兼容期** — 旧 API 在 major 版本前继续工作,只 deprecate 警告;④ **文档示例** — 给升级前后的代码 diff。**Codemod 的作用**:**自动重写代码**。某组件库 v2 改 size 命名,5 个项目 30 万行业务代码,1 个 codemod 跑 1h 完成升级——**没有 codemod 要手动改 3 周**。<AIAsk question="Breaking Change 怎么处理?Codemod 的作用是什么?" />
+> **A**:**Breaking change = 用户升级成本**。**正确处理**:① **提前预告**— 在下个 minor 版本文档标注"v3.0 will change X";② **提供 codemod 工具**— 用户跑 `npx @finui/codemod v2-to-v3` 自动迁移;③ **保留兼容期**— 旧 API 在 major 版本前继续工作,只 deprecate 警告;④ **文档示例**— 给升级前后的代码 diff。**Codemod 的作用**:**自动重写代码**。某组件库 v2 改 size 命名,5 个项目 30 万行业务代码,1 个 codemod 跑 1h 完成升级——**没有 codemod 要手动改 3 周**。<AIAsk question="Breaking Change 怎么处理?Codemod 的作用是什么?" />
 >
 > **Q4(思考)**:WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?
 >
-> **A**:**WCAG 2.1 AA 是企业级组件库的入场券**——政府 / 医疗 / 银行客户必查,**不合规不能上他们的项目**。**必做项**:① **颜色对比度 ≥ 4.5:1**(普通文字) / ≥ 3:1(大文字);② **键盘可访问** — Tab / Shift+Tab / Enter / Space / Esc / 方向键都要支持;③ **aria 属性** — aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid;④ **focus ring 可见** — 键盘焦点不能消失（不要 `outline: none`);⑤ **屏幕阅读器测试** — 用 VoiceOver / NVDA 实际测试。<AIAsk question="WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?" />
+> **A**:**WCAG 2.1 AA 是企业级组件库的入场券**——政府 / 医疗 / 银行客户必查,**不合规不能上他们的项目**。**必做项**:① **颜色对比度 ≥ 4.5:1**(普通文字) / ≥ 3:1(大文字);② **键盘可访问**— Tab / Shift+Tab / Enter / Space / Esc / 方向键都要支持;③ **aria 属性**— aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid;④ **focus ring 可见**— 键盘焦点不能消失（不要 `outline: none`);⑤ **屏幕阅读器测试**— 用 VoiceOver / NVDA 实际测试。<AIAsk question="WCAG 2.1 AA 对企业级组件库意味着什么?哪些是必做项?" />
 >
 > **Q5(思考)**:你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?
 >
-> **A**:**iView(柔宇,30+ 组件)**:① **Design Token 一定要 day 1 设计** — 后期加 Token = 重写 50 个组件;② **Vue 2 → Vue 3 迁移** 踩坑多,Composition API + `<script setup>` 让 30 个组件代码减半。**FinUI(顺丰,50+ 组件)**:① **API 一致性 PR review 必查** — v2 改 size prop 后被投诉"为什么 table 不支持",重写 30 个组件对齐;② **大表格 FinSpread**(300 列 × 500 行）用虚拟滚动 + 列虚拟化,从 800ms 优化到 50ms;③ **跨客户主题定制** 用 Design Token 体系,**3 天切换品牌色**。**共同教训**:**Breaking change 必预告 + codemod 自动化**——**信任建立一次需要 3 年,毁掉一次只要 1 个 release**。<AIAsk question="你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?" />
+> **A**:**iView(,30+ 组件)**:① **Design Token 一定要 day 1 设计**— 后期加 Token = 重写 50 个组件;② **Vue 2 → Vue 3 迁移**踩坑多,Composition API + `<script setup>` 让 30 个组件代码减半。**FinUI(,50+ 组件)**:① **API 一致性 PR review 必查**— v2 改 size prop 后被投诉"为什么 table 不支持",重写 30 个组件对齐;② **大表格 FinSpread**(300 列 × 500 行）用虚拟滚动 + 列虚拟化,从 800ms 优化到 50ms;③ **跨客户主题定制**用 Design Token 体系,**3 天切换品牌色**。**共同教训**:**Breaking change 必预告 + codemod 自动化**——**信任建立一次需要 3 年,毁掉一次只要 1 个 release**。<AIAsk question="你在 iView / FinUI 的组件库设计里,有什么具体的经验教训?踩过哪些坑?" />
 
 > 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
 

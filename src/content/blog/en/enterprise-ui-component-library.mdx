@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand component library design? My answer is **yes** — not to copy Element Plus / Ant Design, but to build the engineering philosophy of "how 50 components maintain API consistency, visual unity, maintainability". Three reasons:
+Should a frontend architect understand component library design? My answer is **yes**— not to copy Element Plus / Ant Design, but to build the engineering philosophy of "how 50 components maintain API consistency, visual unity, maintainability". Three reasons:
 
-1. **The iView / FinUI on resume are real projects.** **Design Token system / theme customization / documentation** determines how long the component library lasts.
-2. **Component library is team's "infrastructure".** 50 business teams depend on your component library, **changing one API = changing 50 projects' code**. **Architect must have "breaking change control" thinking**.
-3. **Accessibility / i18n / dark mode** are required questions for component libraries, not optional. **Element Plus v3 / Ant Design v5 emphasize these**.
+1. **The iView / FinUI are real projects.** **Design Token system / theme customization / documentation**determines how long the component library lasts.
+2. **Component library is team's "infrastructure".**50 business teams depend on the component library, **changing one API = changing 50 projects' code**. **Architect must have "breaking change control" thinking**.
+3. **Accessibility / i18n / dark mode**are required questions for component libraries, not optional. **Element Plus v3 / Ant Design v5 emphasize these**.
 
 This is post #23 of the *Frontend Architecture Cultivation Path* series. We skip specific component APIs (no Button details), use design philosophy + real experience + decision table to make Token system / theme / documentation / API consistency / version management concrete. The next post deep-dives into admin backend development patterns.
 
@@ -68,7 +68,7 @@ const buttonTokens = {
 };
 ```
 
-**Architect's mantra**: **Business side only references semantic Token** — `color: var(--color-primary)` not `var(--color-blue-500)`. **Theme switch only changes baseToken** — blue to green one-click.
+**Architect's mantra**: **Business side only references semantic Token**— `color: var(--color-primary)` not `var(--color-blue-500)`. **Theme switch only changes baseToken**— blue to green one-click.
 
 ### 2.2 Theme Switching Practice
 
@@ -86,7 +86,7 @@ const buttonTokens = {
 }
 ```
 
-**Production case**: iView switching to Ant Design style, **only swapped baseToken** — migration done in 3 days. **No Token system = changing one color changes 200 files**.
+**Production case**: iView switching to Ant Design style, **only swapped baseToken**— migration done in 3 days. **No Token system = changing one color changes 200 files**.
 
 ## 3. API Consistency: Component Library's Soul
 
@@ -146,8 +146,8 @@ export const Secondary: Story = {
 
 **Storybook three-piece set**:
 - **Every component has stories file**
-- **Controls panel** for interactive prop debugging
-- **Docs page** auto-generates props table
+- **Controls panel**for interactive prop debugging
+- **Docs page**auto-generates props table
 
 ## 5. Version Management and Breaking Change
 
@@ -183,7 +183,7 @@ transform: (file, api) => {
 };
 ```
 
-**Architect's mantra**: **Breaking change = user upgrade cost = team trust**. **Codemod auto-migration** lets users upgrade = run one command.
+**Architect's mantra**: **Breaking change = user upgrade cost = team trust**. **Codemod auto-migration**lets users upgrade = run one command.
 
 ## 6. Accessibility (A11y)
 
@@ -199,32 +199,32 @@ transform: (file, api) => {
 ```
 
 **WCAG 2.1 AA required**:
-- **Color contrast** ≥ 4.5:1 (regular text) / 3:1 (large text)
+- **Color contrast**≥ 4.5:1 (regular text) / 3:1 (large text)
 - **Keyboard accessible**: reasonable Tab order / Enter / Space / Esc / arrow keys
 - **aria-label / aria-describedby**: screen reader readable
 - **focus ring visible**: keyboard focus cannot disappear
 
 ## 7. Production Practice: iView / FinUI Design Experience
 
-**iView (Rouyu era)**:
+**iView ( era)**:
 - Maintenance from 2016, **30+ components**
 - 2018 v3.0 refactored to Vue single-file components
 - 2024 migrated to Vue 3 + Composition API
-- **Core experience**: **Design Token must be designed from day 1** — adding Token system later = rewrite 50 components
+- **Core experience**: **Design Token must be designed from day 1**— adding Token system later = rewrite 50 components
 
-**FinUI (SF Express era)**:
+**FinUI ( era)**:
 - 50+ components + business component library
-- **Large table** FinSpread (merged into FinUI)
-- **Theme customization** supports multiple customers' brand colors
-- **Core experience**: **API consistency PR review must-check** — v2 changed size prop was complained "why doesn't table support it", team **rewrote 30 components to align API**
+- **Large table**FinSpread (merged into FinUI)
+- **Theme customization**supports multiple customers' brand colors
+- **Core experience**: **API consistency PR review must-check**— v2 changed size prop was complained "why doesn't table support it", team **rewrote 30 components to align API**
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't build 100 components from day 1.** **First do 5-10 core components** (Button / Input / Select / Table / Form), **add when business uses them**.
-2. **Don't use the same prop name to express different meanings.** `size="small"` in Button is padding, in Table is font size — **should be separate names** (Button uses `size`, Table uses `density`).
-3. **Don't ignore A11y.** **WCAG 2.1 AA is the entry ticket for enterprise component libraries** — government / medical / bank clients require it.
-4. **Don't make breaking changes too suddenly.** **Pre-announce 1 minor version ahead + provide codemod** + docs examples, let users time to migrate.
-5. **Don't forget bundle size.** **Every component must be tree-shakable** — import on demand `import { Button } from 'finui'` not `import * from 'finui'`.
+1. **Don't build 100 components from day 1.** **First do 5-10 core components**(Button / Input / Select / Table / Form), **add when business uses them**.
+2. **Don't use the same prop name to express different meanings.**`size="small"` in Button is padding, in Table is font size — **should be separate names**(Button uses `size`, Table uses `density`).
+3. **Don't ignore A11y.** **WCAG 2.1 AA is the entry ticket for enterprise component libraries**— government / medical / bank clients require it.
+4. **Don't make breaking changes too suddenly.** **Pre-announce 1 minor version ahead + provide codemod**+ docs examples, let users time to migrate.
+5. **Don't forget bundle size.** **Every component must be tree-shakable**— import on demand `import { Button } from 'finui'` not `import * from 'finui'`.
 
 ## Summary
 
@@ -234,7 +234,7 @@ Six key facts that thread component library design together:
 - **API consistency > single component perfection**: all components same props / events / state naming.
 - **Storybook documentation**: every component stories + Controls debugging + Docs auto-generation.
 - **SemVer + Codemod**: **Breaking change must pre-announce + auto-migrate**.
-- **WCAG 2.1 AA is entry ticket**: **keyboard / aria / color contrast** all required.
+- **WCAG 2.1 AA is entry ticket**: **keyboard / aria / color contrast**all required.
 - **Production experience**: iView 30+ components, FinUI 50+ components, **core is Token system + API consistency**.
 
 **Next post**: Admin backend development patterns — forms / tables / ECharts, 800+ page ERP accumulation.
@@ -245,23 +245,23 @@ Six key facts that thread component library design together:
 
 > **Q1 (Answer)**: What are Design Token's three layers? Why must base / semantic / component be separate?
 >
-> **A**: **Three-layer architecture**: ① **Base Token** (atomic layer) — specific values of colors / spacing / fonts / radius, e.g. `color-blue-500: #1a73e8`; ② **Semantic Token** (based on base) — business scenario aliases, e.g. `color-primary: var(--color-blue-500)`; ③ **Component Token** (specific component) — internal component use, e.g. `button-primary-bg: var(--color-primary)`. **Why separate**: **Business side only references semantic Token**, **theme switch only changes base Token**. **Case**: a component library had no Token system, switching to dark mode required changing 200 files; with Token system **change 1 baseToken to switch full theme**, migration done in 3 days.<AIAsk question="What are Design Token's three layers? Why must base / semantic / component be separate?" lang="en" />
+> **A**: **Three-layer architecture**: ① **Base Token**(atomic layer) — specific values of colors / spacing / fonts / radius, e.g. `color-blue-500: #1a73e8`; ② **Semantic Token**(based on base) — business scenario aliases, e.g. `color-primary: var(--color-blue-500)`; ③ **Component Token**(specific component) — internal component use, e.g. `button-primary-bg: var(--color-primary)`. **Why separate**: **Business side only references semantic Token**, **theme switch only changes base Token**. **Case**: a component library had no Token system, switching to dark mode required changing 200 files; with Token system **change 1 baseToken to switch full theme**, migration done in 3 days.<AIAsk question="What are Design Token's three layers? Why must base / semantic / component be separate?" lang="en" />
 >
 > **Q2 (Think)**: API consistency vs single component perfection, which is more important? How to ensure 50 components have consistent API?
 >
-> **A**: **API consistency > single component perfection**. **Counter-example**: a component library v2 had chaotic prop naming across components (Input used `val` / Select used `v` / DatePicker used `value`), **team learning cost × 50**. **Methods to ensure consistency**: ① **PR review must-check** — new component must match existing props naming; ② **codemod tool auto-aligns** — old components get unified to new component style; ③ **API documentation** — internal wiki lists all components' props / events naming; ④ **Design Token system constraints** — makes "color / spacing" non-customizable, forces going through Token.<AIAsk question="API consistency vs single component perfection, which is more important? How to ensure 50 components have consistent API?" lang="en" />
+> **A**: **API consistency > single component perfection**. **Counter-example**: a component library v2 had chaotic prop naming across components (Input used `val` / Select used `v` / DatePicker used `value`), **team learning cost × 50**. **Methods to ensure consistency**: ① **PR review must-check**— new component must match existing props naming; ② **codemod tool auto-aligns**— old components get unified to new component style; ③ **API documentation**— internal wiki lists all components' props / events naming; ④ **Design Token system constraints**— makes "color / spacing" non-customizable, forces going through Token.<AIAsk question="API consistency vs single component perfection, which is more important? How to ensure 50 components have consistent API?" lang="en" />
 >
 > **Q3 (Think)**: How to handle Breaking Change? What's the role of Codemod?
 >
-> **A**: **Breaking change = user upgrade cost**. **Correct handling**: ① **Pre-announce** — document in next minor version's docs "v3.0 will change X"; ② **Provide codemod tool** — user runs `npx @finui/codemod v2-to-v3` auto-migrates; ③ **Compatibility period** — old API continues to work before major version, only deprecation warning; ④ **Docs examples** — give code diff before/after upgrade. **Codemod's role**: **auto-rewrite code**. A component library v2 changed size naming, 5 projects with 300k lines of business code, 1 codemod run finished upgrade in 1h — **without codemod would need 3 weeks of manual changes**.<AIAsk question="How to handle Breaking Change? What's the role of Codemod?" lang="en" />
+> **A**: **Breaking change = user upgrade cost**. **Correct handling**: ① **Pre-announce**— document in next minor version's docs "v3.0 will change X"; ② **Provide codemod tool**— user runs `npx @finui/codemod v2-to-v3` auto-migrates; ③ **Compatibility period**— old API continues to work before major version, only deprecation warning; ④ **Docs examples**— give code diff before/after upgrade. **Codemod's role**: **auto-rewrite code**. A component library v2 changed size naming, 5 projects with 300k lines of business code, 1 codemod run finished upgrade in 1h — **without codemod would need 3 weeks of manual changes**.<AIAsk question="How to handle Breaking Change? What's the role of Codemod?" lang="en" />
 >
 > **Q4 (Think)**: What does WCAG 2.1 AA mean for enterprise component libraries? What are the must-do items?
 >
-> **A**: **WCAG 2.1 AA is the entry ticket for enterprise component libraries** — government / medical / bank clients require it, **non-compliant can't go on their projects**. **Must-do items**: ① **Color contrast ≥ 4.5:1** (regular text) / ≥ 3:1 (large text); ② **Keyboard accessible** — Tab / Shift+Tab / Enter / Space / Esc / arrow keys all must work; ③ **aria attributes** — aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid; ④ **focus ring visible** — keyboard focus cannot disappear (don't `outline: none`); ⑤ **Screen reader testing** — actually test with VoiceOver / NVDA.<AIAsk question="What does WCAG 2.1 AA mean for enterprise component libraries? What are the must-do items?" lang="en" />
+> **A**: **WCAG 2.1 AA is the entry ticket for enterprise component libraries**— government / medical / bank clients require it, **non-compliant can't go on their projects**. **Must-do items**: ① **Color contrast ≥ 4.5:1**(regular text) / ≥ 3:1 (large text); ② **Keyboard accessible**— Tab / Shift+Tab / Enter / Space / Esc / arrow keys all must work; ③ **aria attributes**— aria-label / aria-describedby / aria-expanded / aria-controls / aria-required / aria-invalid; ④ **focus ring visible**— keyboard focus cannot disappear (don't `outline: none`); ⑤ **Screen reader testing**— actually test with VoiceOver / NVDA.<AIAsk question="What does WCAG 2.1 AA mean for enterprise component libraries? What are the must-do items?" lang="en" />
 >
 > **Q5 (Think)**: In your iView / FinUI component library design, what specific lessons did you learn? What pitfalls?
 >
-> **A**: **iView (Rouyu, 30+ components)**: ① **Design Token must be day-1 design** — adding Token later = rewrite 50 components; ② **Vue 2 → Vue 3 migration** had many pitfalls, Composition API + `<script setup>` cut 30 components' code in half. **FinUI (SF Express, 50+ components)**: ① **API consistency PR review must-check** — v2 changed size prop was complained "why doesn't table support it", rewrote 30 components to align; ② **Large table FinSpread** (300 columns × 500 rows) with virtual scrolling + column virtualization, optimized from 800ms to 50ms; ③ **Cross-customer theme customization** uses Design Token system, **3 days to switch brand colors**. **Common lesson**: **Breaking change must pre-announce + codemod automation** — **trust built in 3 years, destroyed in 1 release**.<AIAsk question="In your iView / FinUI component library design, what specific lessons did you learn? What pitfalls?" lang="en" />
+> **A**: **iView (, 30+ components)**: ① **Design Token must be day-1 design**— adding Token later = rewrite 50 components; ② **Vue 2 → Vue 3 migration**had many pitfalls, Composition API + `<script setup>` cut 30 components' code in half. **FinUI (, 50+ components)**: ① **API consistency PR review must-check**— v2 changed size prop was complained "why doesn't table support it", rewrote 30 components to align; ② **Large table FinSpread**(300 columns × 500 rows) with virtual scrolling + column virtualization, optimized from 800ms to 50ms; ③ **Cross-customer theme customization**uses Design Token system, **3 days to switch brand colors**. **Common lesson**: **Breaking change must pre-announce + codemod automation**— **trust built in 3 years, destroyed in 1 release**.<AIAsk question="In your iView / FinUI component library design, what specific lessons did you learn? What pitfalls?" lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

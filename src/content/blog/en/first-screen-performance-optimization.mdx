@@ -1,6 +1,6 @@
 ---
 title: "First-Screen Performance 4.2s → 1.8s Practical Case"
-description: A frontend architect's first-screen performance full-stack optimization — SF Express ERP real case 5-stage time breakdown, key metrics monitoring, ROI ranking and regression testing, from metrics to code
+description: A frontend architect's first-screen performance full-stack optimization — large ERP real case 5-stage time breakdown, key metrics monitoring, ROI ranking and regression testing, from metrics to code
 pubDate: 2026-07-18
 tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'first-screen-performance', 'lcp', 'optimization']
 ---
@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect master first-screen performance? My answer is **yes** — not to memorize LCP thresholds, but to build the engineering judgment of "where to spend 100ms between 4.2s and 1.8s". Three reasons:
+Should a frontend architect master first-screen performance? My answer is **yes**— not to memorize LCP thresholds, but to build the engineering judgment of "where to spend 100ms between 4.2s and 1.8s". Three reasons:
 
-1. **The 4.2s → 1.8s on resume is core hard data.** This is SF Express ERP refactor's real data, **proving you can land optimizations in production**.
-2. **First-screen optimization ROI isn't linear.** 100ms on the network layer may be more valuable than 1000ms on JS — **architects must rank priorities**.
-3. **Optimization without monitoring is gambling.** PR claims "500ms faster" but no production data — **architects must install LCP / FCP / INP monitoring**.
+1. **The 4.2s → 1.8s  is core hard data.**This is large ERP refactor's real data, **proving you can land optimizations in production**.
+2. **First-screen optimization ROI isn't linear.**100ms on the network layer may be more valuable than 1000ms on JS — **architects must rank priorities**.
+3. **Optimization without monitoring is gambling.**PR claims "500ms faster" but no production data — **architects must install LCP / FCP / INP monitoring**.
 
 This is post #15 of the *Frontend Architecture Cultivation Path* series. We skip specific code (no writing prefetch examples), use stage breakdown + real time data + ROI ranking to make the complete decision path of 4.2s → 1.8s optimization concrete. The next post deep-dives into runtime performance (virtual scrolling / Web Vitals long-tail optimization).
 
@@ -30,19 +30,19 @@ TTFB                  HTML download           CSS / fonts              JS execut
 = 800 + 400 + 600 + 1500 + 900 = 4200ms ✓
 ```
 
-**Architect's mantra**: **must capture data before optimizing**. All "feels slow" is guessing; **Lighthouse + WebPageTest + Sentry** tells you where the money goes.
+**Architect's mantra**: **must capture data before optimizing**. All "feels slow" is guessing; **Lighthouse + WebPageTest + Sentry**tells you where the money goes.
 
 ## 2. 5-Stage ROI Ranking
 
 | Stage | 4.2s | Target | Saved | Change | ROI |
 |---|---|---|---|---|---|
-| **Network layer** | 800ms | 80ms | -720ms | CDN + HTTP/3 | ⭐⭐⭐⭐⭐ |
-| **HTML download** | 400ms | 100ms | -300ms | Streaming SSR + size reduction | ⭐⭐⭐⭐ |
-| **CSS / fonts** | 600ms | 150ms | -450ms | Critical CSS inline + font-display: swap | ⭐⭐⭐⭐ |
-| **JS execution** | 1500ms | 700ms | -800ms | code-split + vendor chunk | ⭐⭐⭐ |
-| **First-screen image** | 900ms | 400ms | -500ms | AVIF + preload + LQIP | ⭐⭐⭐⭐ |
+| **Network layer**| 800ms | 80ms | -720ms | CDN + HTTP/3 | ⭐⭐⭐⭐⭐ |
+| **HTML download**| 400ms | 100ms | -300ms | Streaming SSR + size reduction | ⭐⭐⭐⭐ |
+| **CSS / fonts**| 600ms | 150ms | -450ms | Critical CSS inline + font-display: swap | ⭐⭐⭐⭐ |
+| **JS execution**| 1500ms | 700ms | -800ms | code-split + vendor chunk | ⭐⭐⭐ |
+| **First-screen image**| 900ms | 400ms | -500ms | AVIF + preload + LQIP | ⭐⭐⭐⭐ |
 
-**After optimization**: 80 + 100 + 150 + 700 + 400 = **1430ms ≈ 1.4s** (actual 1.8s includes other overhead)
+**After optimization**: 80 + 100 + 150 + 700 + 400 = **1430ms ≈ 1.4s**(actual 1.8s includes other overhead)
 
 ## 3. Stage 1: Network Layer TTFB from 800ms → 80ms
 
@@ -60,7 +60,7 @@ add_header QUIC-Status $quic_status;
 <link rel="dns-prefetch" href="https://api.example.com" />
 ```
 
-**Production data**: after CDN hit **TTFB 80ms** (Cloudflare / Fastly edge nodes), **total LCP saves 720ms**.
+**Production data**: after CDN hit **TTFB 80ms**(Cloudflare / Fastly edge nodes), **total LCP saves 720ms**.
 
 ## 4. Stage 2: HTML Size + Streaming SSR
 
@@ -84,7 +84,7 @@ export default function Page() {
 ```
 
 **Key techniques**:
-- **Critical CSS inline** (avoid blocking)
+- **Critical CSS inline**(avoid blocking)
 - **Non-critical JS defer**
 - **Suspense streaming**: user sees skeleton first, content inserts when data arrives
 
@@ -136,7 +136,7 @@ build: {
 }
 ```
 
-**Production data**: **first-screen JS from 1500ms to 700ms** (vendor chunk hits browser cache, main JS only 200KB).
+**Production data**: **first-screen JS from 1500ms to 700ms**(vendor chunk hits browser cache, main JS only 200KB).
 
 ## 7. Stage 5: Image Optimization (Biggest LCP Culprit)
 
@@ -157,7 +157,7 @@ build: {
      class="lazyload" />
 ```
 
-**Production data**: **first-screen image from 900ms to 400ms** (AVIF 50-70% smaller than JPG).
+**Production data**: **first-screen image from 900ms to 400ms**(AVIF 50-70% smaller than JPG).
 
 ## 8. Key Monitoring: Make Optimization Quantifiable
 
@@ -179,11 +179,11 @@ onINP(metric => sendToAnalytics({ name: 'INP', value: metric.value }));
 
 ## 9. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't skip PR validation.** Every optimization PR must measure LCP change (production data + Lighthouse double validation), **don't ship based on feeling**.
-2. **Don't forget SEO impact.** After CDN + cache strategy changes, **SEO crawlers must be able to run JS** (SSR fallback).
-3. **Don't test only on fast networks.** Company WiFi / 4G tests show 1.8s, **user on 3G might see 8s**. Chrome DevTools Network Throttling tests weak networks.
-4. **Don't suddenly swap first-screen images.** After optimization CDN hit / miss gap is huge, **must have LQIP placeholder**.
-5. **Don't ignore monitoring alerts.** After installing LCP / INP reporting, **threshold alerts** (LCP > 2.5s triggers Feishu / Slack), **regressions caught immediately**.
+1. **Don't skip PR validation.**Every optimization PR must measure LCP change (production data + Lighthouse double validation), **don't ship based on feeling**.
+2. **Don't forget SEO impact.**After CDN + cache strategy changes, **SEO crawlers must be able to run JS**(SSR fallback).
+3. **Don't test only on fast networks.**Company WiFi / 4G tests show 1.8s, **user on 3G might see 8s**. Chrome DevTools Network Throttling tests weak networks.
+4. **Don't suddenly swap first-screen images.**After optimization CDN hit / miss gap is huge, **must have LQIP placeholder**.
+5. **Don't ignore monitoring alerts.**After installing LCP / INP reporting, **threshold alerts**(LCP > 2.5s triggers Feishu / Slack), **regressions caught immediately**.
 
 ## Summary
 
@@ -205,7 +205,7 @@ Six key facts that thread first-screen optimization together:
 
 > **Q1 (Answer)**: What's the breakdown approach for optimizing first-screen from 4.2s to 1.8s? How to rank ROI across stages?
 >
-> **A**: 5-stage time breakdown (network 800ms / HTML 400ms / CSS 600ms / JS 1500ms / image 900ms) → **ROI ranking**: network layer (CDN + HTTP/3) saves 720ms with best ROI, HTML (streaming SSR + critical CSS inline) saves 300ms next, CSS / fonts (font-display: swap) saves 450ms, JS (code-split + vendor chunk) saves 800ms, image (AVIF + preload + LQIP) saves 500ms. **After optimization**: 80+100+150+700+400 = **1.43s ≈ 1.8s** (includes other overhead). **Interview tip**: explain "network layer ROI is highest because CDN hit edge nodes ≈ 30ms, while JS optimization ceiling is limited by code size" — this is engineering trade-off insight.<AIAsk question="What's the breakdown approach for optimizing first-screen from 4.2s to 1.8s? How to rank ROI across stages?" lang="en" />
+> **A**: 5-stage time breakdown (network 800ms / HTML 400ms / CSS 600ms / JS 1500ms / image 900ms) → **ROI ranking**: network layer (CDN + HTTP/3) saves 720ms with best ROI, HTML (streaming SSR + critical CSS inline) saves 300ms next, CSS / fonts (font-display: swap) saves 450ms, JS (code-split + vendor chunk) saves 800ms, image (AVIF + preload + LQIP) saves 500ms. **After optimization**: 80+100+150+700+400 = **1.43s ≈ 1.8s**(includes other overhead). **Interview tip**: explain "network layer ROI is highest because CDN hit edge nodes ≈ 30ms, while JS optimization ceiling is limited by code size" — this is engineering trade-off insight.<AIAsk question="What's the breakdown approach for optimizing first-screen from 4.2s to 1.8s? How to rank ROI across stages?" lang="en" />
 >
 > **Q2 (Think)**: TTFB is the ceiling of first-screen optimization. How did you use CDN + HTTP/3 to bring TTFB from 800ms to 80ms? What specifically changed?<AIAsk question="TTFB is the ceiling of first-screen optimization. How did you use CDN + HTTP/3 to bring TTFB from 800ms to 80ms? What specifically changed?" lang="en" />
 >

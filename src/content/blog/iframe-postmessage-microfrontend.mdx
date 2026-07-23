@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂 iframe？我的回答是 **要**——不是去写 `<iframe>` 标签，而是建立"什么场景必须用 iframe 而不是其他方案"的工程判断。原因有三：
 
-1. **简历里 FinSpread 30% 授权成本降低是 iframe 实战**。理解同源 / 跨域 iframe + 授权逻辑的关系，是商业化产品的核心。
+1. **FinSpread 30% 授权成本降低是 iframe 实战**。理解同源 / 跨域 iframe + 授权逻辑的关系，是商业化产品的核心。
 2. **微前端 / 第三方嵌入的沙箱方案就是 iframe + postMessage**。qiankun.js / micro-app / wujie / Module Federation 背后全是 iframe 原理。
 3. **iframe 看似简单，深处有 4 个安全层级**。sandbox / allow / referrerpolicy / csp，**配置错 = 跨站脚本漏洞**。
 
@@ -40,8 +40,8 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 | 维度 | 同源 iframe | 跨域 iframe |
 |---|---|---|
 | DOM 访问 | 父可访问子 DOM | **禁止**（安全沙箱） |
-| JS 变量 | 父可访问子变量 | **禁止** |
-| localStorage | **共享**（同源策略） | **独立** |
+| JS 变量 | 父可访问子变量 | **禁止**|
+| localStorage | **共享**（同源策略） | **独立**|
 | postMessage | ✅ | ✅ |
 | 性能 | 快（无跨域开销） | 稍慢（跨域资源加载） |
 
@@ -76,13 +76,13 @@ window.addEventListener('message', (e) => {
 
 ## 四、FinSpread 30% 授权成本降低实战
 
-简历里出现 **"FinSpread 30% 授权成本降低"**——这是 iframe 跨域部署的典型场景：
+以 **iframe 跨域部署降低授权成本 30%**为例——这是 iframe 在商业化产品中的典型场景：
 
 ### 4.1 场景描述
 
 ```
 产品架构:
-  顺丰 ERP 主站:  finui.example.com (主站)
+  大型 ERP 主站:  finui.example.com (主站)
   表格组件 FinSpread:  finspread.example.com (独立部署)
   客户授权:  客户买了 ERP,Spread 要单独授权
 
@@ -91,7 +91,7 @@ window.addEventListener('message', (e) => {
   客户用 ERP → 自动含 FinSpread (无独立授权)
 
 问题: 客户可以单独买 Spread 授权后,不再需要 ERP
-  → 顺丰利润减少
+  → 利润减少
 ```
 
 ### 4.2 iframe 方案
@@ -104,7 +104,7 @@ window.addEventListener('message', (e) => {
   → 没有授权 → 提示"请购买 FinSpread 独立授权"
   → 授权后 → FinSpread 正常显示
 
-效果: 客户为 FinSpread 独立付费,顺丰收入 +30%
+效果: 客户为 FinSpread 独立付费,收入 +30%
 ```
 
 ### 4.3 通信流程
@@ -151,9 +151,9 @@ window.addEventListener('message', (e) => {
 ```
 
 **架构师决策**：
-- **强隔离 + 跨框架** → iframe 沙箱（qiankun / wujie）
-- **同框架 + 共享运行时** → Module Federation / Vite Module Graph
-- **轻量级** → Web Components
+- **强隔离 + 跨框架**→ iframe 沙箱（qiankun / wujie）
+- **同框架 + 共享运行时**→ Module Federation / Vite Module Graph
+- **轻量级**→ Web Components
 
 ## 六、踩坑提醒（资深架构师请重点看）
 

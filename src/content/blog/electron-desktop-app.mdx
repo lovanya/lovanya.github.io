@@ -1,6 +1,6 @@
 ---
 title: "Electron 实战：主进程 / 渲染进程 / 硬件桥接"
-description: 前端架构师的 Electron 实战——主进程 vs 渲染进程模型、IPC 通信、preload 注入、Node API 集成、柔记 PC 客户端 USB Bridge 实战
+description: 前端架构师的 Electron 实战——主进程 vs 渲染进程模型、IPC 通信、preload 注入、Node API 集成、 PC 客户端 USB Bridge 实战
 pubDate: 2026-07-18
 tags: ['前端架构修仙路', '前端架构', 'electron', '桌面应用', 'ipc']
 ---
@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂 Electron？我的回答是 **要**——不是去写 C++ 插件，而是建立"Web 技术做桌面应用的边界在哪里"的工程判断。原因有三：
 
-1. **简历里柔记 PC 端是稀缺经验**。带 USB 硬件通信的桌面应用，**前端工程师能独立 cover 是巨大优势**。
+1. **带 USB 硬件通信的桌面应用是稀缺经验**。手写笔 / 工业设备等 USB 外设的桌面端打通，**前端工程师能独立 cover 是巨大优势**。
 2. **Electron 是 Web 技术的延伸**，**不是替换**。理解它的限制（bundle size / 性能 / 内存），才知道什么时候该用 Web 什么时候该用原生。
 3. **安全模型必懂**。渲染进程开 `nodeIntegration: false` + `contextIsolation: true` + `preload` 注入，**这套安全配置是 12.x 后强制要求**。
 
@@ -93,13 +93,13 @@ const content = await window.api.readFile('/path/to/file');
 
 | 模式 | API | 用途 |
 |---|---|---|
-| **invoke / handle** | 异步 + 返回值 | "调用 + 等结果"，**80% 场景** |
-| **send / on** | 单向 + 不返回 | "通知"，如硬件数据推送 |
-| **MessagePort** | 双向长连接 | 大数据流（文件 / 视频） |
+| **invoke / handle**| 异步 + 返回值 | "调用 + 等结果"，**80% 场景**|
+| **send / on**| 单向 + 不返回 | "通知"，如硬件数据推送 |
+| **MessagePort**| 双向长连接 | 大数据流（文件 / 视频） |
 
-## 四、柔记 PC 客户端 USB Bridge 实战
+## 四、PC 客户端 USB Bridge 实战
 
-简历里出现 **"柔记 PC 端项目"**——这是 Electron + 智能硬件的混合项目：手写笔通过 USB 连接到 PC，写字笔迹实时显示在屏幕上。
+以**带 USB 硬件通信的桌面应用**为例——这是 Electron + 智能硬件的典型混合项目：手写笔通过 USB 连接到 PC，写字笔迹实时显示在屏幕上。
 
 ### 4.1 USB 设备通信架构
 
@@ -144,7 +144,7 @@ function WritingPad() {
 }
 ```
 
-**生产数据**：柔记 PC 端 **笔迹延迟 < 16ms**（1 帧），**Windows + macOS 双端同步**。
+**生产数据**：带 USB 硬件通信的桌面应用 **笔迹延迟 < 16ms**（1 帧），**Windows + macOS 双端同步**。
 
 ## 五、Electron 的三大限制与对策
 
@@ -197,7 +197,7 @@ app.on('ready', () => {
 
 ## 六、踩坑提醒（资深架构师请重点看）
 
-1. **不要在渲染进程开 `nodeIntegration: true`**。**安全漏洞** = shell 权限 = 任意代码执行。
+1. **不要在渲染进程开 `nodeIntegration: true`**。**安全漏洞**= shell 权限 = 任意代码执行。
 2. **不要让 preload 脚本过大**。preload 启动时同步执行,**太大导致窗口打开延迟**。
 3. **不要忽视主进程崩溃**。主进程是单点,**任何 unhandled rejection 都可能 kill 整个 app**。配 `process.on('uncaughtException')` 兜底。
 4. **不要在 Electron 里塞太多业务**。Electron 适合**带硬件通信 / 系统集成 / 富 UI**的应用;**纯业务 Web 端用浏览器就够了**。
@@ -213,13 +213,13 @@ app.on('ready', () => {
 - **USB Bridge 实战**：node-usb 主进程监听 + IPC 推送 + 渲染进程 Canvas 渲染,**延迟 < 16ms**。
 - **三大限制**：bundle 80-250MB / 启动 500-1500ms / 内存 100-300MB,**中后台工具类应用最适合**。
 
-**下一篇**：混合开发 Taro / Uni-app / Ionic——跨端框架对比,信锐 / 联友混合项目实战。
+**下一篇**：混合开发 Taro / Uni-app / Ionic——跨端框架对比,多家企业混合项目实战。
 
 ## 5 道重点面试问题方向
 
 > **Q1（答案）**：Electron 的主进程 / 渲染进程 / preload 三个角色各负责什么？为什么渲染进程默认不能访问 Node API？
 >
-> **A**：**主进程** —— 唯一能访问 Node API (文件系统 / shell / USB),管理所有窗口生命周期;**渲染进程** —— 每个窗口一个独立 Chromium 进程,只能访问 Web API / DOM;**preload 脚本** —— 在渲染进程加载前执行,作为唯一安全通道注入 Node 能力。**为什么默认不能访问 Node**:Web 应用 90% 场景不需要 Node,**不暴露 Node = 攻击面缩到最小**;且渲染进程如果开 NodeIntegration,**npm 依赖一旦被供应链攻击就拿到 shell 权限**——这是真实事故。<AIAsk question="Electron 的主进程 / 渲染进程 / preload 三个角色各负责什么？为什么渲染进程默认不能访问 Node API？" />
+> **A**：**主进程**—— 唯一能访问 Node API (文件系统 / shell / USB),管理所有窗口生命周期;**渲染进程**—— 每个窗口一个独立 Chromium 进程,只能访问 Web API / DOM;**preload 脚本**—— 在渲染进程加载前执行,作为唯一安全通道注入 Node 能力。**为什么默认不能访问 Node**:Web 应用 90% 场景不需要 Node,**不暴露 Node = 攻击面缩到最小**;且渲染进程如果开 NodeIntegration,**npm 依赖一旦被供应链攻击就拿到 shell 权限**——这是真实事故。<AIAsk question="Electron 的主进程 / 渲染进程 / preload 三个角色各负责什么？为什么渲染进程默认不能访问 Node API？" />
 >
 > **Q2（思考）**：Electron 12.x 之后为什么强制 contextIsolation: true？安全三件套具体怎么配置？<AIAsk question="Electron 12.x 之后为什么强制 contextIsolation: true？安全三件套具体怎么配置？" />
 >
@@ -227,7 +227,7 @@ app.on('ready', () => {
 >
 > **Q4（思考）**：Electron 应用 bundle size 太大怎么办？Electron 适合什么样的应用场景？<AIAsk question="Electron 应用 bundle size 太大怎么办？Electron 适合什么样的应用场景？" />
 >
-> **Q5（思考）**：你在柔记 PC 端项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？<AIAsk question="你在柔记 PC 端项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？" />
+> **Q5（思考）**：你在带 USB 硬件通信的桌面应用项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？<AIAsk question="你在带 USB 硬件通信的桌面应用项目里 USB 通信是怎么实现的？主进程 + 渲染进程的分工怎么设计？" />
 
 > 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
 

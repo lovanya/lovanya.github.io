@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand AI? My answer is **yes** — not to train LLMs, but to build the engineering judgment of "new AI era front-end architecture approaches". Three reasons:
+Should a frontend architect understand AI? My answer is **yes**— not to train LLMs, but to build the engineering judgment of "new AI era front-end architecture approaches". Three reasons:
 
-1. **"New AI era front-end approaches" on resume is real opportunity.** Web LLM running in browser, Chrome built-in AI API, CopilotKit embedded Copilot — **these are real usable client-side AI technologies in 2024-2025**.
-2. **AI era front-end architecture is being redefined.** From "frontend only renders UI" to "frontend is the carrier of AI applications" — **architects must have "AI embedded in UI" thinking**.
-3. **New opportunities beyond LLM APIs.** WebGPU + WebLLM lets browser run LLM, Chrome built-in Gemini Nano, **frontend is no longer just "caller" of AI apps**.
+1. **"New AI era front-end approaches"  is real opportunity.**Web LLM running in browser, Chrome built-in AI API, CopilotKit embedded Copilot — **these are real usable client-side AI technologies in 2024-2025**.
+2. **AI era front-end architecture is being redefined.**From "frontend only renders UI" to "frontend is the carrier of AI applications" — **architects must have "AI embedded in UI" thinking**.
+3. **New opportunities beyond LLM APIs.**WebGPU + WebLLM lets browser run LLM, Chrome built-in Gemini Nano, **frontend is no longer just "caller" of AI apps**.
 
 This is post #28 of the *Frontend Architecture Cultivation Path* series. We skip specific LLM training (no transformer details), use architecture diagrams + real projects + decision tables to make Web LLM / Chrome AI / CopilotKit / new front-end approaches concrete. The next post deep-dives into going from senior engineer to architect.
 
@@ -27,9 +27,9 @@ This is post #28 of the *Frontend Architecture Cultivation Path* series. We skip
   E[Edge LLM<br/>Workers AI / Vercel AI] --> UI`} />
 
 **Three layers**:
-1. **Cloud LLM** (OpenAI / Anthropic / Gemini) — **API call + stream response**
-2. **Client LLM** (Web LLM / Chrome built-in AI) — **runs in browser, zero backend**
-3. **Edge LLM** (Cloudflare Workers AI / Vercel AI Edge) — **runs on edge nodes, low latency**
+1. **Cloud LLM**(OpenAI / Anthropic / Gemini) — **API call + stream response**
+2. **Client LLM**(Web LLM / Chrome built-in AI) — **runs in browser, zero backend**
+3. **Edge LLM**(Cloudflare Workers AI / Vercel AI Edge) — **runs on edge nodes, low latency**
 
 **Architect's mantra**: **Which layer to choose = privacy vs cost vs latency trade-off**. **Sensitive data uses client, generic tasks use cloud, latency-sensitive uses Edge**.
 
@@ -45,11 +45,11 @@ const result = await classifier('I love transformers.js!');
 ```
 
 **Advantages**:
-- **Zero backend** — all runs in browser
-- **Privacy protection** — data doesn't leave user device
-- **Offline available** — works without network
+- **Zero backend**— all runs in browser
+- **Privacy protection**— data doesn't leave user device
+- **Offline available**— works without network
 
-**Production case**: A ToB SaaS client-side sensitive data redaction, **using transformers.js to run NER entity recognition**, **data never leaves browser** — **satisfies GDPR / HIPAA compliance**.
+**Production case**: A ToB SaaS client-side sensitive data redaction, **using transformers.js to run NER entity recognition**, **data never leaves browser**— **satisfies GDPR / HIPAA compliance**.
 
 ## 3. Chrome Built-in AI: Gemini Nano
 
@@ -66,12 +66,12 @@ for await (const chunk of stream) {
 ```
 
 **Core advantages**:
-- **Zero network** — browser built-in, **offline available**
-- **Zero cost** — no API call fees
-- **Zero privacy issues** — data doesn't leave device
-- **Fast response** — no network, latency < 100ms
+- **Zero network**— browser built-in, **offline available**
+- **Zero cost**— no API call fees
+- **Zero privacy issues**— data doesn't leave device
+- **Fast response**— no network, latency < 100ms
 
-**Production case**: Chrome built-in AI for **content moderation / translation / summary** — **each user operation zero cost**, **backend doesn't burn money**.
+**Production case**: Chrome built-in AI for **content moderation / translation / summary**— **each user operation zero cost**, **backend doesn't burn money**.
 
 ## 4. CopilotKit: Embedded AI Copilot
 
@@ -92,11 +92,11 @@ function App() {
 ```
 
 **CopilotKit three-piece set**:
-- **CopilotChat** — floating AI chat UI
-- **CopilotTextarea** — text input AI completion
-- **CopilotActions** — business AI actions (`createOrder / analyzeData`)
+- **CopilotChat**— floating AI chat UI
+- **CopilotTextarea**— text input AI completion
+- **CopilotActions**— business AI actions (`createOrder / analyzeData`)
 
-**Production case**: An ERP integrates CopilotKit, **user says "query last month East China orders"** → backend LLM call + return result + render to table — **business-side zero dev**.
+**Production case**: An ERP integrates CopilotKit, **user says "query last month East China orders"**→ backend LLM call + return result + render to table — **business-side zero dev**.
 
 ## 5. Speculative Decoding: AI Stream Response Optimization
 
@@ -122,9 +122,9 @@ while (true) {
 ```
 
 **Optimization effect**:
-- **TTFT** (Time To First Token) from 3s → **200ms**
-- **User perceived speed** improves 10×
-- **Word-by-word display** — like a real person typing
+- **TTFT**(Time To First Token) from 3s → **200ms**
+- **User perceived speed**improves 10×
+- **Word-by-word display**— like a real person typing
 
 ## 6. New Front-End Approaches: AI-Embedded UI Patterns
 
@@ -165,37 +165,37 @@ function OrderList() {
 }
 ```
 
-**Architect's mantra**: **AI era UI = imperative operations** — user says "filter paid orders", **AI directly calls render function**, **no need for business-side to implement interactions**.
+**Architect's mantra**: **AI era UI = imperative operations**— user says "filter paid orders", **AI directly calls render function**, **no need for business-side to implement interactions**.
 
 ## 7. AI Front-End Architecture Decision Table
 
 | Scenario | Recommendation | Why |
 |---|---|---|
-| **Generic chat / summary** | Cloud LLM API | Strong model, controllable cost |
-| **Sensitive data / offline** | Client LLM (WebLLM / Chrome AI) | Privacy, zero backend |
-| **Real-time translation / moderation** | Client LLM (transformers.js) | Browser-internal, zero latency |
-| **Embedded Copilot** | CopilotKit + Cloud LLM | Fast integration, UI ready |
-| **Latency-sensitive (chat stream)** | Edge LLM (Cloudflare AI) | Edge node 5ms latency |
-| **AI completion / smart operations** | CopilotKit + Actions | Business-side zero dev |
+| **Generic chat / summary**| Cloud LLM API | Strong model, controllable cost |
+| **Sensitive data / offline**| Client LLM (WebLLM / Chrome AI) | Privacy, zero backend |
+| **Real-time translation / moderation**| Client LLM (transformers.js) | Browser-internal, zero latency |
+| **Embedded Copilot**| CopilotKit + Cloud LLM | Fast integration, UI ready |
+| **Latency-sensitive (chat stream)**| Edge LLM (Cloudflare AI) | Edge node 5ms latency |
+| **AI completion / smart operations**| CopilotKit + Actions | Business-side zero dev |
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't put all AI tasks on cloud.** **Sensitive data** uses client LLM, **GDPR / HIPAA** compliance requires it.
+1. **Don't put all AI tasks on cloud.** **Sensitive data**uses client LLM, **GDPR / HIPAA**compliance requires it.
 2. **Don't make users wait for LLM response.** **Speculative Decoding + stream rendering**, **TTFT 200ms is qualified**.
-3. **Don't let AI output be untrustworthy.** **Hallucination** is LLM's nature — **business critical decisions don't depend on LLM**, **AI only makes suggestions / drafts**.
-4. **Don't ignore cost.** **GPT-4 level model 10K calls ≈ $50**, **Chrome built-in AI zero cost** — **orders of magnitude difference**.
-5. **Don't let AI completely replace human interaction.** **AI embedded in UI is assistance**, **not replacement** — users always need "cancel / skip AI" options.
+3. **Don't let AI output be untrustworthy.** **Hallucination**is LLM's nature — **business critical decisions don't depend on LLM**, **AI only makes suggestions / drafts**.
+4. **Don't ignore cost.** **GPT-4 level model 10K calls ≈ $50**, **Chrome built-in AI zero cost**— **orders of magnitude difference**.
+5. **Don't let AI completely replace human interaction.** **AI embedded in UI is assistance**, **not replacement**— users always need "cancel / skip AI" options.
 
 ## Summary
 
 Six key facts that thread AI era front-end architecture together:
 
 - **Three LLM layers**: cloud / client / Edge, choose by privacy / cost / latency trade-off.
-- **Web LLM (transformers.js)** — run LLM in browser, zero backend, GDPR / HIPAA compliance.
-- **Chrome built-in AI (Gemini Nano)** — browser built-in, zero cost, offline available.
-- **CopilotKit** — embedded Copilot fast integration, UI ready, business-side zero dev.
-- **Speculative Decoding** — stream response + immediate render, TTFT from 3s to 200ms.
-- **AI embedded in UI** — CopilotTextarea smart completion + CopilotActions smart operations, users **operate UI with natural language**.
+- **Web LLM (transformers.js)**— run LLM in browser, zero backend, GDPR / HIPAA compliance.
+- **Chrome built-in AI (Gemini Nano)**— browser built-in, zero cost, offline available.
+- **CopilotKit**— embedded Copilot fast integration, UI ready, business-side zero dev.
+- **Speculative Decoding**— stream response + immediate render, TTFT from 3s to 200ms.
+- **AI embedded in UI**— CopilotTextarea smart completion + CopilotActions smart operations, users **operate UI with natural language**.
 
 **Next post**: From senior engineer to architect — 3-5 person team management, review mechanisms, technical decision "Tao and Shu".
 
@@ -205,23 +205,23 @@ Six key facts that thread AI era front-end architecture together:
 
 > **Q1 (Answer)**: What are the three layers of AI era front-end architecture? Why can't "all AI tasks be on cloud"?
 >
-> **A**: **Three layers**: ① **Cloud LLM** (OpenAI / Anthropic / Gemini) — strongest model, pay-per-use; ② **Client LLM** (Web LLM / Chrome built-in AI) — runs in browser, zero backend, privacy; ③ **Edge LLM** (Cloudflare Workers AI / Vercel AI Edge) — edge node, low latency. **Why not all on cloud**: ① **Privacy** — sensitive data (medical / financial) on cloud is illegal; ② **Cost** — GPT-4 10K calls ≈ $50, **Chrome AI zero cost**; ③ **Latency** — cloud 500ms+ roundtrip, client < 100ms; ④ **Offline** — airplane / subway / overseas scenarios needed.<AIAsk question="What are the three layers of AI era front-end architecture? Why can't 'all AI tasks be on cloud'?" lang="en" />
+> **A**: **Three layers**: ① **Cloud LLM**(OpenAI / Anthropic / Gemini) — strongest model, pay-per-use; ② **Client LLM**(Web LLM / Chrome built-in AI) — runs in browser, zero backend, privacy; ③ **Edge LLM**(Cloudflare Workers AI / Vercel AI Edge) — edge node, low latency. **Why not all on cloud**: ① **Privacy**— sensitive data (medical / financial) on cloud is illegal; ② **Cost**— GPT-4 10K calls ≈ $50, **Chrome AI zero cost**; ③ **Latency**— cloud 500ms+ roundtrip, client < 100ms; ④ **Offline**— airplane / subway / overseas scenarios needed.<AIAsk question="What are the three layers of AI era front-end architecture? Why can't 'all AI tasks be on cloud'?" lang="en" />
 >
 > **Q2 (Think)**: How to choose between Web LLM and Chrome built-in AI? When to use which?
 >
-> **A**: **Web LLM (transformers.js)**: ① **Model swap** — supports any Hugging Face model; ② **Cross-browser** — all modern browsers; ③ **Bundle size** large (model 100MB+). **Chrome built-in AI (Gemini Nano)**: ① **Zero cost** — browser built-in, zero download; ② **Zero latency** — no model download, local inference; ③ **Chrome only** — Safari / Firefox don't support. **Selection**: **multi-model + cross-browser** use transformers.js; **Chrome only + performance-sensitive** use Built-in AI; **Safari / mobile** must use Web LLM.<AIAsk question="How to choose between Web LLM and Chrome built-in AI? When to use which?" lang="en" />
+> **A**: **Web LLM (transformers.js)**: ① **Model swap**— supports any Hugging Face model; ② **Cross-browser**— all modern browsers; ③ **Bundle size**large (model 100MB+). **Chrome built-in AI (Gemini Nano)**: ① **Zero cost**— browser built-in, zero download; ② **Zero latency**— no model download, local inference; ③ **Chrome only**— Safari / Firefox don't support. **Selection**: **multi-model + cross-browser**use transformers.js; **Chrome only + performance-sensitive**use Built-in AI; **Safari / mobile**must use Web LLM.<AIAsk question="How to choose between Web LLM and Chrome built-in AI? When to use which?" lang="en" />
 >
 > **Q3 (Think)**: What's the working principle of Speculative Decoding? Why can TTFT be optimized 10×?
 >
-> **A**: **Speculative Decoding**: server **guesses a few tokens to return together**, **client immediately displays**; if guess correct = 3-5× speedup; if wrong = rollback. **TTFT** (Time To First Token) from "wait for model to generate first token" (hundreds of ms) drops to "display immediately" (tens of ms). **Frontend implementation**: fetch + ReadableStream + per-chunk rendering, user **feels like a real person typing**. **Production case**: AI programming assistant Copilot uses this technique, **input box real-time completion** like VSCode IntelliSense.<AIAsk question="What's the working principle of Speculative Decoding? Why can TTFT be optimized 10×?" lang="en" />
+> **A**: **Speculative Decoding**: server **guesses a few tokens to return together**, **client immediately displays**; if guess correct = 3-5× speedup; if wrong = rollback. **TTFT**(Time To First Token) from "wait for model to generate first token" (hundreds of ms) drops to "display immediately" (tens of ms). **Frontend implementation**: fetch + ReadableStream + per-chunk rendering, user **feels like a real person typing**. **Production case**: AI programming assistant Copilot uses this technique, **input box real-time completion**like VSCode IntelliSense.<AIAsk question="What's the working principle of Speculative Decoding? Why can TTFT be optimized 10×?" lang="en" />
 >
 > **Q4 (Think)**: What is CopilotKit? How to use it to quickly integrate AI Copilot?
 >
-> **A**: **CopilotKit** is open-source AI Copilot framework, **3 core components**: ① **CopilotChat** — floating AI chat UI, **10 lines of code to integrate**; ② **CopilotTextarea** — text box AI completion (like GitHub Copilot); ③ **CopilotActions** — business AI actions, LLM calls function to render UI. **3 steps to integrate**: ① install `@copilotkit/react-core` + `@copilotkit/react-ui`; ② wrap app with `<CopilotKit runtimeUrl="/api/copilotkit">`; ③ add `<CopilotChat>` UI component + register actions. **Production case**: ERP integrates CopilotKit, **user says "query last month orders"** → backend LLM calls `queryOrders` function → returns data + renders to table — **business-side zero dev**.<AIAsk question="What is CopilotKit? How to use it to quickly integrate AI Copilot?" lang="en" />
+> **A**: **CopilotKit**is open-source AI Copilot framework, **3 core components**: ① **CopilotChat**— floating AI chat UI, **10 lines of code to integrate**; ② **CopilotTextarea**— text box AI completion (like GitHub Copilot); ③ **CopilotActions**— business AI actions, LLM calls function to render UI. **3 steps to integrate**: ① install `@copilotkit/react-core` + `@copilotkit/react-ui`; ② wrap app with `<CopilotKit runtimeUrl="/api/copilotkit">`; ③ add `<CopilotChat>` UI component + register actions. **Production case**: ERP integrates CopilotKit, **user says "query last month orders"**→ backend LLM calls `queryOrders` function → returns data + renders to table — **business-side zero dev**.<AIAsk question="What is CopilotKit? How to use it to quickly integrate AI Copilot?" lang="en" />
 >
 > **Q5 (Think)**: As a frontend architect, how do you decide whether an AI task should go to cloud, client, or Edge? Give a real case.
 >
-> **A**: **Decision framework**: ① **Sensitive data** → client (GDPR / HIPAA); ② **Latency-sensitive** → Edge; ③ **Generic tasks + large model** → cloud; ④ **Offline** → client. **Real case**: **SF Express ERP AI assistant**: ① Generic queries (orders / customers) — cloud GPT-4o (mini version controls cost); ② Financial report analysis (sensitive) — client LLM (data doesn't leave company); ③ AI completion input box (low latency) — Edge (Cloudflare AI, 5ms); ④ Translate documents (offline) — client transformers.js. **Result**: cost reduced 60% (client takes 30% of tasks), compliance met (sensitive data doesn't leave domain), latency < 100ms (Edge dominated).<AIAsk question="As a frontend architect, how do you decide whether an AI task should go to cloud, client, or Edge? Give a real case." lang="en" />
+> **A**: **Decision framework**: ① **Sensitive data**→ client (GDPR / HIPAA); ② **Latency-sensitive**→ Edge; ③ **Generic tasks + large model**→ cloud; ④ **Offline**→ client. **Real case**: **large ERP AI assistant**: ① Generic queries (orders / customers) — cloud GPT-4o (mini version controls cost); ② Financial report analysis (sensitive) — client LLM (data doesn't leave company); ③ AI completion input box (low latency) — Edge (Cloudflare AI, 5ms); ④ Translate documents (offline) — client transformers.js. **Result**: cost reduced 60% (client takes 30% of tasks), compliance met (sensitive data doesn't leave domain), latency < 100ms (Edge dominated).<AIAsk question="As a frontend architect, how do you decide whether an AI task should go to cloud, client, or Edge? Give a real case." lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

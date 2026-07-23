@@ -1,6 +1,6 @@
 ---
 title: "Electron Practice: Main Process / Renderer / Hardware Bridge"
-description: A frontend architect's Electron practice — main vs renderer process model, IPC communication, preload injection, Node API integration, Rouyu PC client USB Bridge case
+description: A frontend architect's Electron practice — main vs renderer process model, IPC communication, preload injection, Node API integration, USB-hardware desktop app USB Bridge case
 pubDate: 2026-07-18
 tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'electron', 'desktop-app', 'ipc']
 ---
@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand Electron? My answer is **yes** — not to write C++ plugins, but to build the engineering judgment of "where's the boundary of web tech doing desktop apps". Three reasons:
+Should a frontend architect understand Electron? My answer is **yes**— not to write C++ plugins, but to build the engineering judgment of "where's the boundary of web tech doing desktop apps". Three reasons:
 
-1. **The Rouyu PC client on resume is scarce experience.** Desktop apps with USB hardware communication, **frontend engineers covering it independently is a huge advantage**.
-2. **Electron is web tech's extension, not replacement.** Understanding its limits (bundle size / performance / memory), you know when to use Web vs native.
-3. **Security model is must-understand.** Renderer must have `nodeIntegration: false` + `contextIsolation: true` + `preload` injection, **this security config is required from 12.x onward**.
+1. **The USB-hardware desktop app is scarce experience.**Desktop apps with USB hardware communication, **frontend engineers covering it independently is a huge advantage**.
+2. **Electron is web tech's extension, not replacement.**Understanding its limits (bundle size / performance / memory), you know when to use Web vs native.
+3. **Security model is must-understand.**Renderer must have `nodeIntegration: false` + `contextIsolation: true` + `preload` injection, **this security config is required from 12.x onward**.
 
 This is post #17 of the *Frontend Architecture Cultivation Path* series. We skip specific IPC APIs (no `ipcMain.handle` details), use architecture diagrams + real cases + security checklist to make Electron's process model / communication mechanism / USB Bridge concrete. The next post deep-dives into hybrid development (Taro / Uni-app / Ionic).
 
@@ -33,7 +33,7 @@ This is post #17 of the *Frontend Architecture Cultivation Path* series. We skip
 
 1. **Main process**: only one with access to Node API (filesystem / shell / hardware), manages all windows
 2. **Renderer process**: each window is an independent Chromium process, **cannot access Node API by default**
-3. **preload script**: runs before renderer loads, **the only safe channel** to inject Node capabilities
+3. **preload script**: runs before renderer loads, **the only safe channel**to inject Node capabilities
 
 **Architect's mantra**: **Electron = Chromium + Node.js**. Two runtimes running in the same process, **security boundaries must be clear**.
 
@@ -93,13 +93,13 @@ const content = await window.api.readFile('/path/to/file');
 
 | Mode | API | Use |
 |---|---|---|
-| **invoke / handle** | async + return value | "Call + wait for result", **80% scenarios** |
-| **send / on** | one-way + no return | "Notification", like hardware data push |
-| **MessagePort** | bidirectional long connection | Big data streams (file / video) |
+| **invoke / handle**| async + return value | "Call + wait for result", **80% scenarios**|
+| **send / on**| one-way + no return | "Notification", like hardware data push |
+| **MessagePort**| bidirectional long connection | Big data streams (file / video) |
 
-## 4. Rouyu PC Client USB Bridge Practice
+## 4. PC Client USB Bridge Practice
 
-The resume line **"Rouyu PC client project"** — this is an Electron + smart hardware hybrid project: stylus connects to PC via USB, handwriting strokes display on screen in real-time.
+Take **USB-hardware desktop apps** as an example—this is an Electron + smart hardware hybrid project: stylus connects to PC via USB, handwriting strokes display on screen in real-time.
 
 ### 4.1 USB Device Communication Architecture
 
@@ -144,7 +144,7 @@ function WritingPad() {
 }
 ```
 
-**Production data**: Rouyu PC client **stroke latency < 16ms** (1 frame), **Windows + macOS dual-platform sync**.
+**Production data**: USB-hardware desktop app **stroke latency < 16ms**(1 frame), **Windows + macOS dual-platform sync**.
 
 ## 5. Electron's Three Limits and Countermeasures
 
@@ -193,15 +193,15 @@ app.on('ready', () => {
 });
 ```
 
-**Architect's rule**: **desktop apps must have auto-update** — users won't actively download new versions.
+**Architect's rule**: **desktop apps must have auto-update**— users won't actively download new versions.
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't enable `nodeIntegration: true` in renderer.** **Security vulnerability** = shell access = arbitrary code execution.
-2. **Don't make preload script too large.** preload runs synchronously on startup, **too large delays window opening**.
-3. **Don't ignore main process crashes.** Main process is single point, **any unhandled rejection can kill entire app**. Configure `process.on('uncaughtException')` as fallback.
-4. **Don't stuff too much business into Electron.** Electron fits **apps with hardware comms / system integration / rich UI**; **pure business web side just use browser**.
-5. **Don't forget Mac notarization.** Mac apps without notarization get blocked by Gatekeeper, **must run `xcrun notarytool` before release**.
+1. **Don't enable `nodeIntegration: true` in renderer.** **Security vulnerability**= shell access = arbitrary code execution.
+2. **Don't make preload script too large.**preload runs synchronously on startup, **too large delays window opening**.
+3. **Don't ignore main process crashes.**Main process is single point, **any unhandled rejection can kill entire app**. Configure `process.on('uncaughtException')` as fallback.
+4. **Don't stuff too much business into Electron.**Electron fits **apps with hardware comms / system integration / rich UI**; **pure business web side just use browser**.
+5. **Don't forget Mac notarization.**Mac apps without notarization get blocked by Gatekeeper, **must run `xcrun notarytool` before release**.
 
 ## Summary
 
@@ -213,7 +213,7 @@ Five key facts that thread Electron practice together:
 - **USB Bridge practice**: node-usb main process monitor + IPC push + renderer Canvas render, **latency < 16ms**.
 - **Three limits**: bundle 80-250MB / startup 500-1500ms / memory 100-300MB, **admin tool apps fit best**.
 
-**Next post**: Hybrid development Taro / Uni-app / Ionic — cross-platform framework comparison, Xinrui / Lianyou hybrid project practice.
+**Next post**: Hybrid development Taro / Uni-app / Ionic — cross-platform framework comparison, multi-enterprise hybrid project practice.
 
 ## 5 Key Interview Question Tracks
 
@@ -221,7 +221,7 @@ Five key facts that thread Electron practice together:
 
 > **Q1 (Answer)**: What are the three roles of Electron's main process / renderer process / preload? Why can't the renderer process access Node API by default?
 >
-> **A**: **Main process** — only one with Node API access (filesystem / shell / USB), manages all window lifecycles; **renderer process** — each window is an independent Chromium process, can only access Web API / DOM; **preload script** — runs before renderer loads, the only safe channel to inject Node capabilities. **Why default can't access Node**: Web apps 90% of scenarios don't need Node, **not exposing Node = smallest attack surface**; and if renderer opens NodeIntegration, **a supply-chain attack on npm dependencies gets shell access** — this is a real incident.<AIAsk question="What are the three roles of Electron's main process / renderer process / preload? Why can't the renderer process access Node API by default?" lang="en" />
+> **A**: **Main process**— only one with Node API access (filesystem / shell / USB), manages all window lifecycles; **renderer process**— each window is an independent Chromium process, can only access Web API / DOM; **preload script**— runs before renderer loads, the only safe channel to inject Node capabilities. **Why default can't access Node**: Web apps 90% of scenarios don't need Node, **not exposing Node = smallest attack surface**; and if renderer opens NodeIntegration, **a supply-chain attack on npm dependencies gets shell access**— this is a real incident.<AIAsk question="What are the three roles of Electron's main process / renderer process / preload? Why can't the renderer process access Node API by default?" lang="en" />
 >
 > **Q2 (Think)**: Why did Electron 12.x enforce contextIsolation: true? How exactly to configure the security three-piece set?<AIAsk question="Why did Electron 12.x enforce contextIsolation: true? How exactly to configure the security three-piece set?" lang="en" />
 >
@@ -229,7 +229,7 @@ Five key facts that thread Electron practice together:
 >
 > **Q4 (Think)**: Electron app bundle size is too large, how to fix? What app scenarios does Electron fit?<AIAsk question="Electron app bundle size is too large, how to fix? What app scenarios does Electron fit?" lang="en" />
 >
-> **Q5 (Think)**: How did you implement USB communication in the Rouyu PC client project? How did you design the main process + renderer process division of labor?<AIAsk question="How did you implement USB communication in the Rouyu PC client project? How did you design the main process + renderer process division of labor?" lang="en" />
+> **Q5 (Think)**: How did you implement USB communication in the USB-hardware desktop app project? How did you design the main process + renderer process division of labor?<AIAsk question="How did you implement USB communication in the USB-hardware desktop app project? How did you design the main process + renderer process division of labor?" lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

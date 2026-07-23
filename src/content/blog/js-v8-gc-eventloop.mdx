@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂 V8？我的回答是 **要**——不是去读 V8 源码，而是建立"JS 在运行时到底做了什么"的直觉。原因有三：
 
-1. **性能优化需要它**。简历里那个 12min→3min 构建优化虽然主体在构建工具，但运行时优化（避免 deopt、避免内存泄漏、合理使用事件循环）和它直接相关。
+1. **性能优化需要它**。那个 12min→3min 构建优化虽然主体在构建工具，但运行时优化（避免 deopt、避免内存泄漏、合理使用事件循环）和它直接相关。
 2. **异步编程的根基**。`Promise.then` / `setTimeout` / `requestAnimationFrame` / `queueMicrotask` 哪个先跑、为什么这样跑，写错一行就出 bug。
 3. **技术选型不被忽悠**。Node.js 用 V8、Bun 用 JavaScriptCore、Deno 用 V8 + Rust——选哪个引擎要看场景。Worker Threads / Web Workers / Atomics 何时用，靠直觉很难选对。
 
@@ -220,7 +220,7 @@ window.addEventListener('beforeunload', () => clearInterval(id));
 
 ### 3.3 性能监控：如何看 GC 是否在搞你
 
-Chrome DevTools → Performance → 看 **Main** 轨道里的 **Major GC** 黄色三角。**单次 Major GC > 50ms 就有问题了**。
+Chrome DevTools → Performance → 看 **Main**轨道里的 **Major GC**黄色三角。**单次 Major GC > 50ms 就有问题了**。
 
 ```javascript
 // 编程方式检测:V8 暴露了 gc() 函数（需 --expose-gc 启动）
@@ -351,7 +351,7 @@ self.onmessage = (e) => {
 
 1. **不要把所有"看起来异步"的操作都用 Promise 包**。`await Promise.resolve()` 强制 microtask 会让简单同步操作变慢。**只在真正 I/O 时用 async**。
 2. **不要在 V8 优化热路径上改对象形状**。`obj.x = 1; delete obj.x; obj.x = 2` 会让 V8 反复 deopt。**对象创建后不要再改 shape**。
-3. **不要忘记清理定时器和事件监听**。内存泄漏 80% 来源。**生产规则**：每个 `setInterval` / `addEventListener` 都要对应 `clearInterval` / `removeEventListener`，**通常在 `useEffect` cleanup 或 `beforeunload`** 里。
+3. **不要忘记清理定时器和事件监听**。内存泄漏 80% 来源。**生产规则**：每个 `setInterval` / `addEventListener` 都要对应 `clearInterval` / `removeEventListener`，**通常在 `useEffect` cleanup 或 `beforeunload`**里。
 4. **不要把 await 串行当默认模式**。`for (const x of arr) { await ... }` 永远是串行。**默认应该是 `Promise.all(arr.map(async x => ...))`**。
 5. **不要忽略 microtask 饥饿**。如果 microtask 队列里无限递归（promise.then 里再 then），会**永远阻塞**渲染和 I/O。Node.js 用 `process.nextTick` 调试时经常踩这个。
 

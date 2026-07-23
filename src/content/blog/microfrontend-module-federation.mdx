@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂微前端？我的回答是 **要**——不是去用 qiankun / Module Federation，而是建立"为什么需要把单仓变成多仓"的工程判断。原因有三：
 
-1. **简历里"12min → 3min 构建优化"是简历里 Module Federation 实战**。单仓巨型 monorepo 用 MF 拆子应用,**构建时间数量级下降**。
+1. **"12min → 3min 构建优化"是Module Federation 实战**。单仓巨型 monorepo 用 MF 拆子应用,**构建时间数量级下降**。
 2. **微前端不是"为了拆而拆"**。**超过 50 个开发者 / 5 个子团队**才考虑微前端,**小项目 monorepo + 路由懒加载就够了**。
 3. **三大方案底层都是 iframe + JS 沙箱**。qiankun / micro-app / wujie 思想一脉相承,**选型决策比写代码重要**。
 
@@ -42,15 +42,15 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 | 方案 | 底层 | 跨框架 | 性能 | 适合场景 |
 |---|---|---|---|---|
-| **qiankun** | iframe + JS 沙箱 | ✅ | 损耗较大 | 多团队 / 跨框架 / 强隔离 |
-| **micro-app** | iframe + Web Components | ✅ | 中 | 京东电商场景 |
-| **wujie** | iframe + Web Components | ✅ | 较好 | 腾讯场景 |
-| **Module Federation** | JS 共享 | ⚠️ 同构 | **最好** | 同框架 + 共享运行时 |
+| **qiankun**| iframe + JS 沙箱 | ✅ | 损耗较大 | 多团队 / 跨框架 / 强隔离 |
+| **micro-app**| iframe + Web Components | ✅ | 中 | 京东电商场景 |
+| **wujie**| iframe + Web Components | ✅ | 较好 | 腾讯场景 |
+| **Module Federation**| JS 共享 | ⚠️ 同构 | **最好**| 同框架 + 共享运行时 |
 
 **架构师决策**：
-- **跨框架 + 强隔离** → qiankun / wujie（iframe 沙箱）
-- **同框架 + 共享运行时** → Module Federation（Webpack 5 / Vite）
-- **京东系** → micro-app
+- **跨框架 + 强隔离**→ qiankun / wujie（iframe 沙箱）
+- **同框架 + 共享运行时**→ Module Federation（Webpack 5 / Vite）
+- **京东系**→ micro-app
 
 ## 三、qiankun 实战
 
@@ -86,9 +86,9 @@ export async function unmount() { /* 卸载 */ }
 - **样式隔离**：动态插入 `<style>` 标签 + scoped CSS
 - **通信**：基于 props + CustomEvent / `initGlobalState`
 
-## 四、Module Federation 实战（顺丰 ERP）
+## 四、Module Federation 实战（大型 ERP）
 
-简历里出现 **"ERP 重构 12min → 3min"**——核心改造就是用 Webpack 5 Module Federation。
+以 **ERP 重构 12min → 3min**为例——核心改造就是用 Webpack 5 Module Federation。
 
 ### 4.1 重构前
 
@@ -148,7 +148,7 @@ const FinanceApp = React.lazy(() => import('finance/App'));
 
 | 指标 | 重构前 | 重构后 |
 |---|---|---|
-| 全量构建 | 12min | **1.5min（并行）** |
+| 全量构建 | 12min | **1.5min（并行）**|
 | 修改 admin 后构建 | 12min | 30s |
 | 修改 finance 后构建 | 12min | 1.5min |
 | Bundle size (主 app) | 800KB | 100KB |
@@ -161,13 +161,13 @@ const FinanceApp = React.lazy(() => import('finance/App'));
 |---|---|---|
 | JS 隔离 | **100%**（独立 window） | ⚠️ 99%（Proxy 拦截） |
 | CSS 隔离 | **100%**（独立 document） | ⚠️ 90%（scoped / namespace） |
-| 全局变量污染 | **无** | **有**（需要清空） |
+| 全局变量污染 | **无**| **有**（需要清空） |
 | 性能损耗 | 5-15% (iframe) | < 1% |
 | 跨子应用通信 | 复杂（postMessage） | 简单（globalState） |
 
 **架构师决策**：
-- **强隔离 + 跨框架** → iframe 沙箱（qiankun / wujie）
-- **同框架 + 共享运行时** → JS 沙箱（Module Federation / Vite Module Graph）
+- **强隔离 + 跨框架**→ iframe 沙箱（qiankun / wujie）
+- **同框架 + 共享运行时**→ JS 沙箱（Module Federation / Vite Module Graph）
 
 ## 六、踩坑提醒（资深架构师请重点看）
 
@@ -185,8 +185,8 @@ const FinanceApp = React.lazy(() => import('finance/App'));
 - **三大方案**:qiankun (iframe + 跨框架) / micro-app (京东系) / wujie (腾讯系) / Module Federation (同框架共享)。
 - **Module Federation 实战**:Shell + 子应用,Shell 30s,子应用 1.5min,全量并行 1.5min 总耗时。
 - **运行时隔离**:iframe 100% 隔离 (性能 5-15%) / JS 沙箱 99% 隔离 (性能 < 1%)。
-- **跨框架 + 强隔离** → iframe;**同框架 + 共享运行时** → MF。
-- **生产案例**:顺丰 ERP 12min → 1.5min 提速 8 倍,bundle 减 87%。
+- **跨框架 + 强隔离**→ iframe;**同框架 + 共享运行时**→ MF。
+- **生产案例**:大型 ERP 12min → 1.5min 提速 8 倍,bundle 减 87%。
 
 **下一篇**:低代码平台设计——表单 / 流程 / 报表的代码生成,ERP 半低代码项目实战。
 
@@ -198,19 +198,19 @@ const FinanceApp = React.lazy(() => import('finance/App'));
 >
 > **Q2(思考)**:qiankun / micro-app / wujie / Module Federation 怎么选?
 >
-> **A**:**选型决策**:① **跨框架 + 强隔离** → **qiankun / wujie** (iframe 沙箱);② **同框架 + 共享运行时** → **Module Federation** (Webpack 5 / Vite);③ **京东系项目** → **micro-app**;④ **腾讯系项目** → **wujie**。**核心决策点**:**跨框架必 iframe**(qiankun/wujie),**同框架用 MF**(性能 5 倍,共享运行时)。**生产案例**:顺丰 ERP 5 个业务域,Vue 3 统一,**用 Module Federation**;某 ToB SaaS Vue / React 混用,**用 qiankun iframe**。<AIAsk question="qiankun / micro-app / wujie / Module Federation 怎么选?" />
+> **A**:**选型决策**:① **跨框架 + 强隔离**→ **qiankun / wujie**(iframe 沙箱);② **同框架 + 共享运行时**→ **Module Federation**(Webpack 5 / Vite);③ **京东系项目**→ **micro-app**;④ **腾讯系项目**→ **wujie**。**核心决策点**:**跨框架必 iframe**(qiankun/wujie),**同框架用 MF**(性能 5 倍,共享运行时)。**生产案例**:大型 ERP 5 个业务域,Vue 3 统一,**用 Module Federation**;某 ToB SaaS Vue / React 混用,**用 qiankun iframe**。<AIAsk question="qiankun / micro-app / wujie / Module Federation 怎么选?" />
 >
 > **Q3(思考)**:Module Federation 是怎么实现「运行时共享依赖,构建时独立」的?Shell + 子应用的构建配置怎么写?
 >
-> **A**:**核心原理**:Webpack / Rspack 编译时把共享依赖(React / Antd)标记为 **singleton**(只加载一份),Shell 启动时**异步加载子应用的 remoteEntry.js**,**按需动态 import**。**Shell 配置**:`new ModuleFederationPlugin({ name: 'admin', remotes: { finance: '...' }, shared: { react: { singleton: true } } })`;**子应用配置**:`new ModuleFederationPlugin({ name: 'finance', filename: 'remoteEntry.js', exposes: { './App': './src/App' } })`。**生产数据**:Shell bundle 800KB → 100KB(共享依赖只下 1 次),子应用独立部署,**Shell 30s,子应用 1.5min,全量并行 1.5min** 总耗时。<AIAsk question="Module Federation 是怎么实现「运行时共享依赖,构建时独立」的?Shell + 子应用的构建配置怎么写?" />
+> **A**:**核心原理**:Webpack / Rspack 编译时把共享依赖(React / Antd)标记为 **singleton**(只加载一份),Shell 启动时**异步加载子应用的 remoteEntry.js**,**按需动态 import**。**Shell 配置**:`new ModuleFederationPlugin({ name: 'admin', remotes: { finance: '...' }, shared: { react: { singleton: true } } })`;**子应用配置**:`new ModuleFederationPlugin({ name: 'finance', filename: 'remoteEntry.js', exposes: { './App': './src/App' } })`。**生产数据**:Shell bundle 800KB → 100KB(共享依赖只下 1 次),子应用独立部署,**Shell 30s,子应用 1.5min,全量并行 1.5min**总耗时。<AIAsk question="Module Federation 是怎么实现「运行时共享依赖,构建时独立」的?Shell + 子应用的构建配置怎么写?" />
 >
 > **Q4(思考)**:qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?
 >
-> **A**:**iframe 沙箱**:100% JS / CSS 隔离（独立 window/document),**性能损耗 5-15%**(iframe 创建 + postMessage 通信);**JS 沙箱(MF)**:99% 隔离(Proxy 拦截 + scoped CSS),**性能损耗 < 1%**(共享 runtime + 零序列化)。**选型**:**强隔离 + 跨框架** 用 iframe,**同框架 + 共享运行时** 用 JS 沙箱。**生产数据**:qiankun 多子应用 + 跨框架,首屏 **1500ms**;MF 同框架,首屏 **800ms**。<AIAsk question="qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?" />
+> **A**:**iframe 沙箱**:100% JS / CSS 隔离（独立 window/document),**性能损耗 5-15%**(iframe 创建 + postMessage 通信);**JS 沙箱(MF)**:99% 隔离(Proxy 拦截 + scoped CSS),**性能损耗 < 1%**(共享 runtime + 零序列化)。**选型**:**强隔离 + 跨框架**用 iframe,**同框架 + 共享运行时**用 JS 沙箱。**生产数据**:qiankun 多子应用 + 跨框架,首屏 **1500ms**;MF 同框架,首屏 **800ms**。<AIAsk question="qiankun 的 iframe 沙箱 vs Module Federation 的 JS 沙箱,性能 / 隔离性怎么权衡?" />
 >
-> **Q5(思考)**:你在顺丰 ERP 项目里是怎么从单仓 monorepo 迁移到 Module Federation 的?踩过哪些坑?
+> **Q5(思考)**:你在大型 ERP 项目里是怎么从单仓 monorepo 迁移到 Module Federation 的?踩过哪些坑?
 >
-> **A**:**迁移三步**:① **识别业务边界** — 财务 / 人力 / 客户 / 主应用,**确定子应用划分**;② **共享依赖抽取** — React / Antd / utils / SDK 抽到 `packages/shared`,**singleton 配置**;③ **Shell + 子应用拆分** — 主应用变 Shell 只挂路由,业务页面拆到子应用,exposes 暴露入口。**踩坑**:① **shared 配置** 太激进导致版本冲突,改成**精确到子集**;② **CSS 隔离** 用 `data-app` 属性 + scoped,不用 css-modules(太重);③ **部署流水线** 重写,每个子应用**独立 CI** + **独立 CDN** 路径;④ **灰度发布** 用 Shell 路由 + 子应用版本号,Shell 决定调用哪个版本。<AIAsk question="你在顺丰 ERP 项目里是怎么从单仓 monorepo 迁移到 Module Federation 的?踩过哪些坑?" />
+> **A**:**迁移三步**:① **识别业务边界**— 财务 / 人力 / 客户 / 主应用,**确定子应用划分**;② **共享依赖抽取**— React / Antd / utils / SDK 抽到 `packages/shared`,**singleton 配置**;③ **Shell + 子应用拆分**— 主应用变 Shell 只挂路由,业务页面拆到子应用,exposes 暴露入口。**踩坑**:① **shared 配置**太激进导致版本冲突,改成**精确到子集**;② **CSS 隔离**用 `data-app` 属性 + scoped,不用 css-modules(太重);③ **部署流水线**重写,每个子应用**独立 CI**+ **独立 CDN**路径;④ **灰度发布**用 Shell 路由 + 子应用版本号,Shell 决定调用哪个版本。<AIAsk question="你在大型 ERP 项目里是怎么从单仓 monorepo 迁移到 Module Federation 的?踩过哪些坑?" />
 
 > 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
 

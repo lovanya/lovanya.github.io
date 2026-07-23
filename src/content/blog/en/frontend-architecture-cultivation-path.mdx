@@ -10,28 +10,28 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Preface: Why This Series
 
-After 11 years as a frontend engineer — from jQuery to leading an ERP rebuild, from solo contributor to managing a 5-person contractor team, from PC OA systems to Electron desktop apps + micro-frontend + 800-page enterprise admin — I have never found a single resource that systematically walks from **junior to architect**, **shallow to deep**, in a **field-tested** way.
+After years of watching frontend engineers climb from junior to architect — through jQuery-era PC OA systems, through Electron desktop apps, through micro-frontend rebuilds, through 800-page enterprise admin backends — the field still lacks a single resource that systematically walks from **junior to architect**, **shallow to deep**, in a **field-tested** way.
 
 What exists out there:
-- **Beginner tutorials**: abundant, but after chapter 5 they show `npm install`; I know how to build a Todo in React but not *why* it's designed this way
+- **Beginner tutorials**: abundant, but after chapter 5 they show `npm install`; covers how to build a Todo in React but not *why* it's designed this way
 - **Source code deep-dives**: extremely deep, but read like a textbook to anyone under 3 years experience
 - **Architecture blogs**: scattered, single-topic, but explain *why this choice* — the most valuable kind, just not systematic
-- **Interview question dumps**: useful for rote memorization but don't help you truly understand
+- **Interview question dumps**: useful for rote memorization but don't help build true understanding
 
 This series aims to:
 
 1. **Shallow to deep**: from "how a browser renders a page" all the way to "Transformation God stage" — 5 stages, 29 articles. Each readable independently; together they form a growth curve
-2. **Field-tested**: anchored to my own production projects — Module Federation micro-frontend, 4.2s → 1.8s first-paint optimization, SSO unified permission, FinUI component library, Electron dual-canvas sync, etc.
-3. **No question banks**: every article ends with **5 high-priority interview question directions**, but only the first question has a concise answer. The remaining 4 are yours to think about. Each question has an AI helper button right behind it — one click gets you a detailed answer.
-4. **Selection clarity**: every article with comparisons includes a **technology selection cheat sheet** — one line per candidate with biggest advantage / biggest disadvantage
+2. **Field-anchored**: every article maps to a real production scenario — Module Federation micro-frontend, first-paint optimization, SSO unified permission, FinUI component library, Electron dual-canvas sync, and more
+3. **No question banks**: every article ends with **5 high-priority interview question directions**, but only the first question has a concise answer. The remaining 4 invite deeper thought. Each question has an AI helper button right behind it — one click gets a detailed answer.
+4. **Selection clarity**: every article with comparisons includes a **technology selection cheat sheet**— one line per candidate with biggest advantage / biggest disadvantage
 
 ## I. Why "Cultivation Realms" as a Metaphor
 
 Not a gimmick. Three real reasons:
 
-1. **Stage thresholds** — In cultivation, "Foundation Building → Golden Core" is a qualitative leap requiring 1–2 years of grinding. Frontend is the same: from "writing components" to "independently making tech selections", from "building features" to "designing observability systems", every leap requires long accumulation
-2. **Risk and tribulation** — "Tribulation" isn't decorative. An architect's biggest risk is **tech decisions**: wrong framework, wrong bundler, wrong monitoring stack → 6 months later, scrap it all. Cultivation literature takes "decision-and-try-error" seriously and names it "劫 (tribulation)"
-3. **Resonance** — 80% of Chinese engineers have read xianxia novels. Calling "today I studied V8 bytecode" as "I comprehended one more layer" is 10× more readable than "path-dependency inversion"
+1. **Stage thresholds**— In cultivation, "Foundation Building → Golden Core" is a qualitative leap requiring 1–2 years of grinding. Frontend is the same: from "writing components" to "independently making tech selections", from "building features" to "designing observability systems", every leap requires long accumulation
+2. **Risk and tribulation**— "Tribulation" isn't decorative. An architect's biggest risk is **tech decisions**: wrong framework, wrong bundler, wrong monitoring stack → 6 months later, scrap it all. Cultivation literature takes "decision-and-try-error" seriously and names it "劫 (tribulation)"
+3. **Resonance**— 80% of Chinese engineers have read xianxia novels. Calling "today I studied V8 bytecode" as "I comprehended one more layer" is 10× more readable than "path-dependency inversion"
 
 <Mermaid client:load caption="Fig 1: 5 Cultivation Stages" chart={`flowchart LR
   L1["Qi Refining"] -->|Foundation| L2["Foundation Building"]
@@ -48,12 +48,12 @@ Not a gimmick. Three real reasons:
 
 | Stage | Cultivation Subtitle | Articles | Topics |
 |---|---|---|---|
-| **Prologue** | Overview | 1 | Series intro + reading paths + resume mapping |
-| **Qi Refining** | Foundation Cultivation | 6 | Browser / CSS·HTML5 / JS / Network / Security / TS |
-| **Foundation Building** | Frameworks & Adaptation | 5 | Framework evolution / React / Vue / Angular / Responsive |
-| **Golden Core** | Engineering Mastery | 5 | Bundlers / Packages / Engineering / First-paint / Runtime perf |
-| **Nascent Soul** | Cross-Boundary Mastery | 8 | Electron / Hybrid / iframe / WC / Monitoring / Testing / UI lib / Admin |
-| **Transformation God** | Architect's Realm | 5 | Micro-frontend / Low-code / RBAC / AI future / Role transition |
+| **Prologue**| Overview | 1 | Series intro + reading paths + knowledge mapping |
+| **Qi Refining**| Foundation Cultivation | 6 | Browser / CSS·HTML5 / JS / Network / Security / TS |
+| **Foundation Building**| Frameworks & Adaptation | 5 | Framework evolution / React / Vue / Angular / Responsive |
+| **Golden Core**| Engineering Mastery | 5 | Bundlers / Packages / Engineering / First-paint / Runtime perf |
+| **Nascent Soul**| Cross-Boundary Mastery | 8 | Electron / Hybrid / iframe / WC / Monitoring / Testing / UI lib / Admin |
+| **Transformation God**| Architect's Realm | 5 | Micro-frontend / Low-code / RBAC / AI future / Role transition |
 
 **Total 30 articles**, ~8 months at 1 article/week.
 
@@ -82,14 +82,14 @@ Mastering at least one mainstream framework + adapting to multiple device classe
 
 ### Golden Core · Engineering Mastery (5 articles)
 
-The real source of the resume's 12min → 3min build and 4.2s → 1.8s first-paint numbers.
+The real source of the 12min → 3min build and 4.2s → 1.8s first-paint optimizations.
 
 | # | Title | Anchor |
 |---|---|---|
 | 12 | Build Tools: Webpack → Vite → Rspack | Build 12min → 3min |
 | 13 | Package Management: pnpm / Changesets | ERP Monorepo |
 | 14 | Engineering System: CI/CD / Standards / Review | ESLint + Husky rules |
-| 15 | First-Paint Performance 4.2s → 1.8s Case Study | SF Express ERP rebuild |
+| 15 | First-Paint Performance 4.2s → 1.8s Case Study | large ERP rebuild |
 | 16 | Runtime Performance: Virtual Scroll / Web Vitals | FinUI large table perf |
 
 ### Nascent Soul · Cross-Boundary Mastery (8 articles)
@@ -98,8 +98,8 @@ Cross-end, cross-domain, cross-framework, cross-system — master of every "cros
 
 | # | Title | Anchor |
 |---|---|---|
-| 17 | Electron In Practice: Main / Renderer / USB Bridge | Rouyu Note PC project |
-| 18 | Hybrid Framework Comparison: Taro / Uni-app / Ionic | Sundray / Lianyou hybrid practice |
+| 17 | Electron In Practice: Main / Renderer / USB Bridge |  Note PC project |
+| 18 | Hybrid Framework Comparison: Taro / Uni-app / Ionic | Sundray /  hybrid practice |
 | 19 | iframe Isolation + postMessage Communication | FinSpread 30% license cost reduction |
 | 20 | Web Components for Cross-Framework Reuse | 8 components across Vue/React |
 | 21 | Frontend Monitoring: Errors / Performance / Behavior | Two-stage monitoring practice |
@@ -123,24 +123,24 @@ Tech decision-maker, cross-team leader, helmsman in the AI era.
 
 ### Mode A: By Experience (Recommended)
 
-Start from your current stage and read upward:
-- **1-2 year junior** → start from Qi Refining #1
-- **3-4 year mid-level** → skip browser basics, start from TS or HTTP
-- **5-7 year senior** → start from Foundation Building framework comparisons, focus on Golden Core
-- **8+ year architect** → jump to Nascent Soul + Transformation God, treat earlier as reference
+Start from the current stage and read upward:
+- **1-2 year junior**→ start from Qi Refining #1
+- **3-4 year mid-level**→ skip browser basics, start from TS or HTTP
+- **5-7 year senior**→ start from Foundation Building framework comparisons, focus on Golden Core
+- **8+ year architect**→ jump to Nascent Soul + Transformation God, treat earlier as reference
 
 ### Mode B: By Topic (Project-Driven)
 
 Working on something specific? Jump directly:
-- **Micro-frontend** → #25
-- **Performance** → #15 + #16
-- **Permissions** → #27
-- **Electron** → #17
-- **Hybrid App** → #18
-- **Monitoring** → #21
-- **UI Component Library** → #23
-- **Enterprise Admin Patterns** → #24
-- **iframe / WC cross-domain** → #19 + #20
+- **Micro-frontend**→ #25
+- **Performance**→ #15 + #16
+- **Permissions**→ #27
+- **Electron**→ #17
+- **Hybrid App**→ #18
+- **Monitoring**→ #21
+- **UI Component Library**→ #23
+- **Enterprise Admin Patterns**→ #24
+- **iframe / WC cross-domain**→ #19 + #20
 
 ### Mode C: By Interview (Job-Hunting)
 
@@ -156,17 +156,17 @@ Highest-frequency interview topics first:
 
 Every article follows the same skeleton:
 
-1. **Core concepts (what)** — minimal definition
-2. **Field-test anchor (how I did it)** — my biggest differentiator: real production numbers
-3. **Comparison + selection cheat sheet (when & why)** — one line per candidate with biggest advantage / biggest disadvantage
-4. **Pitfalls (what not to do)** — scars included
-5. **5 high-priority interview questions** — **only Q1 has a concise answer**, the other 4 are yours to think through
+1. **Core concepts (what)**— minimal definition
+2. **Field-test anchor (how it lands)**— real production numbers, no theory-only talk
+3. **Comparison + selection cheat sheet (when & why)**— one line per candidate with biggest advantage / biggest disadvantage
+4. **Pitfalls (what not to do)**— scars included
+5. **5 high-priority interview questions**— **only Q1 has a concise answer**, the other 4 invite deeper thought
 
 Each interview question has an AI helper button right behind it — one click gets you a detailed answer based on this article's context.
 
-## V. Resume Tech Stack vs Series Coverage
+## V. Knowledge Map vs Series Coverage
 
-| Resume Skill | Covered In |
+| Knowledge Area | Covered In |
 |---|---|
 | Vue 3 / Vue 2 / Pinia | #9 (Vue) + #24 (Admin patterns) |
 | React 18 / Lit | #8 (React) + #20 (Web Components) |
@@ -184,13 +184,13 @@ Each interview question has an AI helper button right behind it — one click ge
 | SpreadJS / ECharts / Rich Text | #24 (Admin Patterns) |
 | Node.js / RESTful API | #10 (Angular collaboration) + #27 (OAuth + JWT) |
 
-> Left column shows what's on the resume; right column shows where to deepen. **Beyond the resume** — this series also covers resume-absent-but-essential fundamentals (V8 / browser / security / TS) and architect-view soft skills (#29).
+> Left column shows what's needed; right column shows where to deepen. **Beyond the basics**— this series also covers often-overlooked fundamentals (V8 / browser / security / TS) and architect-view soft skills (#29).
 
 ## VI. 5 High-Priority Interview Question Directions
 
 > **Q1 (with answer)**: What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?
 >
-> **A**: **Network layer** (DNS → TCP → TLS → HTTP response → TTFB) + **rendering layer** (HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **Frontend can optimize**: ① Network: CDN + HTTP/3 + edge cache compresses TTFB from hundreds of ms to tens of ms; ② HTML size + streaming SSR gets first bytes faster; ③ CSS / fonts: inline critical CSS + `font-display: swap` reduces blocking; ④ JS: code splitting + tree-shaking gets main thread idle fast; ⑤ Images: `preload` + AVIF + LQIP placeholders. **Interview tip**: name a quantifiable metric per stage (ms or %), sounds far more professional than "we optimized the network" in general. Detailed answer in **[Post #1 · How Browsers Render a Page](/en/blog/how-browser-renders-page)**'s 5 interview questions.<AIAsk question="What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?" lang="en" />
+> **A**: **Network layer**(DNS → TCP → TLS → HTTP response → TTFB) + **rendering layer**(HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **Frontend can optimize**: ① Network: CDN + HTTP/3 + edge cache compresses TTFB from hundreds of ms to tens of ms; ② HTML size + streaming SSR gets first bytes faster; ③ CSS / fonts: inline critical CSS + `font-display: swap` reduces blocking; ④ JS: code splitting + tree-shaking gets main thread idle fast; ⑤ Images: `preload` + AVIF + LQIP placeholders. **Interview tip**: name a quantifiable metric per stage (ms or %), sounds far more professional than "we optimized the network" in general. Detailed answer in **[Post #1 · How Browsers Render a Page](/en/blog/how-browser-renders-page)**'s 5 interview questions.<AIAsk question="What stages does a browser go through from URL input to page display? Which stages are optimizable by frontend code?" lang="en" />
 >
 > **Q2 (think)**: What's the core difference between HTTP/1.1 / HTTP/2 / HTTP/3? Why does HTTP/3 use QUIC instead of TCP?<AIAsk question="What's the core difference between HTTP/1.1 / HTTP/2 / HTTP/3? Why does HTTP/3 use QUIC instead of TCP?" lang="en" />
 >
@@ -204,7 +204,7 @@ Each interview question has an AI helper button right behind it — one click ge
 
 ## VII. Next Steps
 
-Next article → **[Qi Refining #1 · How Browsers Render a Web Page](/en/blog/how-browser-renders-page)** — start the cultivation journey from the lowest foundation.
+Next article → **[Qi Refining #1 · How Browsers Render a Web Page](/en/blog/how-browser-renders-page)**— start the cultivation journey from the lowest foundation.
 
 ---
 

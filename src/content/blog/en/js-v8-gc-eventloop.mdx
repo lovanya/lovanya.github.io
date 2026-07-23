@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand V8? My answer is **yes** — not to read V8 source code, but to build intuition for "what JS actually does at runtime". Three reasons:
+Should a frontend architect understand V8? My answer is **yes**— not to read V8 source code, but to build intuition for "what JS actually does at runtime". Three reasons:
 
-1. **Performance optimization demands it.** The 12min→3min build optimization on my resume was primarily a build-tools story, but runtime optimization (avoiding deopt, avoiding memory leaks, properly using the event loop) directly ties into it.
-2. **Async programming's foundation.** `Promise.then` / `setTimeout` / `requestAnimationFrame` / `queueMicrotask` — which runs first, why, write one line wrong and you ship a bug.
-3. **Technology selection stops fooling you.** Node.js uses V8, Bun uses JavaScriptCore, Deno uses V8 + Rust — which engine for which scenario. Worker Threads / Web Workers / Atomics — by gut feel you'll pick wrong.
+1. **Performance optimization demands it.**The 12min→3min build optimization  was primarily a build-tools story, but runtime optimization (avoiding deopt, avoiding memory leaks, properly using the event loop) directly ties into it.
+2. **Async programming's foundation.**`Promise.then` / `setTimeout` / `requestAnimationFrame` / `queueMicrotask` — which runs first, why, write one line wrong and you ship a bug.
+3. **Technology selection stops being guesswork.**Node.js uses V8, Bun uses JavaScriptCore, Deno uses V8 + Rust — which engine for which scenario. Worker Threads / Web Workers / Atomics — by gut feel you'll pick wrong.
 
 This is post #3 of the *Frontend Architecture Cultivation Path* series. We skip compiler theory (no LLVM IR explanations), use architecture diagrams, real performance numbers, and real code cases to make V8's compilation pipeline, hidden classes, GC, and event loop concrete. The next post covers HTTP / HTTPS / HTTP2 / HTTP3 and caching strategy.
 
@@ -24,7 +24,7 @@ V8 is the JS engine (not browser — engine) used by Chrome / Node.js / Deno. It
 
 ### 1.1 Two Compilers: Ignition + TurboFan
 
-V8 uses a **two-phase compilation** strategy:
+V8 uses a **two-phase compilation**strategy:
 
 <Mermaid client:load caption="Figure 1: V8 Ignition + TurboFan compilation pipeline" chart={`flowchart LR
   S[JS Source] --> P[Parser<br/>V8 built-in parser]
@@ -33,12 +33,12 @@ V8 uses a **two-phase compilation** strategy:
   T --> M[Optimized machine code]
   M -->|assumption fails| B`} />
 
-- **Ignition** (interpreter): the first pass produces **bytecode** (more compact than AST, more portable than machine code), interpreted instruction by instruction. **Fast cold start**.
-- **TurboFan** (JIT): detects "hot functions" (called many times) → uses type feedback to **speculatively optimize-compile** to machine code. **Fast runtime, slow cold start**.
+- **Ignition**(interpreter): the first pass produces **bytecode**(more compact than AST, more portable than machine code), interpreted instruction by instruction. **Fast cold start**.
+- **TurboFan**(JIT): detects "hot functions" (called many times) → uses type feedback to **speculatively optimize-compile**to machine code. **Fast runtime, slow cold start**.
 
 ### 1.2 Type Feedback — Why V8 is 100× Faster than Python
 
-**Core mechanism**: V8 **observes** the actual types of variables at runtime, **using observations to optimize machine code**. Consider:
+**Core mechanism**: V8 **observes**the actual types of variables at runtime, **using observations to optimize machine code**. Consider:
 
 ```javascript
 function add(a, b) {
@@ -84,7 +84,7 @@ function formatString(id) {
 
 ### 2.1 Hidden Class
 
-V8 **doesn't** have a full class system like Java, but each object has an **internal hidden class** — recording the object's "shape" (which properties, what order added). **Key insight**: objects with the same hidden class share the same optimized code.
+V8 **doesn't**have a full class system like Java, but each object has an **internal hidden class**— recording the object's "shape" (which properties, what order added). **Key insight**: objects with the same hidden class share the same optimized code.
 
 ```javascript
 function Point(x, y) {
@@ -127,7 +127,7 @@ function makeUser(name, age, email) {
 
 ### 2.2 Inline Cache
 
-When V8 executes `obj.prop`, it **caches** the property lookup position ("1st property" or "2nd property"). **Key**: on cache hit, the entire property lookup chain is skipped.
+When V8 executes `obj.prop`, it **caches**the property lookup position ("1st property" or "2nd property"). **Key**: on cache hit, the entire property lookup chain is skipped.
 
 ```javascript
 function getName(user) {
@@ -165,12 +165,12 @@ V8's GC engine is called **Orinoco**, the core strategy is the **generational hy
   O -->|full| M[Major GC<br/>Stop-The-World]
   M -->|old gen still full| C[Out of Memory]`} />
 
-- **New Space** (young generation, 1-8 MB): most objects allocate here
-- **Old Space** (old generation): objects surviving two Minor GCs are promoted here
+- **New Space**(young generation, 1-8 MB): most objects allocate here
+- **Old Space**(old generation): objects surviving two Minor GCs are promoted here
 
-**Minor GC** (Scavenge algorithm, pre-2018; now Parallel Scavenge) is **fast** (millisecond-scale), **doesn't pause the main thread long** (runs in parallel).
+**Minor GC**(Scavenge algorithm, pre-2018; now Parallel Scavenge) is **fast**(millisecond-scale), **doesn't pause the main thread long**(runs in parallel).
 
-**Major GC** (Mark-Sweep + Mark-Compact) is **slow** (hundred-millisecond scale), triggers **Stop-The-World (STW)** — main thread completely paused.
+**Major GC**(Mark-Sweep + Mark-Compact) is **slow**(hundred-millisecond scale), triggers **Stop-The-World (STW)**— main thread completely paused.
 
 ### 3.2 Practical Techniques to Reduce GC Pressure
 
@@ -220,7 +220,7 @@ window.addEventListener('beforeunload', () => clearInterval(id));
 
 ### 3.3 Performance Monitoring: How to Tell if GC is Hurting You
 
-Chrome DevTools → Performance → look at the **Major GC** yellow triangle on the **Main** track. **A single Major GC > 50ms is a problem**.
+Chrome DevTools → Performance → look at the **Major GC**yellow triangle on the **Main**track. **A single Major GC > 50ms is a problem**.
 
 ```javascript
 // Programmatic detection: V8 exposes gc() function (requires --expose-gc flag)
@@ -232,7 +232,7 @@ console.log(performance.memory.usedJSHeapSize / 1024 / 1024, 'MB');
 
 ## 4. Event Loop: Microtask and Macrotask Execution Order
 
-JS is a **single-threaded** language; all tasks run on one thread. The **event loop** is that thread's scheduler.
+JS is a **single-threaded**language; all tasks run on one thread. The **event loop**is that thread's scheduler.
 
 ### 4.1 Task Queue Hierarchy
 
@@ -242,9 +242,9 @@ JS is a **single-threaded** language; all tasks run on one thread. The **event l
   R --> T[Macrotask Queue<br/>setTimeout / setInterval<br/>I/O / UI events / MessageChannel]`} />
 
 **Key execution order**:
-1. **Execute current macrotask** (a chunk of sync code)
-2. **Drain microtask queue** (all of them, including nested)
-3. **Render update** (if needed, requestAnimationFrame runs here)
+1. **Execute current macrotask**(a chunk of sync code)
+2. **Drain microtask queue**(all of them, including nested)
+3. **Render update**(if needed, requestAnimationFrame runs here)
 4. **Take next macrotask**
 
 ### 4.2 Classic Pitfall: `Promise` vs `setTimeout(fn, 0)`
@@ -258,7 +258,7 @@ console.log('4');
 // Output: 1, 4, 3, 2
 ```
 
-**Microtasks always execute before the next macrotask** — even `setTimeout(fn, 0)` is the next macrotask.
+**Microtasks always execute before the next macrotask**— even `setTimeout(fn, 0)` is the next macrotask.
 
 ### 4.3 Classic Pitfall: await in a Loop
 
@@ -342,18 +342,18 @@ self.onmessage = (e) => {
 | Worklet | CSS Houdini, custom properties | Sync / async | Special scenarios |
 
 **Production selection**:
-- Long list rendering → **Virtual scrolling** (no Worker needed)
+- Long list rendering → **Virtual scrolling**(no Worker needed)
 - Big data sort/filter → **Web Worker**
 - Image processing → **OffscreenCanvas + Worker**
 - Background data sync → **Service Worker**
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't wrap everything that "looks async" in Promise.** `await Promise.resolve()` forces a microtask and makes simple sync operations slow. **Only use async for actual I/O**.
-2. **Don't change object shape on V8's optimization hot path.** `obj.x = 1; delete obj.x; obj.x = 2` makes V8 deopt repeatedly. **Don't change shape after object creation**.
-3. **Don't forget to clean up timers and event listeners.** 80% of memory leaks come from this. **Production rule**: every `setInterval` / `addEventListener` needs a corresponding `clearInterval` / `removeEventListener`, **typically in `useEffect` cleanup or `beforeunload`**.
-4. **Don't make serial await the default.** `for (const x of arr) { await ... }` is always serial. **Default should be `Promise.all(arr.map(async x => ...))`**.
-5. **Don't ignore microtask starvation.** If the microtask queue has infinite recursion (promise.then inside then), it will **forever block** rendering and I/O. Common when debugging with `process.nextTick` in Node.js.
+1. **Don't wrap everything that "looks async" in Promise.**`await Promise.resolve()` forces a microtask and makes simple sync operations slow. **Only use async for actual I/O**.
+2. **Don't change object shape on V8's optimization hot path.**`obj.x = 1; delete obj.x; obj.x = 2` makes V8 deopt repeatedly. **Don't change shape after object creation**.
+3. **Don't forget to clean up timers and event listeners.**80% of memory leaks come from this. **Production rule**: every `setInterval` / `addEventListener` needs a corresponding `clearInterval` / `removeEventListener`, **typically in `useEffect` cleanup or `beforeunload`**.
+4. **Don't make serial await the default.**`for (const x of arr) { await ... }` is always serial. **Default should be `Promise.all(arr.map(async x => ...))`**.
+5. **Don't ignore microtask starvation.**If the microtask queue has infinite recursion (promise.then inside then), it will **forever block**rendering and I/O. Common when debugging with `process.nextTick` in Node.js.
 
 ## Summary
 
@@ -374,7 +374,7 @@ Six key facts that thread the JS runtime together:
 
 > **Q1 (Answer)**: JS is single-threaded — how does it handle concurrency? What's the execution order of microtasks and macrotasks in the event loop?
 >
-> **A**: The JS main thread can only run one piece of code at a time; **concurrency is handled by the event loop**. One loop cycle has four steps: ① Execute current macrotask (a chunk of sync code); ② **Drain entire microtask queue** (including nested `.then`); ③ If rendering is needed, run rAF + render; ④ Take the next macrotask. **Microtasks have higher priority than the next macrotask** — classic example: `setTimeout(fn, 0)` and `Promise.resolve().then(fn)` registered at the same time; the former queues as macrotask; on execution, microtasks are drained first, then we move to the next macrotask. **Interview tip**: cite microtask starvation (infinite recursive `.then` blocking I/O) as a counter-example.<AIAsk question="JS is single-threaded — how does it handle concurrency? What's the execution order of microtasks and macrotasks in the event loop?" lang="en" />
+> **A**: The JS main thread can only run one piece of code at a time; **concurrency is handled by the event loop**. One loop cycle has four steps: ① Execute current macrotask (a chunk of sync code); ② **Drain entire microtask queue**(including nested `.then`); ③ If rendering is needed, run rAF + render; ④ Take the next macrotask. **Microtasks have higher priority than the next macrotask**— classic example: `setTimeout(fn, 0)` and `Promise.resolve().then(fn)` registered at the same time; the former queues as macrotask; on execution, microtasks are drained first, then we move to the next macrotask. **Interview tip**: cite microtask starvation (infinite recursive `.then` blocking I/O) as a counter-example.<AIAsk question="JS is single-threaded — how does it handle concurrency? What's the execution order of microtasks and macrotasks in the event loop?" lang="en" />
 >
 > **Q2 (Think)**: What are V8's Hidden Classes and Inline Caches? How do you write code that takes full advantage of V8's optimizations?<AIAsk question="What are V8's Hidden Classes and Inline Caches? How do you write code that takes full advantage of V8's optimizations?" lang="en" />
 >

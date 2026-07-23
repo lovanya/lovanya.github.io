@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand package management? My answer is **yes** — not to memorize npm install commands, but to build the engineering judgment of "how dependency graphs affect project structure and release flow". Three reasons:
+Should a frontend architect understand package management? My answer is **yes**— not to memorize npm install commands, but to build the engineering judgment of "how dependency graphs affect project structure and release flow". Three reasons:
 
-1. **The ERP Monorepo on resume is a real project.** 5+ sub-packages (ui / utils / eslint-config / ts-config / cli) architecture, **single-repo multi-package** is the standard answer for admin backends.
-2. **Version management determines release safety.** Manual `npm version` + `npm publish` is error-prone, **Changesets automates "what changed → what version to release → auto-write changelog"**.
-3. **Disk + install speed is hidden productivity.** A 5-project monorepo with npm install takes 12GB, **pnpm + hardlinks takes only 3GB**, CI time from 8min to 2min.
+1. **The ERP Monorepo is a real project.**5+ sub-packages (ui / utils / eslint-config / ts-config / cli) architecture, **single-repo multi-package**is the standard answer for admin backends.
+2. **Version management determines release safety.**Manual `npm version` + `npm publish` is error-prone, **Changesets automates "what changed → what version to release → auto-write changelog"**.
+3. **Disk + install speed is hidden productivity.**A 5-project monorepo with npm install takes 12GB, **pnpm + hardlinks takes only 3GB**, CI time from 8min to 2min.
 
 This is post #13 of the *Frontend Architecture Cultivation Path* series. We skip specific config file details (no talking about `--registry`), use architecture diagrams + real data + selection tables to make pnpm / workspace / Changesets / Turborepo concrete. The next post deep-dives into front-end engineering (CI/CD / standards / review).
 
@@ -22,10 +22,10 @@ This is post #13 of the *Frontend Architecture Cultivation Path* series. We skip
 
 | Tool | Install speed | Disk usage | monorepo | node_modules structure | hoisting |
 |---|---|---|---|---|---|
-| npm | Slow | **Large** (independent copy per project) | workspaces | Nested | Early nested, npm 3+ flat |
+| npm | Slow | **Large**(independent copy per project) | workspaces | Nested | Early nested, npm 3+ flat |
 | yarn | Medium | Large | workspaces | Nested | Flat |
-| yarn pnp | Fast | **Zero** (no node_modules) | Limited support | No node_modules | None |
-| **pnpm** | **Fast** (multi-thread + hardlink) | **Tiny** (all packages share store) | **Excellent** | **Symlink + hardlink** | Hoist on demand |
+| yarn pnp | Fast | **Zero**(no node_modules) | Limited support | No node_modules | None |
+| **pnpm**| **Fast**(multi-thread + hardlink) | **Tiny**(all packages share store) | **Excellent**| **Symlink + hardlink**| Hoist on demand |
 
 **Three pnpm advantages**:
 
@@ -62,9 +62,9 @@ packages:
 ```
 
 **Architect's mantra**:
-- **apps/** is publish artifact (admin / mobile app)
-- **packages/** is internal library (referenced by apps)
-- **tools/** is build / deployment tools
+- **apps/**is publish artifact (admin / mobile app)
+- **packages/**is internal library (referenced by apps)
+- **tools/**is build / deployment tools
 
 ## 3. Changesets: Semantic Versioning + Changelog Automation
 
@@ -115,7 +115,7 @@ Add virtual scroll support
 #    - git tag + npm publish
 ```
 
-**Production case**: SF Express ERP with Changesets, **release error rate from 1-2/month to 0** — version numbers, changelog, tags all automated.
+**Production case**: large ERP with Changesets, **release error rate from 1-2/month to 0**— version numbers, changelog, tags all automated.
 
 ## 4. Turborepo: Incremental Build + Remote Cache
 
@@ -145,7 +145,7 @@ Turborepo is Vercel's monorepo task orchestrator:
 
 **Core benefits**:
 
-1. **Incremental builds**: only build **packages affected by this change** (based on dependency graph + git diff)
+1. **Incremental builds**: only build **packages affected by this change**(based on dependency graph + git diff)
 2. **Remote cache**: `turbo run build --summarize` uploads artifacts to Vercel, CI directly downloads cache
 3. **Parallel execution**: multiple packages' build / test run concurrently (no serial)
 
@@ -162,14 +162,14 @@ A monorepo (10 packages):
 
 ## 5. Monorepo Tools Cross-Comparison
 
-| Dimension | Lerna | Nx | Rush | **Turborepo** |
+| Dimension | Lerna | Nx | Rush | **Turborepo**|
 |---|---|---|---|---|
-| Learning curve | Medium | Steep | Steep | **Low** |
-| Incremental build | ❌ Weak | ✅ Strong | ✅ Strong | ✅ **Good** |
-| Remote cache | Needs payment | ✅ | ✅ | ✅ **Vercel free tier** |
-| Task orchestration | ✅ | ✅ Strong | ✅ Strong | ✅ **Simple** |
-| Vite compatible | ✅ | ✅ | ✅ | ✅ **Perfect** |
-| Community size | Medium | Large | Medium | **Growing fast** |
+| Learning curve | Medium | Steep | Steep | **Low**|
+| Incremental build | ❌ Weak | ✅ Strong | ✅ Strong | ✅ **Good**|
+| Remote cache | Needs payment | ✅ | ✅ | ✅ **Vercel free tier**|
+| Task orchestration | ✅ | ✅ Strong | ✅ Strong | ✅ **Simple**|
+| Vite compatible | ✅ | ✅ | ✅ | ✅ **Perfect**|
+| Community size | Medium | Large | Medium | **Growing fast**|
 
 **Architect's decision**:
 - **Small monorepo (< 10 packages)**: Turborepo
@@ -178,11 +178,11 @@ A monorepo (10 packages):
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't mix npm + pnpm in monorepo.** Inconsistent lockfiles cause dependency version drift, **production deploys will fail**.
-2. **Don't put "shared tools" in root package.json.** Independent small packages like `eslint-config` use `extends`, **don't cram 50 dev deps into root**.
-3. **Don't write `*` for dependency versions.** Inter-package dependencies in monorepo are hard deps (workspace protocol), **version must be explicit** for dependency analysis to work.
-4. **Don't ignore peer dependencies in Changesets.** When changing `@ui/table`, if it depends on `@utils/format` that also needs upgrade, **declare both in the changeset**.
-5. **Don't run anything besides `--frozen-lockfile` in CI.** CI uses `pnpm install --frozen-lockfile` to ensure lockfile isn't modified, **avoid build drift**.
+1. **Don't mix npm + pnpm in monorepo.**Inconsistent lockfiles cause dependency version drift, **production deploys will fail**.
+2. **Don't put "shared tools" in root package.json.**Independent small packages like `eslint-config` use `extends`, **don't cram 50 dev deps into root**.
+3. **Don't write `*` for dependency versions.**Inter-package dependencies in monorepo are hard deps (workspace protocol), **version must be explicit**for dependency analysis to work.
+4. **Don't ignore peer dependencies in Changesets.**When changing `@ui/table`, if it depends on `@utils/format` that also needs upgrade, **declare both in the changeset**.
+5. **Don't run anything besides `--frozen-lockfile` in CI.**CI uses `pnpm install --frozen-lockfile` to ensure lockfile isn't modified, **avoid build drift**.
 
 ## Summary
 
@@ -194,7 +194,7 @@ Five key facts that thread package management and Monorepo together:
 - **Turborepo incremental builds**: based on dependency graph + git diff only build affected packages, remote cache makes CI 10× faster.
 - **Decision tree**: small monorepo Turborepo / medium-large Nx / very large Nx.
 
-**Next post**: Front-end engineering system — CI/CD / standards / review / team best practices, SF Express + Rouyu two engineering experience summaries.
+**Next post**: Front-end engineering system — CI/CD / standards / review / team best practices, multi-project two engineering experience summaries.
 
 ## 5 Key Interview Question Tracks
 
@@ -202,7 +202,7 @@ Five key facts that thread package management and Monorepo together:
 
 > **Q1 (Answer)**: What are the core advantages of pnpm over npm / yarn? Why is pnpm strongly recommended for monorepo?
 >
-> **A**: pnpm three core advantages: ① **Hardlink saves disk** — all projects share global store (~/.pnpm-store/), same-version dependencies stored once, a 5-project monorepo with pnpm drops from 12GB to 3GB; ② **Symlinks preserve structure** — `node_modules/foo` is a symlink to the global store, preserving ESM resolution's nested structure; ③ **Strict dependency isolation** — packages can't "accidentally" access undeclared dependencies, avoiding npm's phantom dependency issues. **monorepo strongly recommended**: because hardlinks make disk and install time O(1) when multiple workspaces share the same version.<AIAsk question="What are the core advantages of pnpm over npm / yarn? Why is pnpm strongly recommended for monorepo?" lang="en" />
+> **A**: pnpm three core advantages: ① **Hardlink saves disk**— all projects share global store (~/.pnpm-store/), same-version dependencies stored once, a 5-project monorepo with pnpm drops from 12GB to 3GB; ② **Symlinks preserve structure**— `node_modules/foo` is a symlink to the global store, preserving ESM resolution's nested structure; ③ **Strict dependency isolation**— packages can't "accidentally" access undeclared dependencies, avoiding npm's phantom dependency issues. **monorepo strongly recommended**: because hardlinks make disk and install time O(1) when multiple workspaces share the same version.<AIAsk question="What are the core advantages of pnpm over npm / yarn? Why is pnpm strongly recommended for monorepo?" lang="en" />
 >
 > **Q2 (Think)**: What's the Changesets workflow? What pain points does it solve in version management?<AIAsk question="What's the Changesets workflow? What pain points does it solve in version management?" lang="en" />
 >

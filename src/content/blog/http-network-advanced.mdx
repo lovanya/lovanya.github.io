@@ -38,7 +38,7 @@ HTTP/1.1 引入了 **Keep-Alive**（连接复用）和 **管道（pipelining）*
 2. **连接数限制**——浏览器对同一域名并发连接数有限制（Chrome 6 个），多出的请求排队。
 3. **队头阻塞（Head-of-Line Blocking）**——TCP 层丢包会重传整个窗口，所有在飞的 HTTP 请求都卡住。
 
-**生产案例**：顺丰 ERP 首页要加载 12 个 JS chunk（vendor、polyfill、4 个业务模块、路由、状态管理、监控、统计、SDK），HTTP/1.1 下需要 6 + 6 = 12 个 RTT（两批），**单次首屏 = 6 × RTT**。
+**生产案例**：大型 ERP 首页要加载 12 个 JS chunk（vendor、polyfill、4 个业务模块、路由、状态管理、监控、统计、SDK），HTTP/1.1 下需要 6 + 6 = 12 个 RTT（两批），**单次首屏 = 6 × RTT**。
 
 ## 二、HTTP/2：二进制分帧与多路复用
 
@@ -89,7 +89,7 @@ HTTP/2 引入了 **Server Push**——服务端主动推送资源（不需要客
 
 ## 三、HTTP/3：基于 QUIC 的真正并行
 
-HTTP/3 是 **2022 年正式发布**（IETF RFC 9114），用 **QUIC** 替代 TCP 作为传输层。**核心突破**：**UDP 之上的可靠传输**。
+HTTP/3 是 **2022 年正式发布**（IETF RFC 9114），用 **QUIC**替代 TCP 作为传输层。**核心突破**：**UDP 之上的可靠传输**。
 
 ### 3.1 QUIC 为什么用 UDP
 
@@ -133,7 +133,7 @@ TCP 的核心问题：**内核态**实现，协议升级需要操作系统更新
 - Fastly **可配置开启**
 - AWS CloudFront **支持 HTTP/3**（2023+）
 
-**顺丰 ERP 升级到 Cloudflare + HTTP/3 后，TTFB 从 800ms 降到 80ms**（4.2s→1.8s 首屏优化的第一步）。
+**大型 ERP 升级到 Cloudflare + HTTP/3 后，TTFB 从 800ms 降到 80ms**（4.2s→1.8s 首屏优化的第一步）。
 
 ## 四、TLS 1.3：让 HTTPS 不再慢
 
@@ -206,10 +206,10 @@ Cache-Control: private, no-store
 
 ### 5.3 ETag 与 304 协商
 
-**ETag（Entity Tag）** 是资源的"指纹"，服务端给每个响应生成。客户端下次请求带 `If-None-Match: <etag>`，服务端比较：
+**ETag（Entity Tag）**是资源的"指纹"，服务端给每个响应生成。客户端下次请求带 `If-None-Match: <etag>`，服务端比较：
 
-- **资源未变** → 返回 `304 Not Modified`，**无 body**
-- **资源变了** → 返回 `200 OK` + 新内容
+- **资源未变**→ 返回 `304 Not Modified`，**无 body**
+- **资源变了**→ 返回 `200 OK` + 新内容
 
 **生产数据**：300 KB 的 JS bundle，每次都下载 = 800ms。**ETag 命中后 304 通常 < 50ms**。**所以 hash bundle 一定要配 ETag**。
 
@@ -231,7 +231,7 @@ self.addEventListener('fetch', (e) => {
 });
 ```
 
-**stale-while-revalidate** 是 Service Worker 最常用的策略：用户秒开（缓存），后台拉新（更新），下次访问拿最新。
+**stale-while-revalidate**是 Service Worker 最常用的策略：用户秒开（缓存），后台拉新（更新），下次访问拿最新。
 
 ## 六、CDN 与边缘计算选型
 

@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂 Web Components？我的回答是 **要**——不是去用 Lit / Stencil，而是建立"跨框架组件库的核心抽象层"的工程判断。原因有三：
 
-1. **简历里 8 个跨 Vue/React 通用组件是稀缺经验**。跨框架组件库的核心就是 Web Components + 框架 wrapper,**理解了能设计独立于框架的组件**。
+1. **8 个跨 Vue/React 通用组件是稀缺经验**。跨框架组件库的核心就是 Web Components + 框架 wrapper,**理解了能设计独立于框架的组件**。
 2. **Web Components 是浏览器标准**。不像 React 只能 React 用，**Custom Elements 跑在所有框架里**——Vue / React / Angular / Solid / Svelte 都能消费。
 3. **未来 5 年跨端组件库的趋势**。Lit 3.0 / Lit SSR / Web Components + Signals / 跨框架组件库设计,**底层都是 Web Components**。
 
@@ -146,7 +146,7 @@ class SmartTable extends HTMLElement {
 
 ## 五、8 个跨 Vue/React 通用组件的设计哲学
 
-简历里 **"8 个跨 Vue/React 通用组件"**——核心架构是 **Web Components 抽象 + 框架 wrapper**：
+**"8 个跨 Vue/React 通用组件"**——核心架构是 **Web Components 抽象 + 框架 wrapper**：
 
 ```mermaid
 graph TD
@@ -164,15 +164,15 @@ graph TD
 
 | 方案 | 优点 | 缺点 |
 |---|---|---|
-| **Lit** | 现代、TS 友好、生态活跃 | 学习曲线 |
-| **Stencil** | 编译时优化、多框架输出 | 配置复杂 |
-| **自实现 HTMLElement** | 零依赖、灵活 | 工作量大 |
-| **Vue / React 包装 Web Components** | 复用已有组件 | 仍是各框架一份 |
+| **Lit**| 现代、TS 友好、生态活跃 | 学习曲线 |
+| **Stencil**| 编译时优化、多框架输出 | 配置复杂 |
+| **自实现 HTMLElement**| 零依赖、灵活 | 工作量大 |
+| **Vue / React 包装 Web Components**| 复用已有组件 | 仍是各框架一份 |
 
 **架构师决策**：
-- **新项目、追求效率** → Lit
-- **已有 Vue / React 组件库** → Stencil 编译输出
-- **极致性能 / 零依赖** → 原生 HTMLElement
+- **新项目、追求效率**→ Lit
+- **已有 Vue / React 组件库**→ Stencil 编译输出
+- **极致性能 / 零依赖**→ 原生 HTMLElement
 
 ## 七、生产实战：FinUI 跨框架组件库
 
@@ -181,8 +181,8 @@ graph LR
   A[需求<br/>FinUI 组件库<br/>Vue 3 + React 双版本] --> B[核心实现<br/>Lit 写 Web Component]
   B --> C[Vue 3 包装<br/>finui-vue / v-model + TS 类型]
   B --> D[React 包装<br/>finui-react / forwardRef + 类型]
-  C --> E[顺丰 ERP<br/>finui.example.com]
-  D --> F[柔宇管理后台<br/>rouyu.example.com]
+  C --> E[大型 ERP<br/>finui.example.com]
+  D --> F[管理后台<br/>rouyu.example.com]
 ```
 
 **生产数据**：
@@ -209,13 +209,13 @@ graph LR
 - **跨框架组件库**:Web Components 核心 + 框架 wrapper,**8 个通用组件节省 60% 维护**。
 - **选型决策**:新项目 Lit / 已有库 Stencil / 零依赖原生 HTMLElement。
 
-**下一篇**:前端监控体系——错误 / 性能 / 行为监控,顺丰 + 柔宇两段监控沉淀实战。
+**下一篇**:前端监控体系——错误 / 性能 / 行为监控, + 两段监控沉淀实战。
 
 ## 5 道重点面试问题方向
 
 > **Q1(答案)**:Web Components 三大技术是什么?为什么 Web Components 是跨框架组件库的核心抽象?
 >
-> **A**:三大技术:① **Custom Elements** — `customElements.define` 注册自定义 HTML 标签,Vue / React / Angular / Solid 都能用;② **Shadow DOM** — 组件内 DOM / 样式隔离,不会和外部 CSS 冲突;③ **HTML Templates + Slot** — 跨框架一致的内容分发机制。**为什么是跨框架核心抽象**:Web Components 是 **W3C 标准**,所有现代浏览器原生支持,**不被任何框架绑定**。**简历里 8 个跨 Vue/React 通用组件的核心架构就是**:Web Components 写核心逻辑 + Vue/React wrapper 做适配——改一次核心,两个框架同步,节省 60% 维护成本。<AIAsk question="Web Components 三大技术是什么?为什么 Web Components 是跨框架组件库的核心抽象?" />
+> **A**:三大技术:① **Custom Elements**— `customElements.define` 注册自定义 HTML 标签,Vue / React / Angular / Solid 都能用;② **Shadow DOM**— 组件内 DOM / 样式隔离,不会和外部 CSS 冲突;③ **HTML Templates + Slot**— 跨框架一致的内容分发机制。**为什么是跨框架核心抽象**:Web Components 是 **W3C 标准**,所有现代浏览器原生支持,**不被任何框架绑定**。**8 个跨 Vue/React 通用组件的核心架构就是**:Web Components 写核心逻辑 + Vue/React wrapper 做适配——改一次核心,两个框架同步,节省 60% 维护成本。<AIAsk question="Web Components 三大技术是什么?为什么 Web Components 是跨框架组件库的核心抽象?" />
 >
 > **Q2(思考)**:Shadow DOM 的样式隔离是怎么实现的?Web Components 内怎么让外部修改某些样式?
 >
@@ -231,7 +231,7 @@ graph LR
 >
 > **Q5(思考)**:你在 FinUI 跨框架组件库里是怎么设计 8 个通用组件的?Web Components 核心 + 框架 wrapper 的分工具体怎么落?
 >
-> **A**:**8 个通用组件 = SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor**。**分工**:Web Components 写**核心逻辑** — Shadow DOM 封装 + Custom Elements 注册 + observedAttributes 监听 props + slot 内容分发;框架 wrapper 只做**适配** — Vue 用 `defineComponent + v-model` / React 用 `forwardRef + useImperativeHandle`。**实战数据**:改一次核心,Vue 3 + React 双版本同步,节省 60% 维护成本——Vue 团队用 `finui-vue`,React 团队用 `finui-react`,组件库团队只维护一份 Lit 核心。<AIAsk question="你在 FinUI 跨框架组件库里是怎么设计 8 个通用组件的?Web Components 核心 + 框架 wrapper 的分工具体怎么落?" />
+> **A**:**8 个通用组件 = SmartTable / SmartForm / SmartDatePicker / SmartSelect / SmartTree / SmartUpload / SmartModal / SmartEditor**。**分工**:Web Components 写**核心逻辑**— Shadow DOM 封装 + Custom Elements 注册 + observedAttributes 监听 props + slot 内容分发;框架 wrapper 只做**适配**— Vue 用 `defineComponent + v-model` / React 用 `forwardRef + useImperativeHandle`。**实战数据**:改一次核心,Vue 3 + React 双版本同步,节省 60% 维护成本——Vue 团队用 `finui-vue`,React 团队用 `finui-react`,组件库团队只维护一份 Lit 核心。<AIAsk question="你在 FinUI 跨框架组件库里是怎么设计 8 个通用组件的?Web Components 核心 + 框架 wrapper 的分工具体怎么落?" />
 
 > 💡 每道题后面都有 AI 助手按钮,一键拿到详细答案。
 

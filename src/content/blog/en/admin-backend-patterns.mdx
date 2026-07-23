@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand admin backends? My answer is **yes** — not to copy Element Plus tables, but to build the engineering patterns for "form / table / ECharts three scenarios". Three reasons:
+Should a frontend architect understand admin backends? My answer is **yes**— not to copy Element Plus tables, but to build the engineering patterns for "form / table / ECharts three scenarios". Three reasons:
 
-1. **The "800+ page ERP accumulation" on resume is real experience.** Admin backends = **most repeated work domain**, **architect's job is to abstract commonalities, reduce business-side repetition**.
-2. **Forms / tables / ECharts three scenarios are 80% of admin backend code.** Get their engineering patterns right, **the remaining 20% edge cases are all solvable**.
-3. **Reusable vs customizable trade-off.** Admin backend component library isn't "write the perfect component", but "**cover 80% of scenarios + leave 20% escape hatch**".
+1. **"800+ page ERP accumulation" is real experience.**Admin backends = **most repeated work domain**, **architect's job is to abstract commonalities, reduce business-side repetition**.
+2. **Forms / tables / ECharts three scenarios are 80% of admin backend code.**Get their engineering patterns right, **the remaining 20% edge cases are all solvable**.
+3. **Reusable vs customizable trade-off.**Admin backend component library isn't "write the perfect component", but "**cover 80% of scenarios + leave 20% escape hatch**".
 
 This is post #24 of the *Frontend Architecture Cultivation Path* series. We skip specific component APIs (no Element Plus usage), use form / table / ECharts three scenarios' practical patterns + real cases to make admin backend architects' must-master engineering patterns concrete. The next post deep-dives into micro-frontend Module Federation.
 
@@ -41,10 +41,10 @@ This is post #24 of the *Frontend Architecture Cultivation Path* series. We skip
 
 | Solution | Bundle | Performance | Types | Recommendation |
 |---|---|---|---|---|
-| **Controlled components** | 0 | Bad with many fields (re-render) | ✅ | ⭐⭐ (small forms) |
-| **Formik** | 13KB | Medium | ✅ | ⭐⭐⭐ |
-| **React Hook Form** | 9KB | **Excellent** (uncontrolled) | ✅ | ⭐⭐⭐⭐⭐ |
-| **Vee-Validate** | 15KB | Medium | ✅ | ⭐⭐⭐⭐ (Vue) |
+| **Controlled components**| 0 | Bad with many fields (re-render) | ✅ | ⭐⭐ (small forms) |
+| **Formik**| 13KB | Medium | ✅ | ⭐⭐⭐ |
+| **React Hook Form**| 9KB | **Excellent**(uncontrolled) | ✅ | ⭐⭐⭐⭐⭐ |
+| **Vee-Validate**| 15KB | Medium | ✅ | ⭐⭐⭐⭐ (Vue) |
 
 ### 2.2 React Hook Form Practice
 
@@ -86,7 +86,7 @@ function MyForm() {
 - **Zod validation**: schema as documentation, **TypeScript types + runtime validation unified**
 - **Performance**: 100-field form re-render count from 100+ to 1
 
-**Production case**: SF Express ERP 800+ forms use RHF + Zod, **first-paint 200ms → 80ms** (avoided controlled mode's 100 input re-renders).
+**Production case**: large ERP 800+ forms use RHF + Zod, **first-paint 200ms → 80ms**(avoided controlled mode's 100 input re-renders).
 
 ## 3. Table Solutions: TanStack Table vs AG Grid vs vxe-table
 
@@ -94,10 +94,10 @@ function MyForm() {
 
 | Solution | Features | Use case |
 |---|---|---|
-| **TanStack Table** | Headless, TS-friendly, framework-agnostic | **Strongly recommended**, custom UI flexible |
-| **AG Grid** | Most complete features, Excel-style | Enterprise-grade, need Excel features |
-| **vxe-table** | Vue ecosystem, config-style API | Vue admin backends |
-| **Element Plus Table** | Simple use, few config options | Simple lists |
+| **TanStack Table**| Headless, TS-friendly, framework-agnostic | **Strongly recommended**, custom UI flexible |
+| **AG Grid**| Most complete features, Excel-style | Enterprise-grade, need Excel features |
+| **vxe-table**| Vue ecosystem, config-style API | Vue admin backends |
+| **Element Plus Table**| Simple use, few config options | Simple lists |
 
 ### 3.2 TanStack Table + Virtual Scrolling
 
@@ -246,10 +246,10 @@ function CustomerList() {
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
 1. **Don't use controlled mode for 100+ field forms.** **Every input triggers 100+ re-renders**. Use React Hook Form's uncontrolled mode.
-2. **Don't use Element Plus simple Table for large tables.** 300 columns × 500 rows = **5s render + 5fps scroll**. **Must use TanStack Table + virtual scrolling**.
+2. **Don't use Element Plus simple Table for large tables.**300 columns × 500 rows = **5s render + 5fps scroll**. **Must use TanStack Table + virtual scrolling**.
 3. **Don't let each ECharts component instance new one.** **Use chart pool for large screens**.
-4. **Don't split modules by "technology".** Split by business domain (finance / hr / crm), **business domain = team = deployment unit**.
-5. **Don't forget accessibility.** Admin backends often ignored WCAG, but **government procurement / medical systems require it** — tables need aria-row / aria-col, forms need aria-required / aria-invalid.
+4. **Don't split modules by "technology".**Split by business domain (finance / hr / crm), **business domain = team = deployment unit**.
+5. **Don't forget accessibility.**Admin backends often ignored WCAG, but **government procurement / medical systems require it**— tables need aria-row / aria-col, forms need aria-required / aria-invalid.
 
 ## Summary
 
@@ -270,23 +270,23 @@ Six key facts that thread admin backend development together:
 
 > **Q1 (Answer)**: What's the core advantage of React Hook Form over Formik / controlled components? Why must large forms use it?
 >
-> **A**: **Core advantage**: **uncontrolled mode** — uses ref not state, avoids re-render on every input. **Formik / controlled components** trigger re-render on every input, 100-field form = 100 re-renders; **React Hook Form** only re-renders when you call `watch` / `formState`, re-render count from 100 to 1. **Zod integration**: schema is TypeScript types + runtime validation, **types auto-derived from schema**. **Large form must-use**: 100 fields + validation + async submit, controlled mode **first-paint 200ms → 80ms**, re-render reduced 100×. **Production case**: SF Express ERP 800+ forms use RHF + Zod, form performance + type safety both win.<AIAsk question="What's the core advantage of React Hook Form over Formik / controlled components? Why must large forms use it?" lang="en" />
+> **A**: **Core advantage**: **uncontrolled mode**— uses ref not state, avoids re-render on every input. **Formik / controlled components**trigger re-render on every input, 100-field form = 100 re-renders; **React Hook Form**only re-renders when you call `watch` / `formState`, re-render count from 100 to 1. **Zod integration**: schema is TypeScript types + runtime validation, **types auto-derived from schema**. **Large form must-use**: 100 fields + validation + async submit, controlled mode **first-paint 200ms → 80ms**, re-render reduced 100×. **Production case**: large ERP 800+ forms use RHF + Zod, form performance + type safety both win.<AIAsk question="What's the core advantage of React Hook Form over Formik / controlled components? Why must large forms use it?" lang="en" />
 >
 > **Q2 (Think)**: How to choose between TanStack Table and Element Plus Table? What solution for large tables?
 >
-> **A**: **TanStack Table** is headless (no UI library), only provides data + state management, **you write UI yourself for max flexibility**, TS type inference complete; **Element Plus Table** simple to use but **few config options**, 100+ columns + cell editing = can't handle. **Large table must use TanStack Table + virtual scrolling**: `useReactTable` manages data + state, `useVirtualizer` manages visible row rendering, **300 columns × 500 rows from 5s render → 50ms**. **Production case**: FinUI big table v1 used Element Plus couldn't hold, v2 switched to TanStack Table + react-virtual 16× speedup.<AIAsk question="How to choose between TanStack Table and Element Plus Table? What solution for large tables?" lang="en" />
+> **A**: **TanStack Table**is headless (no UI library), only provides data + state management, **you write UI yourself for max flexibility**, TS type inference complete; **Element Plus Table**simple to use but **few config options**, 100+ columns + cell editing = can't handle. **Large table must use TanStack Table + virtual scrolling**: `useReactTable` manages data + state, `useVirtualizer` manages visible row rendering, **300 columns × 500 rows from 5s render → 50ms**. **Production case**: FinUI big table v1 used Element Plus couldn't hold, v2 switched to TanStack Table + react-virtual 16× speedup.<AIAsk question="How to choose between TanStack Table and Element Plus Table? What solution for large tables?" lang="en" />
 >
 > **Q3 (Think)**: What are ECharts' performance bottlenecks in dashboard / real-time refresh scenarios? How to optimize?
 >
-> **A**: **Three performance bottlenecks**: ① **Instance not cleaned** — `echarts.init` not calling `dispose()` causes memory leak + GPU consumption; ② **Big data not sampled** — 100K-point line chart renders 5s, **use `sampling: 'lttb'`** to downsample to 1K points; ③ **Multiple charts without pool** — dashboard with 20 charts each new one, switching to chart pool reuses from 3s → 800ms. **Real-time refresh scenarios**: **use `setOption` incremental update** (don't destroy + init); **big data stream use `appendData`**; **high-frequency refresh throttle with requestAnimationFrame**.<AIAsk question="What are ECharts' performance bottlenecks in dashboard / real-time refresh scenarios? How to optimize?" lang="en" />
+> **A**: **Three performance bottlenecks**: ① **Instance not cleaned**— `echarts.init` not calling `dispose()` causes memory leak + GPU consumption; ② **Big data not sampled**— 100K-point line chart renders 5s, **use `sampling: 'lttb'`**to downsample to 1K points; ③ **Multiple charts without pool**— dashboard with 20 charts each new one, switching to chart pool reuses from 3s → 800ms. **Real-time refresh scenarios**: **use `setOption` incremental update**(don't destroy + init); **big data stream use `appendData`**; **high-frequency refresh throttle with requestAnimationFrame**.<AIAsk question="What are ECharts' performance bottlenecks in dashboard / real-time refresh scenarios? How to optimize?" lang="en" />
 >
 > **Q4 (Think)**: For a 800+ page large ERP project, how to split modules by business domain? How to organize routes?
 >
-> **A**: **By business domain, not by technology** — `/finance` (Finance) + `/hr` (HR) + `/crm` (CRM), **business domain = team = deployment unit**. **Route organization**: each business domain independent router module, main route uses lazy import to load, between domains use `<RouterOutlet>` nested. **Cross-domain communication**: use Pinia / Zustand global store, **avoid event bus** (hard to debug). **Shared code**: three layers domain-specific / common / shared, domains don't depend on each other. **Deployment strategy**: micro-frontend / Module Federation / simple monorepo all work, **business complexity determines solution**.<AIAsk question="For a 800+ page large ERP project, how to split modules by business domain? How to organize routes?" lang="en" />
+> **A**: **By business domain, not by technology**— `/finance` (Finance) + `/hr` (HR) + `/crm` (CRM), **business domain = team = deployment unit**. **Route organization**: each business domain independent router module, main route uses lazy import to load, between domains use `<RouterOutlet>` nested. **Cross-domain communication**: use Pinia / Zustand global store, **avoid event bus**(hard to debug). **Shared code**: three layers domain-specific / common / shared, domains don't depend on each other. **Deployment strategy**: micro-frontend / Module Federation / simple monorepo all work, **business complexity determines solution**.<AIAsk question="For a 800+ page large ERP project, how to split modules by business domain? How to organize routes?" lang="en" />
 >
-> **Q5 (Think)**: In your SF Express ERP project, how exactly did you design the 5 core hooks (useTable / useForm / usePermission / useAsync / useToast)?
+> **Q5 (Think)**: In your large ERP project, how exactly did you design the 5 core hooks (useTable / useForm / usePermission / useAsync / useToast)?
 >
-> **A**: **5 core hooks design philosophy**: **80% of business pages use the same 5 hooks**. ① **useTable(apiUrl, columns)** — internally wraps useQuery + useReactTable + pagination + filters + loading, **business only cares about columns**; ② **useForm(schema, defaultValues)** — RHF + Zod, returns `register / formState`; ③ **usePermission()** — `useCan('edit:user')` permission hook, route-level + component-level both usable; ④ **useAsync(asyncFn, deps)** — `useEffect` wrapper, auto cleanup; ⑤ **useToast()** — global toast queue, **errors auto-toast**. **Business pages average 100 lines**, **data + state all hook-ified**, 800+ pages use the same set.<AIAsk question="In your SF Express ERP project, how exactly did you design the 5 core hooks (useTable / useForm / usePermission / useAsync / useToast)?" lang="en" />
+> **A**: **5 core hooks design philosophy**: **80% of business pages use the same 5 hooks**. ① **useTable(apiUrl, columns)**— internally wraps useQuery + useReactTable + pagination + filters + loading, **business only cares about columns**; ② **useForm(schema, defaultValues)**— RHF + Zod, returns `register / formState`; ③ **usePermission()**— `useCan('edit:user')` permission hook, route-level + component-level both usable; ④ **useAsync(asyncFn, deps)**— `useEffect` wrapper, auto cleanup; ⑤ **useToast()**— global toast queue, **errors auto-toast**. **Business pages average 100 lines**, **data + state all hook-ified**, 800+ pages use the same set.<AIAsk question="In your large ERP project, how exactly did you design the 5 core hooks (useTable / useForm / usePermission / useAsync / useToast)?" lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

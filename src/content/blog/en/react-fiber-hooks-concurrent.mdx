@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand React internals? My answer is **yes** — not to read react-reconciler source code, but to build the engineering intuition of "why React is designed this way". Three reasons:
+Should a frontend architect understand React internals? My answer is **yes**— not to read react-reconciler source code, but to build the engineering intuition of "why React is designed this way". Three reasons:
 
-1. **Performance tuning demands it.** Why does useMemo sometimes make things slower? Why does setState in async callbacks need a function? Without principles, you just guess.
-2. **Cross-framework component reuse demands it.** The resume line "8 cross-Vue/React universal components" — **each abstraction stomped on React vs Vue design philosophy differences**.
-3. **Server Components is the next 5 years' direction.** Understanding Fiber / Concurrent is the prerequisite for understanding RSC, **without this layer you can't read React 19**.
+1. **Performance tuning demands it.**Why does useMemo sometimes make things slower? Why does setState in async callbacks need a function? Without principles, you just guess.
+2. **Cross-framework component reuse demands it.**The "8 cross-Vue/React universal components" — **each abstraction stomped on React vs Vue design philosophy differences**.
+3. **Server Components is the next 5 years' direction.**Understanding Fiber / Concurrent is the prerequisite for understanding RSC, **without this layer you can't read React 19**.
 
 This is post #8 of the *Frontend Architecture Cultivation Path* series. We skip reconciler source code (no commit-by-commit exploration), use architecture diagrams + sequence diagrams + real performance numbers to make React 16+'s four major internals concrete: Fiber / Hooks / Concurrent / Server Components. The next post deep-dives into Vue 3's reactivity + Composition API.
 
@@ -43,7 +43,7 @@ function Counter() {
 
 ### 2.1 Why Fiber Was Needed
 
-Pre-React-15 used **Stack Reconciler** — recursive traversal of the entire component tree, **non-interruptible**.
+Pre-React-15 used **Stack Reconciler**— recursive traversal of the entire component tree, **non-interruptible**.
 
 **Problems**:
 - Rendering a 1000-component tree blocks the main thread for 100ms+
@@ -130,7 +130,7 @@ function useState<T>(initial: T) {
 
 **Key insights**:
 - **Hooks linked list is bound to Fiber node**, list is freed when component unmounts
-- **Each render reads from list head in order**, so **Hooks call order cannot change** (this is why you can't call Hooks in conditions)
+- **Each render reads from list head in order**, so **Hooks call order cannot change**(this is why you can't call Hooks in conditions)
 
 ### 3.2 useEffect's Trap: Dependency Array
 
@@ -150,7 +150,7 @@ const ref = useRef(count);
 useEffect(() => { ref.current = count; });  // no dep array, runs every render
 ```
 
-**Production case**: a FinUI form component had useEffect missing a dependency, causing async validation to **read stale state** — switching to ref solved it.
+**Production case**: a FinUI form component had useEffect missing a dependency, causing async validation to **read stale state**— switching to ref solved it.
 
 ### 3.3 useMemo / useCallback: Performance Optimization Double-Edged Sword
 
@@ -163,11 +163,11 @@ const handleClick = useCallback(() => doThing(id), [id]);
 const doubled = useMemo(() => count * 2, [count]);  // 10× slower than count * 2
 ```
 
-**Dan Abramov (React core team)**: "useMemo makes code slower in most cases because it does dependency comparison and cache management. **Only use it after confirming** it's a bottleneck."
+**Dan Abramov (React core team)**: "useMemo makes code slower in most cases because it does dependency comparison and cache management. **Only use it after confirming**it's a bottleneck."
 
 ### 3.4 React 19's React Compiler: Automatic Memoization
 
-React 19 introduced **React Compiler** (experimental 2024, gradually stabilizing), which **automatically** does what useMemo / useCallback do:
+React 19 introduced **React Compiler**(experimental 2024, gradually stabilizing), which **automatically**does what useMemo / useCallback do:
 
 ```javascript
 // What you write: no useMemo
@@ -204,7 +204,7 @@ setCount(c => c + 1);  // won't trigger two re-renders
 setName('Alice');       // merged into one re-render
 ```
 
-**Production case**: an admin backend search box — **input + list filter** are two state changes. **Marking list filter as non-urgent via useTransition**, input updates instantly, list updates 200ms later. **3× perceived smoothness improvement**.
+**Production case**: an admin backend search box — **input + list filter**are two state changes. **Marking list filter as non-urgent via useTransition**, input updates instantly, list updates 200ms later. **3× perceived smoothness improvement**.
 
 ### 4.2 Suspense in Concurrent Mode
 
@@ -219,7 +219,7 @@ setName('Alice');       // merged into one re-render
 2. React **displays fallback**, doesn't unmount parent
 3. Promise resolves → **replace fallback with real content**
 
-**Server Components** are built on this mechanism — server components throw Promise (serialized), client doesn't block.
+**Server Components**are built on this mechanism — server components throw Promise (serialized), client doesn't block.
 
 ## 5. Server Components: Rendering Crosses Boundaries Again
 
@@ -267,7 +267,7 @@ async function saveUser(formData: FormData) {
 ```
 
 **Bundle size impact**:
-- Entire page only **interactive components** (LikeButton / SearchInput) need JS
+- Entire page only **interactive components**(LikeButton / SearchInput) need JS
 - Static layout, server-side data fetching, SEO meta — **all zero JS**
 
 **Production data**: a SaaS backend's RSC refactor — **first-screen JS bundle from 280KB to 65KB (-77%)**, LCP from 2.1s to 1.4s.
@@ -292,11 +292,11 @@ React render → commit DOM update → useLayoutEffect → browser paint → use
 
 ## 7. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't call Hooks inside conditions / loops.** Hooks depend on call order, conditional calls misalign the hook list — **the whole component crashes**.
-2. **Don't abuse useMemo / useCallback.** **Profile first** (Performance panel / React DevTools Profiler), confirm it's a bottleneck before optimizing. **React 19+ React Compiler makes most manual memo obsolete**.
-3. **Don't use `useEffect(() => fetch(...), [])` as SSR fetch.** useEffect runs on client, not during SSR. **Next.js uses `getServerSideProps` or directly `await` inside Server Components**.
-4. **Don't put all state in Redux / Zustand.** What `useState` / `useRef` / `useContext` can solve, don't put in a global store. **80% of projects over-engineer here**.
-5. **Don't ignore React 18's automatic batching boundaries.** Promises / setTimeout / event handlers now auto-batch multiple setStates, but **if you use `ref.current = ...` to trigger re-render, know that ref doesn't participate in batching**.
+1. **Don't call Hooks inside conditions / loops.**Hooks depend on call order, conditional calls misalign the hook list — **the whole component crashes**.
+2. **Don't abuse useMemo / useCallback.** **Profile first**(Performance panel / React DevTools Profiler), confirm it's a bottleneck before optimizing. **React 19+ React Compiler makes most manual memo obsolete**.
+3. **Don't use `useEffect(() => fetch(...), [])` as SSR fetch.**useEffect runs on client, not during SSR. **Next.js uses `getServerSideProps` or directly `await` inside Server Components**.
+4. **Don't put all state in Redux / Zustand.**What `useState` / `useRef` / `useContext` can solve, don't put in a global store. **80% of projects over-engineer here**.
+5. **Don't ignore React 18's automatic batching boundaries.**Promises / setTimeout / event handlers now auto-batch multiple setStates, but **if you use `ref.current = ...` to trigger re-render, know that ref doesn't participate in batching**.
 
 ## Summary
 
@@ -318,7 +318,7 @@ Seven key facts that thread React internals together:
 
 > **Q1 (Answer)**: What problem does React's Fiber reconciler solve? What are the pain points of Stack Reconciler?
 >
-> **A**: **Stack Reconciler pain points**: ① Render process **non-interruptible** — recursive rendering of 1000 components synchronously blocks the main thread for 100ms+, user input / scroll all stuck; ② **No priority scheduling** — animation / list updates / user input can't be distinguished by priority; ③ Browser has no breathing room, **frames drop**. **Fiber's solution**: ① Replace recursive tree with **linked-list structure** (child / sibling / return), **interruptible** (resume next event loop); ② **Double buffering** (current + workInProgress), render phase builds new tree, commit phase swaps atomically; ③ **5ms time slice**, render phase checks every 5ms whether browser needs to paint. **Interview tip**: explain "render phase interruptible, commit phase non-interruptible — guarantees no half-baked UI rendering".<AIAsk question="What problem does React's Fiber reconciler solve? What are the pain points of Stack Reconciler?" lang="en" />
+> **A**: **Stack Reconciler pain points**: ① Render process **non-interruptible**— recursive rendering of 1000 components synchronously blocks the main thread for 100ms+, user input / scroll all stuck; ② **No priority scheduling**— animation / list updates / user input can't be distinguished by priority; ③ Browser has no breathing room, **frames drop**. **Fiber's solution**: ① Replace recursive tree with **linked-list structure**(child / sibling / return), **interruptible**(resume next event loop); ② **Double buffering**(current + workInProgress), render phase builds new tree, commit phase swaps atomically; ③ **5ms time slice**, render phase checks every 5ms whether browser needs to paint. **Interview tip**: explain "render phase interruptible, commit phase non-interruptible — guarantees no half-baked UI rendering".<AIAsk question="What problem does React's Fiber reconciler solve? What are the pain points of Stack Reconciler?" lang="en" />
 >
 > **Q2 (Think)**: Why can't Hooks be written inside conditions? How does the linked-list structure affect Hook call order?<AIAsk question="Why can't Hooks be written inside conditions? How does the linked-list structure affect Hook call order?" lang="en" />
 >

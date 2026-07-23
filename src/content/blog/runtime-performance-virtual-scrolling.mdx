@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂运行时性能？我的回答是 **要**——不是去背 Web Vitals 阈值，而是建立"列表 10000 行怎么不卡"的工程判断。原因有三：
 
-1. **简历里 FinUI 大表格性能优化是真实案例**。300 列 × 500 行的表格，**虚拟滚动前后差距 800ms → 50ms（16 倍）**。
+1. **FinUI 大表格性能优化是真实案例**。300 列 × 500 行的表格，**虚拟滚动前后差距 800ms → 50ms（16 倍）**。
 2. **运行时性能是"看不见的 bug"**。LCP 优秀不代表 INP 优秀，**Web Vitals 三件套都要盯**。
 3. **架构师必须会选虚拟化方案**。react-window / vue-virtual-scroller / TanStack Virtual / 自实现，**决策直接影响 80% 长列表场景**。
 
@@ -53,18 +53,18 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
   虚拟滚动:  50ms 首屏 + 60fps 滚动
 ```
 
-**顺丰 ERP FinSpread 表格**：300 列 × 500 行，原生 `<table>` 渲染 **800ms**，上虚拟滚动后 **50ms（16 倍提速）**。
+**大型 ERP FinSpread 表格**：300 列 × 500 行，原生 `<table>` 渲染 **800ms**，上虚拟滚动后 **50ms（16 倍提速）**。
 
 ## 二、虚拟滚动库选型
 
 | 库 | 大小 | 特点 | 适用场景 |
 |---|---|---|---|
-| **react-window** | 6KB | 经典、API 简单 | 通用列表 / 网格 |
-| **react-virtuoso** | 30KB | 自动 resize / 动态高度 | 高度不固定的内容 |
-| **TanStack Virtual** | 15KB | 框架无关、TS 友好 | React / Vue / Solid |
-| **@tanstack/react-virtual** | 同上 | 同上,React 专版 | 大表格场景 |
-| **vue-virtual-scroller** | 14KB | Vue 1.x 时代的虚拟滚动 | Vue 2 / Vue 3 |
-| **@vueuse/core** | 内置 useVirtualList | Vue 3 composable | Vue 3 + TS |
+| **react-window**| 6KB | 经典、API 简单 | 通用列表 / 网格 |
+| **react-virtuoso**| 30KB | 自动 resize / 动态高度 | 高度不固定的内容 |
+| **TanStack Virtual**| 15KB | 框架无关、TS 友好 | React / Vue / Solid |
+| **@tanstack/react-virtual**| 同上 | 同上,React 专版 | 大表格场景 |
+| **vue-virtual-scroller**| 14KB | Vue 1.x 时代的虚拟滚动 | Vue 2 / Vue 3 |
+| **@vueuse/core**| 内置 useVirtualList | Vue 3 composable | Vue 3 + TS |
 
 **架构师决策**：
 
@@ -88,7 +88,7 @@ onCLS(metric => sendToAnalytics({ name: 'CLS', value: metric.value }));
 
 ### 3.2 INP 优化：交互响应延迟
 
-**INP（Interaction to Next Paint）** = 用户交互到下一帧绘制的时间。
+**INP（Interaction to Next Paint）**= 用户交互到下一帧绘制的时间。
 
 ```javascript
 // ❌ 反模式:同步计算卡主线程
@@ -182,11 +182,11 @@ FinUI 表格:
 
 | 方案 | 适用场景 | 性能 |
 |---|---|---|
-| **虚拟滚动** | 1000+ 行可滚动 | ⭐⭐⭐⭐⭐ |
-| **分页** | 数据不连续展示 | ⭐⭐⭐ |
-| **无限滚动** | 社交信息流 | ⭐⭐⭐⭐ |
-| **windowing** | 表格 + Grid | ⭐⭐⭐⭐⭐ |
-| **requestIdleCallback** | 后台预处理数据 | ⭐⭐⭐ |
+| **虚拟滚动**| 1000+ 行可滚动 | ⭐⭐⭐⭐⭐ |
+| **分页**| 数据不连续展示 | ⭐⭐⭐ |
+| **无限滚动**| 社交信息流 | ⭐⭐⭐⭐ |
+| **windowing**| 表格 + Grid | ⭐⭐⭐⭐⭐ |
+| **requestIdleCallback**| 后台预处理数据 | ⭐⭐⭐ |
 
 ## 六、踩坑提醒（资深架构师请重点看）
 
@@ -206,13 +206,13 @@ FinUI 表格:
 - **FinUI 大表格**：虚拟滚动 + 列虚拟化 + Cell memo + 数据分片,**16× 提速**。
 - **方案组合**：虚拟滚动 + 分页 + 无限滚动 + windowing 各有适用场景,**架构师按数据量选**。
 
-**下一篇**：Electron 实战——主进程 / 渲染进程 / USB Bridge / 柔记 PC 端项目实战经验。
+**下一篇**：Electron 实战——主进程 / 渲染进程 / USB Bridge / 带 USB 硬件通信的桌面应用项目实战经验。
 
 ## 5 道重点面试问题方向
 
 > **Q1（答案）**：虚拟滚动的核心原理是什么？10000 行列表怎么做到 60fps 滚动？
 >
-> **A**：虚拟滚动三大组件：① **可视区域窗口** —— 固定高度的 scroll container;② **总高度撑出滚动条** —— 用 padding-top / padding-bottom 模拟"10000 行总高度";③ **只渲染当前可见 DOM** —— scroll 事件触发 → 计算 visible range → 渲染该区间的数据。**10000 行从 800ms 降到 50ms 的关键**：DOM 节点从 100000+ 降到 ≈ 20 个,layout / paint / composite 的工作量都是 O(visible) 而不是 O(all)。**面试要点**:能说"虚拟滚动不是省了渲染,是**延迟渲染 + 复用 DOM 池**"。<AIAsk question="虚拟滚动的核心原理是什么？10000 行列表怎么做到 60fps 滚动？" />
+> **A**：虚拟滚动三大组件：① **可视区域窗口**—— 固定高度的 scroll container;② **总高度撑出滚动条**—— 用 padding-top / padding-bottom 模拟"10000 行总高度";③ **只渲染当前可见 DOM**—— scroll 事件触发 → 计算 visible range → 渲染该区间的数据。**10000 行从 800ms 降到 50ms 的关键**：DOM 节点从 100000+ 降到 ≈ 20 个,layout / paint / composite 的工作量都是 O(visible) 而不是 O(all)。**面试要点**:能说"虚拟滚动不是省了渲染,是**延迟渲染 + 复用 DOM 池**"。<AIAsk question="虚拟滚动的核心原理是什么？10000 行列表怎么做到 60fps 滚动？" />
 >
 > **Q2（思考）**：react-window / react-virtuoso / TanStack Virtual 三个虚拟滚动库怎么选？<AIAsk question="react-window / react-virtuoso / TanStack Virtual 三个虚拟滚动库怎么选？" />
 >

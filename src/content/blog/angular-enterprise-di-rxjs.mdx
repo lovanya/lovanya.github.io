@@ -14,7 +14,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 1. **大企业级项目靠 Angular 的约束活下来**。800+ 页面、200+ 开发者、5 个子团队并行——**没有强约定的代码会被任何人在 3 个月内拆解**。Angular 的 DI / 模块 / 严格 TS 全部是为这个规模设计的。
 2. **理解 Angular 才能理解 React / Vue 的设计动机**。Vue 3 的 Composition API 借鉴了 Angular 的 service 概念；React 19 的 RSC 借鉴了 Angular Universal；**前端框架是互相学习的**。
-3. **简历里 Angular + Ionic 跨端是稀缺能力**。Angular 的"原生 + Web 跨端"是混合开发的另一条路线，**懂 Angular 在混合场景里多一套工具**。
+3. **Angular + Ionic 跨端是稀缺能力**。Angular 的"原生 + Web 跨端"是混合开发的另一条路线，**懂 Angular 在混合场景里多一套工具**。
 
 这一篇是『前端架构修仙路』的第 10 篇。我跳过 Angular CLI 模板细节（不展开 schematic 工作流），用架构图 + DI 实例 + 真实案例，把 Angular 的依赖注入、RxJS 异步原语、Zone.js 变化追踪讲透，最后对比三大框架的工程取舍。下一篇深度聊响应式与移动端适配。
 
@@ -91,7 +91,7 @@ export class UserService {
 - **全局单例**（如 UserService）→ `@Injectable({ providedIn: 'root' })`
 - **模块级**（路由、权限）→ 在 `NgModule.providers` 声明
 - **组件级**（每个组件实例独立）→ 在 `Component.providers` 声明
-- **父子组件共享** → 用 `@Input()` 传值，**不要用 service 跨层级**
+- **父子组件共享**→ 用 `@Input()` 传值，**不要用 service 跨层级**
 
 ### 2.3 InjectionToken：接口解耦
 
@@ -111,7 +111,7 @@ export class AppModule {}
 constructor(@Inject(API_BASE_URL) private baseUrl: string) {}
 ```
 
-**生产实战**：信锐某项目用 InjectionToken 解耦多环境配置（dev / staging / prod），**业务代码零改动切换环境**。
+**生产实战**：某项目用 InjectionToken 解耦多环境配置（dev / staging / prod），**业务代码零改动切换环境**。
 
 ## 三、RxJS：Angular 的异步原语
 
@@ -147,7 +147,7 @@ export class SearchComponent {
 }
 ```
 
-**生产案例**：信锐设备管理后台搜索框，用 RxJS 实现的防抖 + 取消旧请求，**比直接 `setTimeout` 实现稳定 10 倍**——切换请求、竞态处理全部免费。
+**生产案例**：设备管理后台搜索框，用 RxJS 实现的防抖 + 取消旧请求，**比直接 `setTimeout` 实现稳定 10 倍**——切换请求、竞态处理全部免费。
 
 ### 3.3 takeUntilDestroyed：自动清理订阅
 
@@ -190,7 +190,7 @@ export class MyComponent {
 
 ### 4.1 Zone.js 的作用
 
-Angular 用 **Zone.js** 自动追踪**所有异步操作**：
+Angular 用 **Zone.js**自动追踪**所有异步操作**：
 
 ```typescript
 @Component({...})
@@ -205,7 +205,7 @@ export class MyComponent {
 }
 ```
 
-**原理**：Zone.js **monkey-patch** 了 `setTimeout` / `Promise` / `fetch` / `addEventListener` 等全局 API，**自动把异步回调放进 Angular 的变化检测周期**。
+**原理**：Zone.js **monkey-patch**了 `setTimeout` / `Promise` / `fetch` / `addEventListener` 等全局 API，**自动把异步回调放进 Angular 的变化检测周期**。
 
 **好处**：**开发者不用手动调用 `markForCheck()`**，框架自动知道何时该检测变化。
 
@@ -259,16 +259,16 @@ export class MyComponent {
 
 | 维度 | Angular | React | Vue |
 |---|---|---|---|
-| **学习曲线** | **陡**（DI / RxJS / 装饰器） | 中（Hooks 心智） | 低（模板友好） |
-| **类型支持** | **TypeScript-first** | TS 需手动配 | TS 需手动配 |
-| **架构约束** | **强**（约定优于配置） | 弱（自由发挥） | 中 |
-| **bundle size** | **大**（200KB+ runtime） | 中（45KB runtime） | 小（30KB runtime） |
-| **冷启动** | 慢 | 中 | 快 |
-| **大型项目维护** | **强**（强约束保护） | 中（需团队纪律） | 中 |
-| **中小项目敏捷** | 慢（CLI 启动慢） | **快** | **快** |
-| **跨端** | Ionic / NativeScript | React Native | Uni-app / Weex |
-| **生态丰富度** | 中（企业级偏多） | **最丰富** | 丰富 |
-| **招聘难度** | 中（候选人少但精） | 易 | 易 |
+| **学习曲线**| **陡**（DI / RxJS / 装饰器） | 中（Hooks 心智） | 低（模板友好） |
+| **类型支持**| **TypeScript-first**| TS 需手动配 | TS 需手动配 |
+| **架构约束**| **强**（约定优于配置） | 弱（自由发挥） | 中 |
+| **bundle size**| **大**（200KB+ runtime） | 中（45KB runtime） | 小（30KB runtime） |
+| **冷启动**| 慢 | 中 | 快 |
+| **大型项目维护**| **强**（强约束保护） | 中（需团队纪律） | 中 |
+| **中小项目敏捷**| 慢（CLI 启动慢） | **快**| **快**|
+| **跨端**| Ionic / NativeScript | React Native | Uni-app / Weex |
+| **生态丰富度**| 中（企业级偏多） | **最丰富**| 丰富 |
+| **招聘难度**| 中（候选人少但精） | 易 | 易 |
 
 **架构师决策树**：
 
@@ -281,7 +281,7 @@ export class MyComponent {
 │   ├── 模板友好 → **Vue 3 + Composition**
 │   └── 生态优先 → **React + Next.js**
 ├── 创业项目 / MVP
-│   └── **Vue 3** 或 **React + Vite**
+│   └── **Vue 3**或 **React + Vite**
 └── 跨端优先 (移动 / 桌面)
     ├── 跨 RN → React Native
     ├── 跨 Vue → Uni-app
@@ -290,7 +290,7 @@ export class MyComponent {
 
 ## 七、Ionic + Angular：移动端跨端实战
 
-简历里出现 **"信锐时期 Ionic + Angular 实战"**——这是 Angular 生态的混合开发：
+以 **Ionic + Angular 混合开发**为例——这是 Angular 生态在跨端场景下的典型应用：
 
 ```typescript
 // Ionic + Angular:同一个 codebase 跑 Web / iOS / Android
@@ -324,7 +324,7 @@ export class DeviceListComponent {
 }
 ```
 
-**生产数据**：信锐设备管理后台同时跑在：
+**生产数据**：设备管理后台同时跑在：
 - **Web**（管理后台）
 - **iPad App**（门店巡检）
 - **Android App**（仓库盘点）
@@ -359,7 +359,7 @@ export class DeviceListComponent {
 
 > **Q1（答案）**：Angular 的依赖注入（DI）解决了什么问题？为什么 React / Vue 没有类似的机制？
 >
-> **A**：**DI 解决三大问题**：① **可测试性** —— 测试时注入 mock,业务代码不变;② **可替换性** —— HttpClient 可换成 GraphQLClient;③ **依赖图清晰** —— 看构造函数就知道依赖什么。**为什么 React / Vue 没有**：React / Vue 是**轻量级 UI 库**(框架哲学差异),把"如何组织依赖"留给社区(Redux / Zustand / Pinia);Angular 是**完整企业级框架**,**自己提供官方 DI 解决方案**。**面试要点**:能说"DI 是 Angular 的最大特点,也是它适合大企业级项目的核心原因——强约束代替团队纪律"。<AIAsk question="Angular 的依赖注入（DI）解决了什么问题？为什么 React / Vue 没有类似的机制？" />
+> **A**：**DI 解决三大问题**：① **可测试性**—— 测试时注入 mock,业务代码不变;② **可替换性**—— HttpClient 可换成 GraphQLClient;③ **依赖图清晰**—— 看构造函数就知道依赖什么。**为什么 React / Vue 没有**：React / Vue 是**轻量级 UI 库**(框架哲学差异),把"如何组织依赖"留给社区(Redux / Zustand / Pinia);Angular 是**完整企业级框架**,**自己提供官方 DI 解决方案**。**面试要点**:能说"DI 是 Angular 的最大特点,也是它适合大企业级项目的核心原因——强约束代替团队纪律"。<AIAsk question="Angular 的依赖注入（DI）解决了什么问题？为什么 React / Vue 没有类似的机制？" />
 >
 > **Q2（思考）**：RxJS 在 Angular 里为什么能成为「异步原语」？Observable 比 Promise 强在哪？<AIAsk question="RxJS 在 Angular 里为什么能成为「异步原语」？Observable 比 Promise 强在哪？" />
 >
@@ -367,7 +367,7 @@ export class DeviceListComponent {
 >
 > **Q4（思考）**：Angular 的 ChangeDetectionStrategy.OnPush 和默认 Default 有什么区别？大型 Angular 项目为什么必须用 OnPush？<AIAsk question="Angular 的 ChangeDetectionStrategy.OnPush 和默认 Default 有什么区别？大型 Angular 项目为什么必须用 OnPush？" />
 >
-> **Q5（思考）**：你在信锐时期的 Ionic + Angular 项目里是怎么做混合开发的？Web / iOS / Android 三端共享代码的比例是多少？踩过哪些坑？<AIAsk question="你在信锐时期的 Ionic + Angular 项目里是怎么做混合开发的？Web / iOS / Android 三端共享代码的比例是多少？踩过哪些坑？" />
+> **Q5（思考）**：你在时期的 Ionic + Angular 项目里是怎么做混合开发的？Web / iOS / Android 三端共享代码的比例是多少？踩过哪些坑？<AIAsk question="你在时期的 Ionic + Angular 项目里是怎么做混合开发的？Web / iOS / Android 三端共享代码的比例是多少？踩过哪些坑？" />
 
 > 💡 每道题后面都有 AI 助手按钮，可以一键拿到详细答案。
 

@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand iframe? My answer is **yes** — not to write `<iframe>` tags, but to build the engineering judgment of "when iframe is the only choice over other solutions". Three reasons:
+Should a frontend architect understand iframe? My answer is **yes**— not to write `<iframe>` tags, but to build the engineering judgment of "when iframe is the only choice over other solutions". Three reasons:
 
-1. **The FinSpread 30% authorization cost reduction on resume is iframe practice.** Understanding same-origin / cross-origin iframe + authorization logic relationship is core to commercialized products.
-2. **Micro-frontend / third-party embedding sandbox solutions are iframe + postMessage.** qiankun.js / micro-app / wujie / Module Federation — all iframe underneath.
-3. **iframe looks simple, has 4 security layers deep.** sandbox / allow / referrerpolicy / csp, **wrong config = XSS vulnerability**.
+1. **The FinSpread 30% authorization cost reduction  is iframe practice.**Understanding same-origin / cross-origin iframe + authorization logic relationship is core to commercialized products.
+2. **Micro-frontend / third-party embedding sandbox solutions are iframe + postMessage.**qiankun.js / micro-app / wujie / Module Federation — all iframe underneath.
+3. **iframe looks simple, has 4 security layers deep.**sandbox / allow / referrerpolicy / csp, **wrong config = XSS vulnerability**.
 
 This is post #19 of the *Frontend Architecture Cultivation Path* series. We skip specific APIs (no `iframe.contentWindow.postMessage` details), use architecture diagrams + real cases + sandbox config checklist to make iframe isolation / postMessage / micro-frontend sandbox concrete. The next post deep-dives into Web Components cross-framework reuse.
 
@@ -39,13 +39,13 @@ This is post #19 of the *Frontend Architecture Cultivation Path* series. We skip
 
 | Dimension | Same-origin iframe | Cross-origin iframe |
 |---|---|---|
-| DOM access | Parent can access child DOM | **Forbidden** (security sandbox) |
-| JS variables | Parent can access child variables | **Forbidden** |
-| localStorage | **Shared** (same-origin policy) | **Independent** |
+| DOM access | Parent can access child DOM | **Forbidden**(security sandbox) |
+| JS variables | Parent can access child variables | **Forbidden**|
+| localStorage | **Shared**(same-origin policy) | **Independent**|
 | postMessage | ✅ | ✅ |
 | Performance | Fast (no cross-origin overhead) | Slightly slower (cross-origin resource loading) |
 
-**Architect's rule**: **use same-origin iframe when possible** — saves 30% security config.
+**Architect's rule**: **use same-origin iframe when possible**— saves 30% security config.
 
 ## 3. postMessage Communication Protocol
 
@@ -69,20 +69,20 @@ window.addEventListener('message', (e) => {
 ```
 
 **Security four-piece set**:
-- **Validate origin** (required)
-- **Validate source** (`e.source === expectedWindow`)
-- **Specify targetOrigin** (don't use `*`)
-- **Validate data shape** (TypeScript type guard)
+- **Validate origin**(required)
+- **Validate source**(`e.source === expectedWindow`)
+- **Specify targetOrigin**(don't use `*`)
+- **Validate data shape**(TypeScript type guard)
 
 ## 4. FinSpread 30% Authorization Cost Reduction Practice
 
-The resume line **"FinSpread 30% authorization cost reduction"** — this is a typical iframe cross-domain deployment scenario:
+Take **iframe cross-domain deployment reducing authorization cost by 30%** as an example—this is a typical iframe deployment scenario for commercial products:
 
 ### 4.1 Scenario Description
 
 ```
 Product architecture:
-  SF Express ERP main:  finui.example.com (main site)
+  large ERP main:  finui.example.com (main site)
   Table component FinSpread:  finspread.example.com (separate deployment)
   Customer authorization:  Customer buys ERP, Spread needs separate authorization
 
@@ -91,7 +91,7 @@ Before authorization:
   Customer uses ERP → automatically includes FinSpread (no separate auth)
 
 Problem: customer can buy Spread authorization separately, no longer needs ERP
-  → SF Express profit decreases
+  →  profit decreases
 ```
 
 ### 4.2 iframe Solution
@@ -104,7 +104,7 @@ New architecture:
   → No authorization → Prompt "Please buy FinSpread independent license"
   → Authorized → FinSpread displays normally
 
-Effect: customer pays for FinSpread independently, SF Express revenue +30%
+Effect: customer pays for FinSpread independently,  revenue +30%
 ```
 
 ### 4.3 Communication Flow
@@ -151,17 +151,17 @@ window.addEventListener('message', (e) => {
 ```
 
 **Architect's decision**:
-- **Strong isolation + cross-framework** → iframe sandbox (qiankun / wujie)
-- **Same framework + shared runtime** → Module Federation / Vite Module Graph
-- **Lightweight** → Web Components
+- **Strong isolation + cross-framework**→ iframe sandbox (qiankun / wujie)
+- **Same framework + shared runtime**→ Module Federation / Vite Module Graph
+- **Lightweight**→ Web Components
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't let iframe height adapt out of control.** `iframe.height = contentWindow.document.body.scrollHeight` can't get cross-origin, **must use ResizeObserver + postMessage**.
-2. **Don't do SEO inside iframe.** Search engines don't crawl iframe content, **key content must be SSR in main page**.
-3. **Don't forget iframe loads slowly.** iframe loading is async, **main page shows skeleton first then embeds iframe**.
-4. **Don't use file:// protocol for cross-origin iframe.** `file://` protocol origin is `null`, **postMessage / Cookie all fail**.
-5. **Don't ignore iframe performance monitoring.** iframe load is LCP's hidden killer, DevTools check `iframe` node load time.
+1. **Don't let iframe height adapt out of control.**`iframe.height = contentWindow.document.body.scrollHeight` can't get cross-origin, **must use ResizeObserver + postMessage**.
+2. **Don't do SEO inside iframe.**Search engines don't crawl iframe content, **key content must be SSR in main page**.
+3. **Don't forget iframe loads slowly.**iframe loading is async, **main page shows skeleton first then embeds iframe**.
+4. **Don't use file:// protocol for cross-origin iframe.**`file://` protocol origin is `null`, **postMessage / Cookie all fail**.
+5. **Don't ignore iframe performance monitoring.**iframe load is LCP's hidden killer, DevTools check `iframe` node load time.
 
 ## Summary
 
@@ -181,7 +181,7 @@ Five key facts that thread iframe isolation + postMessage together:
 
 > **Q1 (Answer)**: What's the essence of iframe? In what scenarios must iframe be used over other solutions?
 >
-> **A**: iframe's essence is **browser-native sandbox** — independent Document / independent Cookie / independent JS context / independent styles. **Scenarios where iframe is required**: ① Third-party embedding (SpreadJS / video player / map) requiring cross-domain isolation; ② Micro-frontend sandbox requiring strong isolation + cross-framework; ③ FinSpread-type **independent authorization / independent billing** commercialized products; ④ Cross-domain third-party component integration. **Architect's rule**: **Use same-origin iframe when possible** (saves 30% security config), don't use iframe when avoidable (SEO can't crawl).<AIAsk question="What's the essence of iframe? In what scenarios must iframe be used over other solutions?" lang="en" />
+> **A**: iframe's essence is **browser-native sandbox**— independent Document / independent Cookie / independent JS context / independent styles. **Scenarios where iframe is required**: ① Third-party embedding (SpreadJS / video player / map) requiring cross-domain isolation; ② Micro-frontend sandbox requiring strong isolation + cross-framework; ③ FinSpread-type **independent authorization / independent billing**commercialized products; ④ Cross-domain third-party component integration. **Architect's rule**: **Use same-origin iframe when possible**(saves 30% security config), don't use iframe when avoidable (SEO can't crawl).<AIAsk question="What's the essence of iframe? In what scenarios must iframe be used over other solutions?" lang="en" />
 >
 > **Q2 (Think)**: What are the postMessage security four-piece set? Why must you specify targetOrigin?<AIAsk question="What are the postMessage security four-piece set? Why must you specify targetOrigin?" lang="en" />
 >

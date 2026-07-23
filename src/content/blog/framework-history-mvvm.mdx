@@ -14,7 +14,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 1. **框架选型不靠博客文章**。React / Vue / Angular / Solid 各自解决不同问题。**理解每种框架的设计动机**，才能判断"我的项目该选谁"。
 2. **未来 5 年的趋势藏在历史里**。Hooks / Composition API / Signals 的演化路径，揭示了前端架构正在向"细粒度响应式 + 编译期优化"收敛。
-3. **跨年代技术栈需要历史视角**。简历里出现 Vue 2 / Vue 3 / React 16 / React 18 同时存在的情况，**不懂历史就只是工具切换，懂历史才是"我们为什么换了"**。
+3. **跨年代技术栈需要历史视角**。出现 Vue 2 / Vue 3 / React 16 / React 18 同时存在的情况，**不懂历史就只是工具切换，懂历史才是"我们为什么换了"**。
 
 这一篇是『前端架构修仙路』筑基期的开篇。我跳过每个框架的"特性罗列"（那些留给后续几篇深度文），用架构图 + 思想史 + 选型决策表，把 jQuery → Backbone → Knockout → AngularJS → React → Vue → Solid 的演化主线讲透。下一篇深度聊 React 19 / Fiber / Concurrent。
 
@@ -190,7 +190,7 @@ const greeting = computed(() => `Hello, ${count.value}`);
 
 ### 5.2 响应式：基于 Proxy 的依赖追踪（Vue 3）
 
-Vue 3 用 **Proxy** 拦截属性访问，自动追踪依赖：
+Vue 3 用 **Proxy**拦截属性访问，自动追踪依赖：
 
 ```javascript
 // Vue 3 响应式核心
@@ -201,7 +201,7 @@ effect(() => {
 obj.count = 1;  // 自动触发 effect
 ```
 
-**vs React**：React 用 **显式 setState** 触发更新；Vue 用 **隐式依赖追踪**。**生产影响**：
+**vs React**：React 用 **显式 setState**触发更新；Vue 用 **隐式依赖追踪**。**生产影响**：
 - React 哲学：状态改变 = 你说了算
 - Vue 哲学：状态改变 = 框架自动发现
 
@@ -211,8 +211,8 @@ AngularJS 1.x 的脏检查模式**性能天花板太低**，Google 决定重写�
 
 - 全面 TypeScript
 - **依赖注入**作为一等公民
-- **RxJS** 作为异步原语
-- **Zone.js** 自动追踪变化
+- **RxJS**作为异步原语
+- **Zone.js**自动追踪变化
 
 **核心哲学**：**"约定优于配置"**——大型团队需要清晰的架构边界，Angular 用强约束提供这个。
 
@@ -275,7 +275,7 @@ Vue 3.5 的 Vapor mode（2025）和 Solid Start 走类似路径。**这是未来
 
 ## 九、Signals：细粒度响应式的回归（2023-2024）
 
-Solid.js / Qwik / Vue 3.5（Vapor）走的是**"不要 Virtual DOM"** 的路线：
+Solid.js / Qwik / Vue 3.5（Vapor）走的是**"不要 Virtual DOM"**的路线：
 
 ```javascript
 // Solid: 细粒度响应式 + 无 Virtual DOM
@@ -295,13 +295,13 @@ return <button onClick={() => setCount(count() + 1)}>{count()}</button>;
 
 | 项目场景 | 推荐 | 理由 |
 |---|---|---|
-| 企业级大型中后台（>100 页面） | **Vue 3 / Angular** | 学习曲线适中 / 强约定，团队规模化友好 |
-| 创业项目快速迭代 | **React / Vue 3** | 生态最丰富，组件库最全 |
-| 性能敏感（动画 / 大量数据） | **Solid** | 无 VDOM 开销，bundle 小 |
-| SEO + SSR 优先 | **Next.js (React) / Nuxt (Vue)** | 内置 SSR / SSG / ISR |
-| AI / Server 优先（API 为主） | **Next.js 15 App Router / Solid Start** | RSC + Server Actions |
-| 跨端（移动 / 桌面） | **React Native / Taro / Flutter** | 跨端框架原生支持 |
-| 老 jQuery / Backbone 项目维护 | **Vue 3（渐进式）** | 可以局部替换，不强推全家桶 |
+| 企业级大型中后台（>100 页面） | **Vue 3 / Angular**| 学习曲线适中 / 强约定，团队规模化友好 |
+| 创业项目快速迭代 | **React / Vue 3**| 生态最丰富，组件库最全 |
+| 性能敏感（动画 / 大量数据） | **Solid**| 无 VDOM 开销，bundle 小 |
+| SEO + SSR 优先 | **Next.js (React) / Nuxt (Vue)**| 内置 SSR / SSG / ISR |
+| AI / Server 优先（API 为主） | **Next.js 15 App Router / Solid Start**| RSC + Server Actions |
+| 跨端（移动 / 桌面） | **React Native / Taro / Flutter**| 跨端框架原生支持 |
+| 老 jQuery / Backbone 项目维护 | **Vue 3（渐进式）**| 可以局部替换，不强推全家桶 |
 
 **架构师心法**：**框架是工具，不是信仰**。**Vue / React / Angular / Solid 都能写出好代码；选错的代价是开发效率 + 招聘难度 + 长期维护成本**。
 
@@ -330,7 +330,7 @@ return <button onClick={() => setCount(count() + 1)}>{count()}</button>;
 
 > **Q1（答案）**：React / Vue / Angular 三大框架的核心心智模型分别是什么？为什么它们选择了不同的设计？
 >
-> **A**：**React** 是「**UI = f(state)**」——单向数据流，函数式思维，性能可控需要手动 `memo / useMemo`。**Vue** 是「**响应式数据代理**」——基于 `Proxy` 自动追踪依赖，写起来最自然。**Angular** 是「**依赖注入 + Zone.js 自动脏检查**」——大企业级约定优于配置，长期可维护。**React 革命**：跳出 MVVM 范式，用"UI 是状态的纯函数"简化心智。**Vue 渐进式**：用模板语法降低门槛，响应式追踪降低心智负担。**Angular 工业级**：用强约束 + DI + RxJS 给大型团队架构边界。**面试要点**：把这三者讲成 3 种*处理 UI 与状态关系*的不同哲学，而不是"谁更好用"。真正的回答深度是：你能讲清 Angular DI 的树形结构 / React Fiber 的双缓冲协调 / Vue 3 的 `effect` 调度器。<AIAsk question="React / Vue / Angular 三大框架的核心心智模型分别是什么？为什么它们选择了不同的设计？" />
+> **A**：**React**是「**UI = f(state)**」——单向数据流，函数式思维，性能可控需要手动 `memo / useMemo`。**Vue**是「**响应式数据代理**」——基于 `Proxy` 自动追踪依赖，写起来最自然。**Angular**是「**依赖注入 + Zone.js 自动脏检查**」——大企业级约定优于配置，长期可维护。**React 革命**：跳出 MVVM 范式，用"UI 是状态的纯函数"简化心智。**Vue 渐进式**：用模板语法降低门槛，响应式追踪降低心智负担。**Angular 工业级**：用强约束 + DI + RxJS 给大型团队架构边界。**面试要点**：把这三者讲成 3 种*处理 UI 与状态关系*的不同哲学，而不是"谁更好用"。真正的回答深度是：你能讲清 Angular DI 的树形结构 / React Fiber 的双缓冲协调 / Vue 3 的 `effect` 调度器。<AIAsk question="React / Vue / Angular 三大框架的核心心智模型分别是什么？为什么它们选择了不同的设计？" />
 >
 > **Q2（思考）**：Knockout.js / AngularJS 1.x 提出的 MVVM 模式在 2010 年很火，但现在主流框架都不再强调 MVVM 了。为什么？<AIAsk question="Knockout.js / AngularJS 1.x 提出的 MVVM 模式在 2010 年很火，但现在主流框架都不再强调 MVVM 了。为什么？" />
 >

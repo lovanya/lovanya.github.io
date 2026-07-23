@@ -1,6 +1,6 @@
 ---
 title: "Front-End Engineering System: CI/CD / Standards / Review / Team Best Practices"
-description: A frontend architect's engineering practice — CI/CD pipelines, ESLint / Prettier / Husky standards, PR review checklist, team best practice accumulation mechanism, with SF Express + Rouyu two engineering experience summaries
+description: A frontend architect's engineering practice — CI/CD pipelines, ESLint / Prettier / Husky standards, PR review checklist, team best practice accumulation mechanism, with multi-project two engineering experience summaries
 pubDate: 2026-07-18
 tags: ['frontend-architecture-cultivation-path', 'frontend-architecture', 'engineering', 'ci-cd', 'eslint']
 ---
@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand engineering? My answer is **yes** — not to write Jenkinsfiles, but to build the engineering system for "how 50 team members don't step on the same pitfall". Three reasons:
+Should a frontend architect understand engineering? My answer is **yes**— not to write Jenkinsfiles, but to build the engineering system for "how 50 team members don't step on the same pitfall". Three reasons:
 
-1. **The "team ESLint + Husky accumulation" on resume is soft skill proof.** Writing 800+ pages of code isn't strong, **being able to make the team stably output 800+ pages of equal quality code is strong**.
-2. **Engineering is a 10× leverage.** Write good conventions once → 100 PRs automatically apply → save 1000 hours of review.
-3. **A team without engineering = chronic death.** After 3 months everyone writes code by their own habits, **refactoring costs grow exponentially**.
+1. **"team ESLint + Husky accumulation" is soft skill proof.**Writing 800+ pages of code isn't strong, **being able to make the team stably output 800+ pages of equal quality code is strong**.
+2. **Engineering is a 10× leverage.**Write good conventions once → 100 PRs automatically apply → save 1000 hours of review.
+3. **A team without engineering = chronic death.**After 3 months everyone writes code by their own habits, **refactoring costs grow exponentially**.
 
 This is post #14 of the *Frontend Architecture Cultivation Path* series. We skip specific configuration (no talking about every ESLint rule), use architecture diagrams + real data + review checklists to make CI / CD / standards / review / team accumulation concrete. The next post deep-dives into first-screen performance 4.2s→1.8s practical case.
 
@@ -33,7 +33,7 @@ This is post #14 of the *Frontend Architecture Cultivation Path* series. We skip
   L8 --> L9[CDN Purge]
   L9 --> L10[Production]`} />
 
-**Architect's mantra**: **each stage should fail-fast** — if Lint fails in 1min, don't run tests.
+**Architect's mantra**: **each stage should fail-fast**— if Lint fails in 1min, don't run tests.
 
 ### 1.1 GitHub Actions Complete Pipeline
 
@@ -118,7 +118,7 @@ module.exports = {
 };
 ```
 
-**Production case**: SF Express ERP monorepo uses `&#64;finui/eslint-config`, **all sub-projects share the same standards** — add a new rule once, 20 projects take effect simultaneously.
+**Production case**: large ERP monorepo uses `&#64;finui/eslint-config`, **all sub-projects share the same standards**— add a new rule once, 20 projects take effect simultaneously.
 
 ## 3. Git Hooks: Husky + lint-staged
 
@@ -142,24 +142,24 @@ pnpm lint-staged
 # only lint changed files, don't run full set
 ```
 
-**Architect's rule**: **Husky runs lint-staged, CI runs full set** — local quick check, CI fallback.
+**Architect's rule**: **Husky runs lint-staged, CI runs full set**— local quick check, CI fallback.
 
 ## 4. PR Review Checklist (Architect's View)
 
 | Dimension | Review focus |
 |---|---|
-| **Types / Interfaces** | Field types, naming, optional/required consistency |
-| **Component design** | Reuse / split / props over-design |
-| **State management** | local / global / server boundaries |
-| **Performance** | Does it trigger unnecessary re-renders / is large list virtualized |
-| **Accessibility** | aria-label / keyboard nav / color contrast |
-| **i18n** | Is text extracted to i18n files |
-| **Error handling** | try/catch / error boundary / user prompts |
-| **Test coverage** | Core logic has unit tests |
-| **Observability** | Is it reported to monitoring / logging |
-| **Documentation** | README / API change notes |
+| **Types / Interfaces**| Field types, naming, optional/required consistency |
+| **Component design**| Reuse / split / props over-design |
+| **State management**| local / global / server boundaries |
+| **Performance**| Does it trigger unnecessary re-renders / is large list virtualized |
+| **Accessibility**| aria-label / keyboard nav / color contrast |
+| **i18n**| Is text extracted to i18n files |
+| **Error handling**| try/catch / error boundary / user prompts |
+| **Test coverage**| Core logic has unit tests |
+| **Observability**| Is it reported to monitoring / logging |
+| **Documentation**| README / API change notes |
 
-**Production rule**: **architect review sees "system consistency", business reviewer sees "functional correctness"** — division of labor.
+**Production rule**: **architect review sees "system consistency", business reviewer sees "functional correctness"**— division of labor.
 
 ## 5. Team Accumulation Mechanism: Make Standards Inheritable
 
@@ -211,11 +211,11 @@ EOF
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't run unrelated checks in CI.** Each stage must **fail-fast** — a PR with 30min CI gets bypassed.
-2. **Don't have too many lint rules.** More than 50 ESLint rules, **team gets overwhelmed**. **Only open rules that block 80% of bugs**.
-3. **Don't run full tests in Husky.** Husky only runs lint-staged (single file check), **CI runs full tests**.
-4. **Don't write standards in Wiki.** Wiki gets forgotten, **standards must go in eslint-config packages and ADR docs**, install and use.
-5. **Don't ignore PR templates.** `.github/PULL_REQUEST_TEMPLATE.md` forces developers to fill "why change / how to test", **3 sentences saves 5 min review**.
+1. **Don't run unrelated checks in CI.**Each stage must **fail-fast**— a PR with 30min CI gets bypassed.
+2. **Don't have too many lint rules.**More than 50 ESLint rules, **team gets overwhelmed**. **Only open rules that block 80% of bugs**.
+3. **Don't run full tests in Husky.**Husky only runs lint-staged (single file check), **CI runs full tests**.
+4. **Don't write standards in Wiki.**Wiki gets forgotten, **standards must go in eslint-config packages and ADR docs**, install and use.
+5. **Don't ignore PR templates.**`.github/PULL_REQUEST_TEMPLATE.md` forces developers to fill "why change / how to test", **3 sentences saves 5 min review**.
 
 ## Summary
 
@@ -227,7 +227,7 @@ Five key facts that thread engineering together:
 - **PR review checklist**: architect sees system consistency, business reviewer sees functional correctness.
 - **ADR + code templates**: decisions inheritable, new components don't need to start from scratch.
 
-**Next post**: First-screen performance 4.2s→1.8s practical case — SF Express ERP's real 4.2s→1.8s optimization, 5-stage time distribution.
+**Next post**: First-screen performance 4.2s→1.8s practical case — large ERP's real 4.2s→1.8s optimization, 5-stage time distribution.
 
 ## 5 Key Interview Question Tracks
 
@@ -235,7 +235,7 @@ Five key facts that thread engineering together:
 
 > **Q1 (Answer)**: What stages should a modern front-end CI / CD pipeline include? Why must each stage fail-fast?
 >
-> **A**: **8 standard stages**: Lint & Format → TypeScript type check → Unit test → E2E test → Bundle analysis → Build → Preview env → Deploy. **Each stage must fail-fast**: Lint 1min failure → don't run tests; unit test 5min failure → don't run E2E. **Principle**: **fail-fast saves total CI time** — a PR with 30min CI gets bypassed, 8min CI gets self-waited. **Production case**: a middle admin backend CI full set takes 8min, E2E + Bundle analysis run together, all PRs auto-validated before merge.<AIAsk question="What stages should a modern front-end CI / CD pipeline include? Why must each stage fail-fast?" lang="en" />
+> **A**: **8 standard stages**: Lint & Format → TypeScript type check → Unit test → E2E test → Bundle analysis → Build → Preview env → Deploy. **Each stage must fail-fast**: Lint 1min failure → don't run tests; unit test 5min failure → don't run E2E. **Principle**: **fail-fast saves total CI time**— a PR with 30min CI gets bypassed, 8min CI gets self-waited. **Production case**: a middle admin backend CI full set takes 8min, E2E + Bundle analysis run together, all PRs auto-validated before merge.<AIAsk question="What stages should a modern front-end CI / CD pipeline include? Why must each stage fail-fast?" lang="en" />
 >
 > **Q2 (Think)**: What's the division of labor between ESLint / Prettier / Stylelint? Why disable conflicting rules when configuring Prettier with ESLint?<AIAsk question="What's the division of labor between ESLint / Prettier / Stylelint? Why disable conflicting rules when configuring Prettier with ESLint?" lang="en" />
 >

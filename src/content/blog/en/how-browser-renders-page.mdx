@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand browser rendering? My answer is **yes** — not to derive the source of a CSS engine, but to build intuition for what actually happens during a page visit. Three reasons:
+Should a frontend architect understand browser rendering? My answer is **yes**— not to derive the source of a CSS engine, but to build intuition for what actually happens during a page visit. Three reasons:
 
-1. **Performance optimization demands it.** The 4.2s → 1.8s LCP improvement on my resume wasn't framework tricks — it was breaking down every millisecond between the DNS lookup and the compositor paint. Without the rendering pipeline as a mental model, you're just tuning the framework layer blindly.
-2. **Production debugging demands it.** When a user reports a 3-second white screen or stuttering scroll, understanding the pipeline lets you locate the failing stage in five minutes — network, parse, layout, or composite.
-3. **Vendor pitches stop fooling you.** SSR / SSG / ISR / edge rendering / streaming HTML — each name is a different cut-point in the rendering timeline. Without the underlying model, you just parrot blog posts.
+1. **Performance optimization demands it.**The 4.2s → 1.8s LCP improvement  wasn't framework tricks — it was breaking down every millisecond between the DNS lookup and the compositor paint. Without the rendering pipeline as a mental model, the result is tuning the framework layer blindly.
+2. **Production debugging demands it.**When a user reports a 3-second white screen or stuttering scroll, understanding the pipeline lets you locate the failing stage in five minutes — network, parse, layout, or composite.
+3. **Vendor pitches stop fooling you.**SSR / SSG / ISR / edge rendering / streaming HTML — each name is a different cut-point in the rendering timeline. Without the underlying model, you just parrot blog posts.
 
 This is the opening post of the *Frontend Architecture Cultivation Path* series. We skip the bytecode internals of CSS engines and the optimization passes of V8 (those get their own deep dives), and lean on architecture diagrams, real performance numbers, and production debugging cases to make the full pipeline concrete. The next post covers CSS / HTML5 advanced topics and the box model.
 
@@ -29,7 +29,7 @@ The moment the user hits Enter in the address bar until the browser receives the
   TLS --> REQ[HTTP request<br/>First HTML byte returns]
   REQ --> TTFB[TTFB ≈<br/>DNS + TCP + TLS + REQ]`} />
 
-**Real-world latency distribution** (cold load on 4G mobile, no cache):
+**Real-world latency distribution**(cold load on 4G mobile, no cache):
 
 | Stage | Typical latency | Optimization |
 |---|---|---|
@@ -38,7 +38,7 @@ The moment the user hits Enter in the address bar until the browser receives the
 | TLS | 1–2 RTT ≈ 80–400ms | TLS 1.3, OCSP stapling, session resumption |
 | Request → First Byte | 100–500ms | Edge CDN (Cloudflare/Fastly hit ≈ 30ms), server pre-render |
 
-**The most important architectural insight**: TTFB is the **ceiling** of front-end optimization. No matter how hard the front-end works, it can't beat the network floor. In the SF Express ERP 4.2s LCP case, the first cut was CDN + HTTP/3, dropping TTFB from 800ms to 80ms.
+**The most important architectural insight**: TTFB is the **ceiling**of front-end optimization. No matter how hard the front-end works, it can't beat the network floor. In the large ERP 4.2s LCP case, the first cut was CDN + HTTP/3, dropping TTFB from 800ms to 80ms.
 
 ## 2. Critical Rendering Path (CRP)
 
@@ -71,15 +71,15 @@ DOM + CSSOM become the Render Tree. **Note**: invisible elements like `<head>`'s
 
 ### 2.4 Layout (Reflow)
 
-Each node on the Render Tree computes its geometric position (x, y, width, height) per the box model. Layout is **recursive + tree-walking** — parent layout must finish before children layout can begin; root layout finishes before any node is done.
+Each node on the Render Tree computes its geometric position (x, y, width, height) per the box model. Layout is **recursive + tree-walking**— parent layout must finish before children layout can begin; root layout finishes before any node is done.
 
 ### 2.5 Paint
 
-Each node's actual pixels are drawn (color, text, borders, shadows, gradients). The output is a **paint records list** (Display List), not a bitmap.
+Each node's actual pixels are drawn (color, text, borders, shadows, gradients). The output is a **paint records list**(Display List), not a bitmap.
 
 ### 2.6 Composite
 
-Different layers (compositor layers) are combined into the final image and sent to the GPU. This is usually **the cheapest step** — as long as layout and paint didn't trigger, rasterization is GPU-bound.
+Different layers (compositor layers) are combined into the final image and sent to the GPU. This is usually **the cheapest step**— as long as layout and paint didn't trigger, rasterization is GPU-bound.
 
 ## 3. Who Blocks Whom: A Cheat Sheet
 
@@ -94,7 +94,7 @@ This is a high-frequency interview question and must be memorized for performanc
 | `<link rel="preload">` | Nothing — just hints the browser to download early | — |
 | `<img>` | Doesn't block parsing, doesn't block rendering | Joins layout only after download |
 
-**Most common pitfall**: a heavy synchronous `<script>` at the top of `<head>`. HTML parsing stops, CSS doesn't trigger layout in parallel — your first paint is delayed by 1 second because of a 200KB vendor.js. This is why mainstream frameworks (Next.js / Nuxt / Astro) default to putting `<script>` at the end of `<body>` or with `defer`.
+**Most common pitfall**: a heavy synchronous `<script>` at the top of `<head>`. HTML parsing stops, CSS doesn't trigger layout in parallel — the first paint is delayed by 1 second because of a 200KB vendor.js. This is why mainstream frameworks (Next.js / Nuxt / Astro) default to putting `<script>` at the end of `<body>` or with `defer`.
 
 ## 4. Compositor Layers and Hardware Acceleration: Which Operations Are Cheapest?
 
@@ -113,7 +113,7 @@ button.style.background = 'red';    // triggers paint (no layout impact)
 
 **This rule directly determines animation library choice**: all modern animation libraries (Framer Motion, GSAP, Vue Transition) drive animations with transform / opacity by default. If you see `left` / `top` / `width` being updated at high frequency, that's a performance bug.
 
-**The SF Express ERP FinSpread large-spreadsheet column drag uses this trick** — dragging columns changes `transform: translate3d()`, skipping layout/paint and keeping 60fps.
+**The large ERP FinSpread large-spreadsheet column drag uses this trick**— dragging columns changes `transform: translate3d()`, skipping layout/paint and keeping 60fps.
 
 ## 5. Web Vitals: How to Measure, How to Read
 
@@ -121,9 +121,9 @@ Three core metrics from [Web Vitals](https://web.dev/articles/lcp):
 
 | Metric | Full name | Threshold (good / poor) | Stage measured |
 |---|---|---|---|
-| **LCP** | Largest Contentful Paint | ≤2.5s / >4s | When the largest above-the-fold content appears |
-| **INP** | Interaction to Next Paint | ≤200ms / >500ms | Interaction responsiveness (replaced FID) |
-| **CLS** | Cumulative Layout Shift | ≤0.1 / >0.25 | Visual stability |
+| **LCP**| Largest Contentful Paint | ≤2.5s / >4s | When the largest above-the-fold content appears |
+| **INP**| Interaction to Next Paint | ≤200ms / >500ms | Interaction responsiveness (replaced FID) |
+| **CLS**| Cumulative Layout Shift | ≤0.1 / >0.25 | Visual stability |
 
 **Performance timeline to read alongside**:
 
@@ -134,7 +134,7 @@ Three core metrics from [Web Vitals](https://web.dev/articles/lcp):
   LCP --> TTI[TTI<br/>Time to Interactive<br/>main thread idle ≥5s]
   TTI --> IDLE[Steadily interactive]`} />
 
-**The 4.2s → 1.8s breakdown** (SF Express ERP real case): from LCP 4.2s to 1.8s isn't one trick — it's the sum of every stage:
+**The 4.2s → 1.8s breakdown**(large ERP real case): from LCP 4.2s to 1.8s isn't one trick — it's the sum of every stage:
 
 | Stage | 4.2s baseline | 1.8s target | Key action |
 |---|---|---|---|
@@ -143,28 +143,28 @@ Three core metrics from [Web Vitals](https://web.dev/articles/lcp):
 | CSS / fonts | 600ms | 150ms | `font-display: swap` + inline critical CSS |
 | JS execution | 1500ms | 700ms | Code splitting + vendor chunk split + tree-shaking |
 | First-screen images | 900ms | 400ms | `<link rel=preload>` + AVIF + LQIP placeholder |
-| LCP render | 4.2s | **1.8s** | Sum of the five items above |
+| LCP render | 4.2s | **1.8s**| Sum of the five items above |
 
 **Architect-level judgment**: if LCP is much larger than the sum of TTFB + HTML + CSS + JS, the problem is most likely the network layer or resource size. If LCP is close to the sum, the problem is the rendering pipeline or main-thread blocking.
 
 ## 6. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't slap `async` on every `<script>`.** `async` loses execution order — multiple vendor scripts will race for the DOM. **The only safe usage**: completely independent scripts (analytics SDKs).
-2. **Don't trust that `display: none` truly "doesn't render".** It only excludes from the Render Tree, but child component mount logic and effects still execute (since React 18, only lazy init approaches this).
-3. **Don't pile everything onto transform to avoid reflow.** Each transform promotes a new compositor layer — **thousands of layers explode VRAM**. Chrome DevTools Layers panel shows layer count.
-4. **Don't conflate FP / FCP / LCP.** FP (First Paint) is when the browser paints any pixel; FCP is the first meaningful content (text/image); LCP is the largest content. FCP might be 1s while LCP is still 4s — don't report FP as your first-screen metric.
-5. **Streaming SSR is not silver bullet.** React 18 / Next.js App Router streaming requires Node 18+ server, client-side fetch priority scheduling, and degradation for older browsers. Evaluate ops cost before adopting.
+1. **Don't slap `async` on every `<script>`.**`async` loses execution order — multiple vendor scripts will race for the DOM. **The only safe usage**: completely independent scripts (analytics SDKs).
+2. **Don't trust that `display: none` truly "doesn't render".**It only excludes from the Render Tree, but child component mount logic and effects still execute (since React 18, only lazy init approaches this).
+3. **Don't pile everything onto transform to avoid reflow.**Each transform promotes a new compositor layer — **thousands of layers explode VRAM**. Chrome DevTools Layers panel shows layer count.
+4. **Don't conflate FP / FCP / LCP.**FP (First Paint) is when the browser paints any pixel; FCP is the first meaningful content (text/image); LCP is the largest content. FCP might be 1s while LCP is still 4s — don't report FP as the first-screen metric.
+5. **Streaming SSR is not silver bullet.**React 18 / Next.js App Router streaming requires Node 18+ server, client-side fetch priority scheduling, and degradation for older browsers. Evaluate ops cost before adopting.
 
 ## Summary
 
 Six key facts that thread the browser rendering pipeline together:
 
-- **Network layer** is the ceiling of first-screen optimization. TTFB is the hard limit.
+- **Network layer**is the ceiling of first-screen optimization. TTFB is the hard limit.
 - **Critical Rendering Path**: DOM + CSSOM → Render Tree → Layout → Paint → Composite. Each stage depends on the previous.
 - **Block rules**: default `<script>` blocks HTML parsing, `<link rel=stylesheet>` blocks rendering. `defer` / `async` / `preload` are the escape hatches.
 - **Compositor layers**: only transform and opacity can skip Layout + Paint — the core of animation optimization.
 - **Web Vitals**: LCP / INP / CLS are core metrics. FCP / FP are long obsolete.
-- **4.2s → 1.8s** isn't one trick — it's the combined governance of network, resource size, rendering pipeline, and main thread.
+- **4.2s → 1.8s**isn't one trick — it's the combined governance of network, resource size, rendering pipeline, and main thread.
 
 **Next post**: CSS / HTML5 advanced — box model, Flex, Grid, container queries. Expanding today's rendering pipeline's "paint stage" into the visual layer fundamentals.
 
@@ -174,7 +174,7 @@ Six key facts that thread the browser rendering pipeline together:
 
 > **Q1 (Answer)**: What stages does a browser go through from entering a URL to rendering the page? Which stages can be optimized on the front-end?
 >
-> **A**: Two layers — **the network layer** (DNS → TCP → TLS → HTTP response → TTFB) and **the rendering layer** (HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **What the front-end can optimize**: ① Network: CDN + HTTP/3 + edge cache to compress TTFB from hundreds of ms to tens of ms. ② HTML: shrink first-screen markup + streaming SSR for earlier first bytes. ③ CSS / fonts: inline critical CSS + `font-display: swap` to unblock rendering. ④ JS: code splitting + tree-shaking so the main thread goes idle fast. ⑤ Images: `<link rel=preload>` + AVIF + LQIP placeholders. **Interview tip**: naming a quantifiable metric per stage (ms or %) sounds far more professional than saying "we optimized the network" in general terms.<AIAsk question="What stages does a browser go through from entering a URL to rendering the page? Which stages can be optimized on the front-end?" lang="en" />
+> **A**: Two layers — **the network layer**(DNS → TCP → TLS → HTTP response → TTFB) and **the rendering layer**(HTML parse → DOM Tree → CSS parse → CSSOM → Render Tree → Layout → Paint → Composite → screen pixels). **What the front-end can optimize**: ① Network: CDN + HTTP/3 + edge cache to compress TTFB from hundreds of ms to tens of ms. ② HTML: shrink first-screen markup + streaming SSR for earlier first bytes. ③ CSS / fonts: inline critical CSS + `font-display: swap` to unblock rendering. ④ JS: code splitting + tree-shaking so the main thread goes idle fast. ⑤ Images: `<link rel=preload>` + AVIF + LQIP placeholders. **Interview tip**: naming a quantifiable metric per stage (ms or %) sounds far more professional than saying "we optimized the network" in general terms.<AIAsk question="What stages does a browser go through from entering a URL to rendering the page? Which stages can be optimized on the front-end?" lang="en" />
 >
 > **Q2 (Think)**: What commonly triggers Reflow and Repaint in browser rendering? How do you avoid them at the code level?<AIAsk question="What commonly triggers Reflow and Repaint in browser rendering? How do you avoid them at the code level?" lang="en" />
 >

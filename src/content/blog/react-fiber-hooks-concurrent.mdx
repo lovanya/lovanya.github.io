@@ -13,7 +13,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 做前端架构的人要不要懂 React 内部？我的回答是 **要**——不是去读 react-reconciler 源码，而是建立"为什么 React 这么设计"的工程直觉。原因有三：
 
 1. **性能调优需要它**。为什么 useMemo 有时反而更慢？为什么 setState 在异步回调里要传函数？不懂原理就只能瞎试。
-2. **跨框架组件复用需要它**。简历里出现"8 个跨 Vue/React 通用组件"，**每个抽象都踩过 React 和 Vue 设计哲学的差异**。
+2. **跨框架组件复用需要它**。出现"8 个跨 Vue/React 通用组件"，**每个抽象都踩过 React 和 Vue 设计哲学的差异**。
 3. **Server Components 是未来 5 年方向**。理解 Fiber / Concurrent 是理解 RSC 的前提，**不学这层就看不懂 React 19 在干嘛**。
 
 这一篇是『前端架构修仙路』的第 8 篇。我跳过 reconciler 源码（不展开每行 commit），用架构图 + 时序图 + 真实性能数据，把 React 16 之后的 4 大内部机制讲透：Fiber / Hooks / Concurrent / Server Components。下一篇深度聊 Vue 3 的响应式 + Composition API。

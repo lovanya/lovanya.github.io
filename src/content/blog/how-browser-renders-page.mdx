@@ -12,7 +12,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 做前端架构的人要不要懂浏览器渲染？我的回答是 **要**——不是去推导 CSS 引擎源码，而是建立"一次页面访问发生了什么"的全链路直觉。原因有三：
 
-1. **性能优化需要它**。简历里那个 4.2s → 1.8s 首屏优化的硬数据，靠的不是框架技巧，而是从 DNS 查到合成层 paint 之间每一段的耗时拆解。不懂渲染流水线的人永远只能在框架层瞎调。
+1. **性能优化需要它**。那个 4.2s → 1.8s 首屏优化的硬数据，靠的不是框架技巧，而是从 DNS 查到合成层 paint 之间每一段的耗时拆解。不懂渲染流水线的人永远只能在框架层瞎调。
 2. **排错需要它**。用户报"白屏 3 秒"或"滚动卡顿"时，懂得渲染流水线才能 5 分钟定位到具体阶段——是网络、是解析、是布局、还是合成。
 3. **技术选型不被忽悠**。SSR / SSG / ISR / 边缘渲染 / Streaming HTML 这些名词背后是不同的渲染时刻切分点，没有底层认知就只是跟着博客文章抄。
 
@@ -38,7 +38,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 | TLS | 1–2 RTT ≈ 80–400ms | TLS 1.3、OCSP stapling、Session resumption |
 | Request → First Byte | 100–500ms | 边缘 CDN（Cloudflare/Fastly 命中后 ≈30ms）、服务端预渲染 |
 
-**这一段对架构师最关键的认知**：TTFB 是首屏优化的天花板。**前端再怎么努力，也压不过网络层的下限**。顺丰 ERP 那个 4.2s 首屏案例，第一刀就是 CDN 化 + HTTP/3，让 TTFB 从 800ms 降到 80ms。
+**这一段对架构师最关键的认知**：TTFB 是首屏优化的天花板。**前端再怎么努力，也压不过网络层的下限**。大型 ERP 那个 4.2s 首屏案例，第一刀就是 CDN 化 + HTTP/3，让 TTFB 从 800ms 降到 80ms。
 
 ## 二、关键渲染路径 (Critical Rendering Path)
 
@@ -111,9 +111,9 @@ button.style.width = '200px';       // 触发 reflow
 button.style.background = 'red';    // 触发 paint（不影响 layout）
 ```
 
-**这条规则直接决定动画库选择**：所有现代动画库（Framer Motion、GSAP、Vue Transition）默认用 transform / opacity 驱动动画；如果你看到 `left` / `top` / `width` 在被高频改动，那一定是性能 bug。
+**这条规则直接决定动画库选择**：所有现代动画库（Framer Motion、GSAP、Vue Transition）默认用 transform / opacity 驱动动画；如发现 `left` / `top` / `width` 在被高频改动，那一定是性能 bug。
 
-**顺丰 ERP FinSpread 大表格拖拽**用的就是这个技巧——拖动列时改 `transform: translate3d()`，跳过 layout/paint，60fps 不掉。
+**大型 ERP FinSpread 大表格拖拽**用的就是这个技巧——拖动列时改 `transform: translate3d()`，跳过 layout/paint，60fps 不掉。
 
 ## 五、性能指标：怎么测、怎么读
 
@@ -121,9 +121,9 @@ Web Vitals（[官方定义](https://web.dev/articles/lcp)）三个核心：
 
 | 指标 | 全称 | 阈值（好 / 差） | 衡量阶段 |
 |---|---|---|---|
-| **LCP** | Largest Contentful Paint | ≤2.5s / >4s | 首屏最大内容出现 |
-| **INP** | Interaction to Next Paint | ≤200ms / >500ms | 交互响应（取代 FID） |
-| **CLS** | Cumulative Layout Shift | ≤0.1 / >0.25 | 视觉稳定性 |
+| **LCP**| Largest Contentful Paint | ≤2.5s / >4s | 首屏最大内容出现 |
+| **INP**| Interaction to Next Paint | ≤200ms / >500ms | 交互响应（取代 FID） |
+| **CLS**| Cumulative Layout Shift | ≤0.1 / >0.25 | 视觉稳定性 |
 
 **配合读的性能时间轴**：
 
@@ -134,7 +134,7 @@ Web Vitals（[官方定义](https://web.dev/articles/lcp)）三个核心：
   LCP --> TTI[TTI<br/>Time to Interactive<br/>主线程空闲 ≥5s]
   TTI --> IDLE[持续可交互]`} />
 
-**4.2s → 1.8s 的拆解**（顺丰 ERP 实战案例）：从 LCP 4.2s 到 1.8s 不是一招魔法，是各阶段叠加：
+**4.2s → 1.8s 的拆解**（大型 ERP 实战案例）：从 LCP 4.2s 到 1.8s 不是一招魔法，是各阶段叠加：
 
 | 阶段 | 4.2s 现状 | 1.8s 目标 | 关键动作 |
 |---|---|---|---|
@@ -143,7 +143,7 @@ Web Vitals（[官方定义](https://web.dev/articles/lcp)）三个核心：
 | CSS / 字体 | 600ms | 150ms | `font-display: swap` + 关键 CSS 内联 |
 | JS 执行 | 1500ms | 700ms | 代码分割 + vendor 拆 chunk + tree-shaking |
 | 首屏图片 | 900ms | 400ms | `<link rel=preload>` + AVIF + LQIP 占位 |
-| LCP 渲染 | 4.2s | **1.8s** | 综合上面 5 项 |
+| LCP 渲染 | 4.2s | **1.8s**| 综合上面 5 项 |
 
 **架构师视角的关键判断**：如果 LCP 远大于 TTFB + HTML + CSS + JS 之和，**问题大概率在网络层或资源体积**；如果 LCP 接近总和，问题在渲染流水线或主线程阻塞。
 
@@ -164,7 +164,7 @@ Web Vitals（[官方定义](https://web.dev/articles/lcp)）三个核心：
 - **阻塞规则**：默认 `<script>` 阻塞 HTML 解析，`<link rel=stylesheet>` 阻塞渲染；`defer` / `async` / `preload` 是出口。
 - **合成层**：只有 transform 和 opacity 能跳过 Layout + Paint，是动画优化的核心。
 - **Web Vitals**：LCP / INP / CLS 是核心指标，FCP / FP 早就过时。
-- **4.2s → 1.8s** 不是一招魔法，是网络 + 资源 + 渲染流水线 + 主线程的综合治理。
+- **4.2s → 1.8s**不是一招魔法，是网络 + 资源 + 渲染流水线 + 主线程的综合治理。
 
 **下一篇**：CSS / HTML5 进阶——盒模型 / Flex / Grid / 容器查询。把今天渲染流水线的"绘制阶段"展开到视觉层基础。
 

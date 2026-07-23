@@ -14,7 +14,7 @@ import AIAsk from '../../components/Blog/AIAsk.astro';
 
 1. **响应式调优需要它**。为什么 `ref` 和 `reactive` 不能直接互换？为什么 computed 缓存何时失效？不懂原理就只能"用模板能跑就行"。
 2. **大项目靠 Vue 守门**。ERP 财务系统 200+ 表格列 + 80+ 表单字段，用 Vue 3 的响应式 + Composition API + 类型体操，**重构成 Vue 2 重写不了的项目结构**。
-3. **跨框架迁移需要它**。简历里出现 Vue 2 / Vue 3 同时存在，**理解 v2→v3 的 Proxy 重构动机**，才知道"哪些 v2 写法在 v3 是反模式"。
+3. **跨框架迁移需要它**。出现 Vue 2 / Vue 3 同时存在，**理解 v2→v3 的 Proxy 重构动机**，才知道"哪些 v2 写法在 v3 是反模式"。
 
 这一篇是『前端架构修仙路』的第 9 篇。我跳过 reactivity 包源码（不展开 createReactiveObject 的每个分支），用架构图 + 时序图 + 真实案例，把 Vue 3 的 Proxy 响应式 / 依赖追踪 / VNode Diff / Composition API 讲透。下一篇深度聊 Angular 的企业级架构与 DI。
 
@@ -157,7 +157,7 @@ count.value++;  // 注意 .value
 ```
 
 **架构师规则**：
-- `ref` 包**基本类型** + **DOM 引用** + **需要整体替换**的对象
+- `ref` 包**基本类型**+ **DOM 引用**+ **需要整体替换**的对象
 - `reactive` 包**会多个属性独立修改**的对象
 - 模板里 ref **自动解包**（不需要 `.value`），reactive **不会**
 
@@ -240,7 +240,7 @@ Vue 3 在模板编译时**自动识别动态节点的边界**：
 </template>
 ```
 
-编译产物会**自动识别** `v-if / v-for` 创建的子节点，**整个 block 在 diff 时扁平化**——避免跨 block 的无效比较。
+编译产物会**自动识别**`v-if / v-for` 创建的子节点，**整个 block 在 diff 时扁平化**——避免跨 block 的无效比较。
 
 ## 五、Composition API：函数式思维统一
 
@@ -374,7 +374,7 @@ function render(_ctx) {
 
 ## 七、跨框架组件复用：Web Components + Vue + React
 
-简历里出现 **"8 个跨 Vue/React 通用组件"**，**核心抽象层是 Web Components**：
+以 **8 个跨 Vue/React 通用组件**为例——**核心抽象层是 Web Components**：
 
 ```javascript
 // 用 Web Components 写一次,Vue / React / Angular 都可用
@@ -424,13 +424,13 @@ const SmartTable = createComponent({ react: SmartTableReact, ... });
 - **Vapor mode（Vue 3.5）**：无 VDOM,首屏 JS 减半,LCP 降 39%。
 - **Web Components**：跨 Vue / React / Angular 通用组件的核心抽象层。
 
-**下一篇**：Angular 深度——企业级 DI 体系 + RxJS 异步原语 + 强约定架构,从信锐时期 Ionic + Angular 实战讲起。
+**下一篇**：Angular 深度——企业级 DI 体系 + RxJS 异步原语 + 强约定架构,从Ionic + Angular 实战讲起。
 
 ## 5 道重点面试问题方向
 
 > **Q1（答案）**：Vue 2 用 `Object.defineProperty` 实现响应式，Vue 3 为什么改用 `Proxy`？解决了哪些问题？
 >
-> **A**：**Vue 2 痛点**：① **无法检测新增属性** —— `vm.newProp = 1` 不触发更新，必须 `Vue.set`；② **无法检测数组下标变化** —— `arr[0] = 1` / `arr.length = 0` 不触发；③ **无法检测 Map / Set** —— 要重写 push/pop/shift 等方法。**Vue 3 Proxy 解决**：Proxy 是**对象级别的拦截**（不是属性级别），所以**新增 / 删除 / 数组下标 / Map / Set** 全部自动响应；同时 Proxy 是**引擎原生实现**，比 Object.defineProperty 性能更好。**面试要点**：能说"Proxy 拦截的是对象整体,defineProperty 拦截的是单个属性"——这是核心区别。<AIAsk question="Vue 2 用 Object.defineProperty 实现响应式，Vue 3 为什么改用 Proxy？解决了哪些问题？" />
+> **A**：**Vue 2 痛点**：① **无法检测新增属性**—— `vm.newProp = 1` 不触发更新，必须 `Vue.set`；② **无法检测数组下标变化**—— `arr[0] = 1` / `arr.length = 0` 不触发；③ **无法检测 Map / Set**—— 要重写 push/pop/shift 等方法。**Vue 3 Proxy 解决**：Proxy 是**对象级别的拦截**（不是属性级别），所以**新增 / 删除 / 数组下标 / Map / Set**全部自动响应；同时 Proxy 是**引擎原生实现**，比 Object.defineProperty 性能更好。**面试要点**：能说"Proxy 拦截的是对象整体,defineProperty 拦截的是单个属性"——这是核心区别。<AIAsk question="Vue 2 用 Object.defineProperty 实现响应式，Vue 3 为什么改用 Proxy？解决了哪些问题？" />
 >
 > **Q2（思考）**：Vue 3 的 `ref` 和 `reactive` 什么时候该用哪个？模板里有什么差异？<AIAsk question="Vue 3 的 ref 和 reactive 什么时候该用哪个？模板里有什么差异？" />
 >

@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand responsive design? My answer is **yes** — not to memorize every viewport meta, but to build the engineering intuition of "one codebase runs on all devices". Three reasons:
+Should a frontend architect understand responsive design? My answer is **yes**— not to memorize every viewport meta, but to build the engineering intuition of "one codebase runs on all devices". Three reasons:
 
-1. **Admin backend mobile is a high-frequency scenario.** ERP / FinUI / CRM increasingly require PC + tablet + mobile three-end access, **responsive is not a "bonus" but a "required question"**.
-2. **Viewport misconfig breaks the whole page.** Wrong `device-width` / missing `initial-scale` / wrong `user-scalable` — all make users see a shrunken page.
-3. **Architects unify the approach.** 5 projects using 5 different rem adaptation schemes, **debugging bugs is hard cross-project**. **Architect's job is to set one rule, the whole team follows**.
+1. **Admin backend mobile is a high-frequency scenario.**ERP / FinUI / CRM increasingly require PC + tablet + mobile three-end access, **responsive is not a "bonus" but a "required question"**.
+2. **Viewport misconfig breaks the whole page.**Wrong `device-width` / missing `initial-scale` / wrong `user-scalable` — all make users see a shrunken page.
+3. **Architects unify the approach.**5 projects using 5 different rem adaptation schemes, **debugging bugs is hard cross-project**. **Architect's job is to set one rule, the whole team follows**.
 
 This is post #11 of the *Frontend Architecture Cultivation Path* series. We skip browser-specific device details (like iOS Safari's rubber-band scrolling), use architecture diagrams + scheme comparison tables + real code to make viewport / rem / vw / container queries / 1px borders / safe areas concrete. The next post deep-dives into build tools (Webpack → Vite → Rspack evolution).
 
@@ -177,7 +177,7 @@ module.exports = {
 
 ### 4.1 Problem Essence
 
-**iPhone 12's devicePixelRatio = 3**, CSS `1px` border is rendered as **3 physical pixels** — looks "thick" on retina screens.
+**iPhone 12's devicePixelRatio = 3**, CSS `1px` border is rendered as **3 physical pixels**— looks "thick" on retina screens.
 
 ### 4.2 Solution: transform scale
 
@@ -224,7 +224,7 @@ module.exports = {
 /* Scheme 2: border-image (poor compatibility, not recommended in 2024) */
 ```
 
-**Production case**: an admin backend's borders looked thick on iPhone 12, **switching to transform scale halved the visual weight** — CSS physical 1px border vs visual 1px border.
+**Production case**: an admin backend's borders looked thick on iPhone 12, **switching to transform scale halved the visual weight**— CSS physical 1px border vs visual 1px border.
 
 ## 5. Safe Areas: iPhone Notch / Dynamic Island
 
@@ -251,7 +251,7 @@ iPhone X+ top notch + bottom Home Indicator occupy part of the screen, **page co
 }
 ```
 
-**Key**: `viewport-fit=cover` + `env()` must appear **as a pair** — otherwise `env()` returns 0.
+**Key**: `viewport-fit=cover` + `env()` must appear **as a pair**— otherwise `env()` returns 0.
 
 ### 5.2 Fullscreen / Landscape Adaptation
 
@@ -283,7 +283,7 @@ window.addEventListener('orientationchange', () => {
 });
 ```
 
-**Key trap**: after orientationchange, **immediately** getting window.innerWidth may return old value (iOS Safari). **setTimeout 100ms protection**.
+**Key trap**: after orientationchange, **immediately**getting window.innerWidth may return old value (iOS Safari). **setTimeout 100ms protection**.
 
 ## 7. Container Queries: Component-Level Responsiveness
 
@@ -312,11 +312,11 @@ Container queries were covered earlier (CSS chapter), here emphasizing the mobil
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't mix multiple adaptation schemes.** rem + vw + media queries mixed, **debugging math is unclear**. **Whole team uses one scheme**.
-2. **Don't forget `viewport-fit=cover`.** iOS notch / Dynamic Island blocks content, **without it the back button in the top status bar is invisible**.
-3. **Don't treat `user-scalable=no` as default.** Visually impaired users depend on zoom, **WCAG 2.1 explicitly forbids default-disabled zoom**. If you must, **provide accessible alternatives (e.g., font size buttons)**.
-4. **Don't use px directly for borders.** On retina screens `border: 1px solid` looks twice as thick. **Use transform scale or vw units**.
-5. **Don't access `window` in SSR.** Next.js / Nuxt SSR runs in Node environment, **no viewport**. **Mobile adaptation must use CSS media queries + vw, not JS-dependent**.
+1. **Don't mix multiple adaptation schemes.**rem + vw + media queries mixed, **debugging math is unclear**. **Whole team uses one scheme**.
+2. **Don't forget `viewport-fit=cover`.**iOS notch / Dynamic Island blocks content, **without it the back button in the top status bar is invisible**.
+3. **Don't treat `user-scalable=no` as default.**Visually impaired users depend on zoom, **WCAG 2.1 explicitly forbids default-disabled zoom**. If you must, **provide accessible alternatives (e.g., font size buttons)**.
+4. **Don't use px directly for borders.**On retina screens `border: 1px solid` looks twice as thick. **Use transform scale or vw units**.
+5. **Don't access `window` in SSR.**Next.js / Nuxt SSR runs in Node environment, **no viewport**. **Mobile adaptation must use CSS media queries + vw, not JS-dependent**.
 
 ## Summary
 
@@ -327,7 +327,7 @@ Eight key facts that thread mobile responsive adaptation together:
 - **vw scheme**: pure CSS smooth responsive, with `postcss-px-to-viewport` auto-conversion.
 - **1px borders**: when DPR > 1, use `transform: scaleY(0.333)`, visually thin line.
 - **Safe areas**: `env(safe-area-inset-*)` + `viewport-fit=cover`, iPhone notch / Dynamic Island adaptation.
-- **Portrait-landscape switching**: after orientationchange **setTimeout 100ms** recalculate rem.
+- **Portrait-landscape switching**: after orientationchange **setTimeout 100ms**recalculate rem.
 - **Container queries**: component-level responsive, **mobile H5 popup/main-area shared component's killer weapon**.
 - **A11y anti-pattern**: `user-scalable=no` default-disabled zoom, **WCAG 2.1 forbids**.
 
@@ -339,7 +339,7 @@ Eight key facts that thread mobile responsive adaptation together:
 
 > **Q1 (Answer)**: Which values must the mobile viewport meta tag set? What happens if they're missing?
 >
-> **A**: **Three required**: `width=device-width` (make layout viewport = device width, missing renders at 980px), `initial-scale=1.0` (initial scale 1:1, missing scales down proportionally), `viewport-fit=cover` (page extends into iPhone notch / Dynamic Island, missing gets content occluded by status bar). **Counter-example**: iPhone 12 without viewport renders at 980px, all elements appear 2.5× smaller, user must double-tap to zoom. **Architect's rule**: **only use these three, don't touch other parameters** — especially `user-scalable=no` is an A11y anti-pattern (WCAG 2.1 explicitly forbids default-disabled zoom).<AIAsk question="Which values must the mobile viewport meta tag set? What happens if they're missing?" lang="en" />
+> **A**: **Three required**: `width=device-width` (make layout viewport = device width, missing renders at 980px), `initial-scale=1.0` (initial scale 1:1, missing scales down proportionally), `viewport-fit=cover` (page extends into iPhone notch / Dynamic Island, missing gets content occluded by status bar). **Counter-example**: iPhone 12 without viewport renders at 980px, all elements appear 2.5× smaller, user must double-tap to zoom. **Architect's rule**: **only use these three, don't touch other parameters**— especially `user-scalable=no` is an A11y anti-pattern (WCAG 2.1 explicitly forbids default-disabled zoom).<AIAsk question="Which values must the mobile viewport meta tag set? What happens if they're missing?" lang="en" />
 >
 > **Q2 (Think)**: What are the pros and cons of the three rem adaptation schemes (JS dynamic root / media queries / CSS Variables + vw)? Which is recommended in 2024?<AIAsk question="What are the pros and cons of the three rem adaptation schemes (JS dynamic root / media queries / CSS Variables + vw)? Which is recommended in 2024?" lang="en" />
 >

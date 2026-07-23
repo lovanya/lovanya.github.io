@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand build tools? My answer is **yes** — not to read Webpack source code, but to build the engineering judgment of "why build time dropped from 12min to 3min". Three reasons:
+Should a frontend architect understand build tools? My answer is **yes**— not to read Webpack source code, but to build the engineering judgment of "why build time dropped from 12min to 3min". Three reasons:
 
-1. **The 12min→3min build optimization on resume is hard data.** SF Express ERP refactor with real numbers proves engineering value — **not talking about performance, but pairing the right toolchain**.
-2. **Build tool evolution = front-end architecture history.** From Webpack to Vite to Rspack, each step reveals "what front-end is making faster".
-3. **Large projects must choose the right build tool.** Webpack for complex customization, Vite for dev experience, Rspack for Webpack compatibility + extreme speed. **Wrong tool = team wastes 30min/day waiting for builds**.
+1. **The 12min→3min build optimization  is hard data.**large ERP refactor with real numbers proves engineering value — **not talking about performance, but pairing the right toolchain**.
+2. **Build tool evolution = front-end architecture history.**From Webpack to Vite to Rspack, each step reveals "what front-end is making faster".
+3. **Large projects must choose the right build tool.**Webpack for complex customization, Vite for dev experience, Rspack for Webpack compatibility + extreme speed. **Wrong tool = team wastes 30min/day waiting for builds**.
 
 This is post #12 of the *Frontend Architecture Cultivation Path* series. We skip bundler source code (no AST / scope hoist deep dive), use architecture diagrams + real performance data + selection tables to make bundler essentials / Webpack 5 / Vite 5 / Rspack 3 / Turbopack concrete. The next post covers package management and Monorepo (pnpm + Changesets).
 
@@ -34,13 +34,13 @@ This is post #12 of the *Frontend Architecture Cultivation Path* series. We skip
 3. **Dependency Graph**: parse import / require, build module dependency graph
 4. **Bundle**: stitch code, tree-shake dead code, code-split chunks, minify
 
-**Architect's mantra**: **bundler performance's core bottleneck** = JS single-thread parsing + many plugin hooks. **Rust rewrites (SWC / esbuild / Turbopack / Rspack) = bypass JS performance bottleneck**.
+**Architect's mantra**: **bundler performance's core bottleneck**= JS single-thread parsing + many plugin hooks. **Rust rewrites (SWC / esbuild / Turbopack / Rspack) = bypass JS performance bottleneck**.
 
 ## 2. Webpack 5: Mature but Slow
 
 ### 2.1 Core Mechanism
 
-Webpack 5 uses **JS single-thread parsing** of all modules → slow but **richest ecosystem**.
+Webpack 5 uses **JS single-thread parsing**of all modules → slow but **richest ecosystem**.
 
 **Advantages**:
 - 1000+ plugins, Loaders cover almost all scenarios
@@ -48,7 +48,7 @@ Webpack 5 uses **JS single-thread parsing** of all modules → slow but **riches
 - Long-term accumulated optimizations (persistent cache, tree-shaking, sideEffects)
 
 **Pain points**:
-- **Slow cold start**: SF Express ERP 12min → mainly Webpack cold start + many Loader parsing
+- **Slow cold start**: large ERP 12min → mainly Webpack cold start + many Loader parsing
 - **Slow HMR**: every modification needs re-parsing the whole module graph
 - **Bloated config**: 500-line webpack.config.js is normal
 
@@ -80,7 +80,7 @@ module.exports = {
 };
 ```
 
-**Production case**: SF Express ERP used these 4 optimizations to take builds from 12min to 4min — **but still not fast enough**, which led to Vite / Rspack attempts.
+**Production case**: large ERP used these 4 optimizations to take builds from 12min to 4min — **but still not fast enough**, which led to Vite / Rspack attempts.
 
 ## 3. Vite 5: Dual Engine of Native ESM + esbuild
 
@@ -103,7 +103,7 @@ Vite dev server:
 
 ### 3.2 Production Uses Rollup
 
-Vite in **build mode** uses **Rollup** to bundle (mature ecosystem, strong tree-shaking):
+Vite in **build mode**uses **Rollup**to bundle (mature ecosystem, strong tree-shaking):
 
 ```
 Vite build:
@@ -126,19 +126,19 @@ export default defineConfig({
 });
 ```
 
-**vs Webpack's 500-line config** — **Vite uses conventions + plugins**, works out of the box.
+**vs Webpack's 500-line config**— **Vite uses conventions + plugins**, works out of the box.
 
 ### 3.4 Vite Pain Points
 
-1. **Ecosystem still catching up to Webpack** — some Webpack plugins have no Vite equivalent
-2. **Production build still Rollup** — not esbuild, still not fast enough for huge projects
-3. **SSR config relatively complex** — especially server-only module import handling
+1. **Ecosystem still catching up to Webpack**— some Webpack plugins have no Vite equivalent
+2. **Production build still Rollup**— not esbuild, still not fast enough for huge projects
+3. **SSR config relatively complex**— especially server-only module import handling
 
 ## 4. Rspack 3: Rust Rewrite of Webpack Compatibility
 
 ### 4.1 Core Innovation
 
-**ByteDance's Rspack (open-sourced 2023)** rewrites the entire bundler in **Rust**, **maintaining Webpack compatibility**.
+**ByteDance's Rspack (open-sourced 2023)**rewrites the entire bundler in **Rust**, **maintaining Webpack compatibility**.
 
 ```
 Rspack vs Webpack:
@@ -163,13 +163,13 @@ A large admin backend project (2000+ modules):
 
 | Dimension | Rspack | Vite |
 |---|---|---|
-| Config compatibility | **Fully Webpack compatible** | Incompatible, needs migration |
-| Dev cold start | 1-3s | **500ms** |
-| Prod build | **5-10× Webpack** | Near Rollup speed |
-| HMR | 200ms | **100ms** |
-| Ecosystem | **1000+ Webpack plugins reused** | Own plugin ecosystem (newer) |
-| Learning curve | **Zero** (Webpack users) | Need to relearn conventions |
-| Use case | **Webpack old project needs speedup** | New project wants dev experience |
+| Config compatibility | **Fully Webpack compatible**| Incompatible, needs migration |
+| Dev cold start | 1-3s | **500ms**|
+| Prod build | **5-10× Webpack**| Near Rollup speed |
+| HMR | 200ms | **100ms**|
+| Ecosystem | **1000+ Webpack plugins reused**| Own plugin ecosystem (newer) |
+| Learning curve | **Zero**(Webpack users) | Need to relearn conventions |
+| Use case | **Webpack old project needs speedup**| New project wants dev experience |
 
 **Architect's rules**:
 - **New project**: use Vite (best dev experience)
@@ -180,34 +180,34 @@ A large admin backend project (2000+ modules):
 
 ### 5.1 Core Innovation
 
-**Turbopack (open-sourced 2023)** written in Rust, **designed specifically for incremental builds** — only compiles modified files, **700× faster compilation than Webpack** (Vercel official data).
+**Turbopack (open-sourced 2023)**written in Rust, **designed specifically for incremental builds**— only compiles modified files, **700× faster compilation than Webpack**(Vercel official data).
 
 ### 5.2 Status
 
-- **Next.js 15+ has it integrated by default** (production mode)
-- **Standalone bundler** still in preview
+- **Next.js 15+ has it integrated by default**(production mode)
+- **Standalone bundler**still in preview
 - **Not directly compatible with Webpack**, need to migrate through Next.js
 
 ### 5.3 Selection Decision
 
-**Production use Next.js + Turbopack** (if project is React framework). **Pure Vite users don't switch for now**.
+**Production use Next.js + Turbopack**(if project is React framework). **Pure Vite users don't switch for now**.
 
 ## 6. Four Build Tools Cross-Comparison
 
 | Tool | Implementation | Cold start | Prod build | HMR | Ecosystem | Learning cost |
 |---|---|---|---|---|---|---|
-| **Webpack 5** | JS | 12min (large project) | 12min | 4s | **Richest** | High |
-| **Vite 5** | ESM + esbuild | **500ms** | 3min (Rollup) | **100ms** | Medium | **Low** |
-| **Rspack 3** | Rust | 1.5min | **1.5min** | 200ms | Webpack compatible | **Zero** (Webpack users) |
-| **Turbopack** | Rust | 1s | 1min | 100ms | Next.js ecosystem | Low |
+| **Webpack 5**| JS | 12min (large project) | 12min | 4s | **Richest**| High |
+| **Vite 5**| ESM + esbuild | **500ms**| 3min (Rollup) | **100ms**| Medium | **Low**|
+| **Rspack 3**| Rust | 1.5min | **1.5min**| 200ms | Webpack compatible | **Zero**(Webpack users) |
+| **Turbopack**| Rust | 1s | 1min | 100ms | Next.js ecosystem | Low |
 
 **Architect's decision tree**:
 
 ```
 Project selection
 ├── New project / wants dev experience → **Vite 5**
-├── Webpack old project wants speedup → **Rspack 3** (zero migration)
-├── Next.js project → **Turbopack** (Next.js 15+ default)
+├── Webpack old project wants speedup → **Rspack 3**(zero migration)
+├── Next.js project → **Turbopack**(Next.js 15+ default)
 └── Extreme build speed + willing to migrate → **Rspack 3 + Turbopack**
 ```
 
@@ -215,7 +215,7 @@ Project selection
 
 ### 7.1 What is Tree-shaking
 
-**Delete unreferenced exports** — bundler statically analyzes imports, finds dead code and deletes it.
+**Delete unreferenced exports**— bundler statically analyzes imports, finds dead code and deletes it.
 
 ```javascript
 // utils.ts
@@ -257,11 +257,11 @@ A SDK package of `100KB`, user only uses 1 function:
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't blindly switch tools "for performance".** Webpack 5 + esbuild-loader / cache / splitChunks is already enough, **optimize config first before switching tools**.
-2. **Don't confuse "dev experience" with "production build".** Vite dev is fast but production is still Rollup. **Evaluate tools by production build speed, not dev startup speed**.
-3. **Don't ignore Bundle analysis.** `webpack-bundle-analyzer` / `rollup-plugin-visualizer` / `rspack-bundler-analyzer` are must-installs. **How do you know where 80% of volume is without looking at the chart?**
-4. **Don't forget SourceMap config.** Dev mode enables full source map, **production mode enables hidden source map (hide source but keep debugging capability)**.
-5. **Don't hardcode version numbers / paths in build config.** Use environment variables or definePlugin injection, so the same config supports multiple environments.
+1. **Don't blindly switch tools "for performance".**Webpack 5 + esbuild-loader / cache / splitChunks is already enough, **optimize config first before switching tools**.
+2. **Don't confuse "dev experience" with "production build".**Vite dev is fast but production is still Rollup. **Evaluate tools by production build speed, not dev startup speed**.
+3. **Don't ignore Bundle analysis.**`webpack-bundle-analyzer` / `rollup-plugin-visualizer` / `rspack-bundler-analyzer` are must-installs. **How do you know where 80% of volume is without looking at the chart?**
+4. **Don't forget SourceMap config.**Dev mode enables full source map, **production mode enables hidden source map (hide source but keep debugging capability)**.
+5. **Don't hardcode version numbers / paths in build config.**Use environment variables or definePlugin injection, so the same config supports multiple environments.
 
 ## Summary
 
@@ -284,7 +284,7 @@ Eight key facts that thread build tool evolution together:
 
 > **Q1 (Answer)**: What's the core difference between Webpack 5 / Vite 5 / Rspack 3 build tools? What scenarios are each suitable for?
 >
-> **A**: **Webpack 5** is JS single-thread bundler, richest ecosystem (1000+ plugins), **slow cold start** but **complex projects have strongest config power**. **Vite 5** uses native ESM + esbuild, **dev cold start 500ms** (regardless of project size), production uses Rollup, **new project first choice**. **Rspack 3** rewrites in Rust, **fully Webpack config compatible**, **5-10× speedup**, **Webpack old project migration zero cost**. **Decision**: new project uses Vite; Webpack old project wants speedup uses Rspack; Next.js project uses Turbopack.<AIAsk question="What's the core difference between Webpack 5 / Vite 5 / Rspack 3 build tools? What scenarios are each suitable for?" lang="en" />
+> **A**: **Webpack 5**is JS single-thread bundler, richest ecosystem (1000+ plugins), **slow cold start**but **complex projects have strongest config power**. **Vite 5**uses native ESM + esbuild, **dev cold start 500ms**(regardless of project size), production uses Rollup, **new project first choice**. **Rspack 3**rewrites in Rust, **fully Webpack config compatible**, **5-10× speedup**, **Webpack old project migration zero cost**. **Decision**: new project uses Vite; Webpack old project wants speedup uses Rspack; Next.js project uses Turbopack.<AIAsk question="What's the core difference between Webpack 5 / Vite 5 / Rspack 3 build tools? What scenarios are each suitable for?" lang="en" />
 >
 > **Q2 (Think)**: Why can Vite 5's dev cold start be as fast as 500ms? What's the core difference between it and Webpack in dev mode?<AIAsk question="Why can Vite 5's dev cold start be as fast as 500ms? What's the core difference between it and Webpack in dev mode?" lang="en" />
 >
@@ -292,7 +292,7 @@ Eight key facts that thread build tool evolution together:
 >
 > **Q4 (Think)**: How can Rspack achieve full Webpack config compatibility + 5-10× speedup? Where are the specific gains of Rust replacing JS?<AIAsk question="How can Rspack achieve full Webpack config compatibility + 5-10× speedup? Where are the specific gains of Rust replacing JS?" lang="en" />
 >
-> **Q5 (Think)**: In the SF Express ERP project, how did you optimize build time from 12min to 3min? Walk through each step's time breakdown and matching optimization.<AIAsk question="In the SF Express ERP project, how did you optimize build time from 12min to 3min? Walk through each step's time breakdown and matching optimization." lang="en" />
+> **Q5 (Think)**: In the large ERP project, how did you optimize build time from 12min to 3min? Walk through each step's time breakdown and matching optimization.<AIAsk question="In the large ERP project, how did you optimize build time from 12min to 3min? Walk through each step's time breakdown and matching optimization." lang="en" />
 
 > 💡 Each question has an AI assistant button — one click gets you a detailed answer.
 

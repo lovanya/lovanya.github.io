@@ -31,9 +31,9 @@ XSS 是 **攻击者把 JS 代码注入到受害者的页面里执行**。分三�
 
 | 类型 | 攻击载体 | 危害面 | 修复难度 |
 |---|---|---|---|
-| 存储型 XSS | 评论 / 头像 / 用户名进数据库 | **所有访问者** | 中 |
-| 反射型 XSS | 邮件 / 钓鱼链接的 query 参数 | **特定受害者** | 中 |
-| DOM 型 XSS | 前端 JS 把不可信数据塞进危险 API | **特定受害者** | **高**（难发现） |
+| 存储型 XSS | 评论 / 头像 / 用户名进数据库 | **所有访问者**| 中 |
+| 反射型 XSS | 邮件 / 钓鱼链接的 query 参数 | **特定受害者**| 中 |
+| DOM 型 XSS | 前端 JS 把不可信数据塞进危险 API | **特定受害者**| **高**（难发现） |
 
 ### 1.2 反射型 XSS 攻击案例
 
@@ -142,7 +142,7 @@ if (req.headers.origin !== 'https://bank.com') {
 # 转账 / 修改密码前要求输入密码 / 2FA
 ```
 
-**生产实战**：顺丰 SSO 系统强制 `SameSite=Lax` + 双重提交 Cookie（Double Submit Cookie）+ Origin 校验三件套，CSRF 投诉从每月几十起降到零。
+**生产实战**： SSO 系统强制 `SameSite=Lax` + 双重提交 Cookie（Double Submit Cookie）+ Origin 校验三件套，CSRF 投诉从每月几十起降到零。
 
 ### 2.3 SameSite 三个值怎么选
 
@@ -265,8 +265,8 @@ JWT / access token 存哪，**架构师必须做决策**：
 | 存储位置 | XSS 风险 | CSRF 风险 | 推荐场景 |
 |---|---|---|---|
 | `localStorage` | **高**（JS 能读，XSS 一键偷） | 低（不发自动带） | ❌ 不推荐 |
-| `sessionStorage` | **高** | 低 | 短时会话，不敏感 |
-| **HttpOnly Cookie** | 低 | 高（默认带） | **推荐**，配 SameSite 防 CSRF |
+| `sessionStorage` | **高**| 低 | 短时会话，不敏感 |
+| **HttpOnly Cookie**| 低 | 高（默认带） | **推荐**，配 SameSite 防 CSRF |
 | Memory（变量） | **零**（刷新丢失） | 零 | 短时会话 + 高敏感 |
 
 **架构师决策**：JWT 默认存 **HttpOnly Cookie + SameSite=Lax**。localStorage 存储只在以下情况可用：① 第三方 SDK 必须 JS 读 ② 应用对 XSS 攻击面已经收口（CSP 严格）。
@@ -302,7 +302,7 @@ package.json 不写 "latest",写具体版本
 这一篇用 8 个关键事实把前端安全串起来：
 
 - **XSS 三类型**：存储型（DB 注入）/ 反射型（URL 注入）/ DOM 型（前端 JS），每种防御手法不同。
-- **escape + sanitize** + CSP 兜底是 XSS 防御三件套。
+- **escape + sanitize**+ CSP 兜底是 XSS 防御三件套。
 - **CSRF 防御**：SameSite Cookie + CSRF Token + Origin 校验 + 关键操作二次认证。
 - **CSP nonce 模式**是现代最推荐的纵深防御方案。
 - **SRI**校验 CDN 资源完整性，防供应链攻击。
@@ -316,7 +316,7 @@ package.json 不写 "latest",写具体版本
 
 > **Q1（答案）**：XSS 三种类型的区别是什么？分别怎么防御？
 >
-> **A**：**存储型 XSS**：恶意代码进数据库（评论 / 头像 / 用户名），所有访问者都中招；防御是**入库前 sanitize** + 渲染前 escape + CSP。**反射型 XSS**：恶意代码在 URL 参数里，需要诱骗受害者点击；防御是服务端**渲染前 escape** 所有用户输入 + CSP。**DOM 型 XSS**：纯前端 JS 把不可信数据塞进 `innerHTML` / `eval` / `document.write`，不经过服务端；防御是**改用 `textContent`** 或 DOMPurify sanitize。**面试要点**：能举出"用 `innerHTML` 渲染 `location.hash`"这类经典反例。<AIAsk question="XSS 三种类型的区别是什么？分别怎么防御？" />
+> **A**：**存储型 XSS**：恶意代码进数据库（评论 / 头像 / 用户名），所有访问者都中招；防御是**入库前 sanitize**+ 渲染前 escape + CSP。**反射型 XSS**：恶意代码在 URL 参数里，需要诱骗受害者点击；防御是服务端**渲染前 escape**所有用户输入 + CSP。**DOM 型 XSS**：纯前端 JS 把不可信数据塞进 `innerHTML` / `eval` / `document.write`，不经过服务端；防御是**改用 `textContent`**或 DOMPurify sanitize。**面试要点**：能举出"用 `innerHTML` 渲染 `location.hash`"这类经典反例。<AIAsk question="XSS 三种类型的区别是什么？分别怎么防御？" />
 >
 > **Q2（思考）**：CSRF 的攻击链路是什么？SameSite Cookie 三种值怎么选？为什么 OAuth 第三方回调必须用 None？<AIAsk question="CSRF 的攻击链路是什么？SameSite Cookie 三种值怎么选？为什么 OAuth 第三方回调必须用 None？" />
 >

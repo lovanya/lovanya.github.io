@@ -10,11 +10,11 @@ import AIAsk from '../../../components/Blog/AIAsk.astro';
 
 ## Introduction
 
-Should a frontend architect understand Vue internals? My answer is **yes** — not to read @vue/reactivity source code, but to build the engineering judgment of "why Vue 3 is more stable and faster than Vue 2". Three reasons:
+Should a frontend architect understand Vue internals? My answer is **yes**— not to read @vue/reactivity source code, but to build the engineering judgment of "why Vue 3 is more stable and faster than Vue 2". Three reasons:
 
-1. **Reactivity tuning demands it.** Why can't `ref` and `reactive` be swapped directly? When does computed's cache invalidate? Without principles, you just "run with templates and hope for the best".
-2. **Large projects rely on Vue as gatekeeper.** ERP finance system's 200+ table columns + 80+ form fields, using Vue 3's reactivity + Composition API + type gymnastics — **restructured into a project that Vue 2 couldn't rewrite**.
-3. **Cross-framework migration demands it.** A resume that lists Vue 2 / Vue 3 simultaneously — **understanding v2→v3's Proxy refactor motivation**, you know "which v2 patterns are anti-patterns in v3".
+1. **Reactivity tuning demands it.**Why can't `ref` and `reactive` be swapped directly? When does computed's cache invalidate? Without principles, you just "run with templates and hope for the best".
+2. **Large projects rely on Vue as gatekeeper.**ERP finance system's 200+ table columns + 80+ form fields, using Vue 3's reactivity + Composition API + type gymnastics — **restructured into a project that Vue 2 couldn't rewrite**.
+3. **Cross-framework migration demands it.**A track record that lists Vue 2 / Vue 3 simultaneously — **understanding v2→v3's Proxy refactor motivation**, you know "which v2 patterns are anti-patterns in v3".
 
 This is post #9 of the *Frontend Architecture Cultivation Path* series. We skip the reactivity package source (no per-branch exploration of createReactiveObject), use architecture diagrams + sequence diagrams + real cases to make Vue 3's Proxy reactivity / dependency tracking / VNode Diff / Composition API concrete. The next post deep-dives into Angular's enterprise architecture and DI.
 
@@ -68,13 +68,13 @@ function defineReactive(obj, key) {
 
 **Three pain points**:
 
-1. **Cannot detect newly added properties** — `vm.newProp = 1` doesn't trigger update (must use `Vue.set`)
-2. **Cannot detect array index changes** — `arr[0] = 1` / `arr.length = 0` doesn't trigger
-3. **Cannot detect Map / Set** — requires overriding push/pop/shift etc.
+1. **Cannot detect newly added properties**— `vm.newProp = 1` doesn't trigger update (must use `Vue.set`)
+2. **Cannot detect array index changes**— `arr[0] = 1` / `arr.length = 0` doesn't trigger
+3. **Cannot detect Map / Set**— requires overriding push/pop/shift etc.
 
 ### 2.2 Vue 3's Proxy Refactor
 
-Vue 3 uses **Proxy** (ES2015 feature) to replace it:
+Vue 3 uses **Proxy**(ES2015 feature) to replace it:
 
 ```javascript
 // Vue 3 reactivity principle (simplified)
@@ -100,11 +100,11 @@ function reactive(obj) {
 
 **Three improvements**:
 
-1. ✅ **Auto-reactive for newly added / deleted properties** (`delete obj.prop` also triggers)
+1. ✅ **Auto-reactive for newly added / deleted properties**(`delete obj.prop` also triggers)
 2. ✅ **Array index / length changes auto-reactive**
 3. ✅ **Complete Map / Set / WeakMap / WeakSet support**
 
-**Performance**: Proxy is **faster** than defineProperty — the former is engine-native, the latter traverses each key.
+**Performance**: Proxy is **faster**than defineProperty — the former is engine-native, the latter traverses each key.
 
 ## 3. Dependency Tracking: track / trigger / effect Trio
 
@@ -157,9 +157,9 @@ count.value++;  // note the .value
 ```
 
 **Architect's rules**:
-- `ref` wraps **primitives** + **DOM refs** + **objects needing whole replacement**
+- `ref` wraps **primitives**+ **DOM refs**+ **objects needing whole replacement**
 - `reactive` wraps **objects with multiple independently-modified properties**
-- In templates, ref **auto-unwraps** (no `.value` needed), reactive **doesn't**
+- In templates, ref **auto-unwraps**(no `.value` needed), reactive **doesn't**
 
 ### 3.2 computed's Cache Mechanism
 
@@ -193,7 +193,7 @@ const stop = watch(...);
 stop();  // actively stop
 ```
 
-**Architect's rule**: **use watchEffect when possible** — auto-tracking is safer (won't miss dependencies); use watch only when you need the old value.
+**Architect's rule**: **use watchEffect when possible**— auto-tracking is safer (won't miss dependencies); use watch only when you need the old value.
 
 ## 4. VNode Diff Algorithm: Vue 3's Compile-Time Optimization
 
@@ -202,11 +202,11 @@ stop();  // actively stop
 Vue 2 uses **double-ended diff**:
 - Head + tail 4 pointers synchronously compare
 - Time complexity O(n)
-- But **static nodes** also diffed every time
+- But **static nodes**also diffed every time
 
 ### 4.2 Vue 3's Block Tree (Compile-Time Speedup)
 
-Vue 3 **at compile time** adds `patchFlag` (compile hints) to templates, only diffing dynamic parts:
+Vue 3 **at compile time**adds `patchFlag` (compile hints) to templates, only diffing dynamic parts:
 
 ```javascript
 // Vue 3 compilation output (simplified)
@@ -240,7 +240,7 @@ Vue 3 at compile time **auto-identifies dynamic node boundaries**:
 </template>
 ```
 
-The compilation output **auto-identifies** child nodes created by `v-if / v-for`, **the entire block flattens during diff** — avoiding invalid cross-block comparisons.
+The compilation output **auto-identifies**child nodes created by `v-if / v-for`, **the entire block flattens during diff**— avoiding invalid cross-block comparisons.
 
 ## 5. Composition API: Functional Thinking Unified
 
@@ -285,7 +285,7 @@ export default {
 | TS type inference | Weak (hard to infer this) | Strong (ref / computed types clear) |
 | Cross-component code sharing | Hard (mixin or HOC only) | Easy (direct import composable) |
 
-**Production case**: an ERP finance system with 200+ table columns, each column's "filter / sort / edit" logic **extracted as composables**, **3 core composables** (useTable / useForm / usePermission) support 800+ pages. **Options API era this reuse required mixin or HOC, 10× more complex**.
+**Production case**: an ERP finance system with 200+ table columns, each column's "filter / sort / edit" logic **extracted as composables**, **3 core composables**(useTable / useForm / usePermission) support 800+ pages. **Options API era this reuse required mixin or HOC, 10× more complex**.
 
 ### 5.3 Three Core Composable Patterns
 
@@ -366,15 +366,15 @@ function render(_ctx) {
 
 ### 6.2 Benefits
 
-- **Bundle size reduced 50%** (no Vue runtime)
-- **First-render 1.5-3× faster** (no VNode creation / diff overhead)
+- **Bundle size reduced 50%**(no Vue runtime)
+- **First-render 1.5-3× faster**(no VNode creation / diff overhead)
 - **Closer to Solid.js's fine-grained reactivity**
 
 **Production case**: an admin panel page after Vapor mode refactor — **first-screen JS from 280KB to 130KB (-54%)**, **LCP from 1.8s to 1.1s (-39%)**.
 
 ## 7. Cross-Framework Component Reuse: Web Components + Vue + React
 
-The resume line **"8 cross-Vue/React universal components"** — **the core abstraction layer is Web Components**:
+Take **8 cross-Vue/React universal components** as an example—**the core abstraction layer is Web Components**:
 
 ```javascript
 // Write once with Web Components, usable in Vue / React / Angular
@@ -406,11 +406,11 @@ const SmartTable = createComponent({ react: SmartTableReact, ... });
 
 ## 8. Pitfall Reminders (Senior Architects Please Read Carefully)
 
-1. **Don't entirely replace a reactive object.** `state = newState` will **lose all reactivity tracking**. **Must use `Object.assign(state, newState)` or keep references stable**.
-2. **Don't abuse `watch`.** watch's implicit dependencies (deep / flush) are easy to step on. **Use computed when possible, only watch for "execute side effects"**.
-3. **Don't use `window` / `document` in SSR.** Nuxt 3 / Vite SSR runs in Node environment by default, direct window access throws. **Guard with `import.meta.client`**.
-4. **Don't confuse ref / reactive template syntax.** `ref` auto-unwraps, reactive doesn't — in templates, `count` (ref) is equivalent to `count.value`, but `state.count` (reactive) is equivalent to `state.count`. **Check template when switching types**.
-5. **Don't use index as key in v-for.** `<li v-for="(item, i) in list" :key="i">` in list reorder / insert-delete will **reuse wrong DOM nodes**, state goes wrong. **Use stable unique IDs**.
+1. **Don't entirely replace a reactive object.**`state = newState` will **lose all reactivity tracking**. **Must use `Object.assign(state, newState)` or keep references stable**.
+2. **Don't abuse `watch`.**watch's implicit dependencies (deep / flush) are easy to step on. **Use computed when possible, only watch for "execute side effects"**.
+3. **Don't use `window` / `document` in SSR.**Nuxt 3 / Vite SSR runs in Node environment by default, direct window access throws. **Guard with `import.meta.client`**.
+4. **Don't confuse ref / reactive template syntax.**`ref` auto-unwraps, reactive doesn't — in templates, `count` (ref) is equivalent to `count.value`, but `state.count` (reactive) is equivalent to `state.count`. **Check template when switching types**.
+5. **Don't use index as key in v-for.**`<li v-for="(item, i) in list" :key="i">` in list reorder / insert-delete will **reuse wrong DOM nodes**, state goes wrong. **Use stable unique IDs**.
 
 ## Summary
 
@@ -424,7 +424,7 @@ Seven key facts that thread Vue 3 internals together:
 - **Vapor mode (Vue 3.5)**: no VDOM, first-screen JS halved, LCP 39% reduction.
 - **Web Components**: core abstraction layer for cross-Vue / React / Angular universal components.
 
-**Next post**: Angular deep dive — enterprise DI system + RxJS async primitives + strong convention architecture, starting from the Xinrui era Ionic + Angular practical experience.
+**Next post**: Angular deep dive — enterprise DI system + RxJS async primitives + strong convention architecture, starting from the Ionic + Angular practical experience.
 
 ## 5 Key Interview Question Tracks
 
@@ -432,7 +432,7 @@ Seven key facts that thread Vue 3 internals together:
 
 > **Q1 (Answer)**: Vue 2 used `Object.defineProperty` for reactivity. Why did Vue 3 switch to `Proxy`? What problems did it solve?
 >
-> **A**: **Vue 2 pain points**: ① **Cannot detect newly added properties** — `vm.newProp = 1` doesn't trigger update, must use `Vue.set`; ② **Cannot detect array index changes** — `arr[0] = 1` / `arr.length = 0` doesn't trigger; ③ **Cannot detect Map / Set** — requires overriding push/pop/shift etc. **Vue 3 Proxy solution**: Proxy is **object-level interception** (not property-level), so **newly added / deleted / array indexes / Map / Set** are all auto-reactive; meanwhile Proxy is **engine-native**, performs better than Object.defineProperty. **Interview tip**: explain "Proxy intercepts the object as a whole, defineProperty intercepts individual properties" — this is the core difference.<AIAsk question="Vue 2 used Object.defineProperty for reactivity. Why did Vue 3 switch to Proxy? What problems did it solve?" lang="en" />
+> **A**: **Vue 2 pain points**: ① **Cannot detect newly added properties**— `vm.newProp = 1` doesn't trigger update, must use `Vue.set`; ② **Cannot detect array index changes**— `arr[0] = 1` / `arr.length = 0` doesn't trigger; ③ **Cannot detect Map / Set**— requires overriding push/pop/shift etc. **Vue 3 Proxy solution**: Proxy is **object-level interception**(not property-level), so **newly added / deleted / array indexes / Map / Set**are all auto-reactive; meanwhile Proxy is **engine-native**, performs better than Object.defineProperty. **Interview tip**: explain "Proxy intercepts the object as a whole, defineProperty intercepts individual properties" — this is the core difference.<AIAsk question="Vue 2 used Object.defineProperty for reactivity. Why did Vue 3 switch to Proxy? What problems did it solve?" lang="en" />
 >
 > **Q2 (Think)**: When should Vue 3's `ref` vs `reactive` be used? What's the difference in templates?<AIAsk question="When should Vue 3's ref vs reactive be used? What's the difference in templates?" lang="en" />
 >
