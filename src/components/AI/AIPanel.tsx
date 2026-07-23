@@ -20,6 +20,22 @@ const markedPromise: Promise<MarkedFn> = import('marked').then((mod) => {
 let markedCache: MarkedFn | null = null;
 markedPromise.then((fn) => { markedCache = fn; });
 
+// 把 AI 输出里的"问题 N: ..."行替换成可点击按钮
+// 支持 **问题 N** 或 问题 N（带/不带冒号前后空格）
+function injectFollowupButtons(text: string): string {
+  return text.replace(
+    /(\*\*问题\s*(\d+)\*\*\s*[:：]?\s*)([^\n]+)/g,
+    (_, prefix, num, question) => {
+      const safe = question
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+      return `${prefix}<button type="button" class="ai-followup-btn" data-fuq-num="${num}" data-fuq-q="${safe}">${safe}</button>`;
+    }
+  );
+}
+
 interface OpenDetail {
   template: TemplateId;
   payload: string;
@@ -194,6 +210,21 @@ export default function AIPanel() {
     }, 50);
   }, [template, payload, anchor]);
 
+  // 追问：用追问问题作为新 payload 重新发起
+  const handleFollowup = useCallback((question: string) => {
+    if (!question) return;
+    setOpen(false);
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('ai:open', {
+        detail: {
+          template: 'interview' as TemplateId,
+          payload: question,
+          anchor: anchor || undefined,
+        },
+      }));
+    }, 50);
+  }, [anchor]);
+
   if (!open || !pos) return null;
 
   const labels = lang === 'zh' ? TEMPLATE_LABELS_ZH : TEMPLATE_LABELS_EN;
@@ -314,13 +345,13 @@ export default function AIPanel() {
           </div>
         )}
         {response.loading && response.text && (
-          <MarkdownView text={response.text} />
+          <MarkdownView text={response.text} onFollowup={handleFollowup} />
         )}
         {!response.loading && response.error && (
           <div style={{ color: 'var(--color-text-secondary)' }}>{response.error}</div>
         )}
         {!response.loading && !response.error && response.text && (
-          <MarkdownView text={response.text} />
+          <MarkdownView text={response.text} onFollowup={handleFollowup} />
         )}
         {response.loading && response.text && <Cursor />}
       </div>
@@ -388,17 +419,23 @@ function Dot({ delay }: { delay: number }) {
   );
 }
 
-function MarkdownView({ text }: { text: string }) {
+function MarkdownView({ text, onFollowup }: { text: string; onFollowup: (question: string) => void }) {
   // marked 异步加载阶段 → 回退纯文本（pre-wrap 保持换行）
   if (!markedCache) {
-    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{text}</div>;
+    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{injectFollowupButtons(text)}</div>;
   }
-  const html = markedCache(text);
+  const html = markedCache(injectFollowupButtons(text));
   return (
     <div
       className="md-body"
-      // marked 默认对源里的 HTML 做转义；这里 trusted AI 输出，可直接 innerHTML
       dangerouslySetInnerHTML={{ __html: html }}
+      onClick={(e) => {
+        const t = e.target as HTMLElement;
+        if (t && t.classList && t.classList.contains('ai-followup-btn')) {
+          const q = t.getAttribute('data-fuq-q') || t.textContent || '';
+          if (q) onFollowup(q);
+        }
+      }}
     />
   );
 }
