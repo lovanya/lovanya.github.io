@@ -5,7 +5,7 @@ import { askGemini, buildPrompt, detectPageLangFromDocument, type Lang } from '.
 /**
  * AI 线程管理器（单一 React 根）：
  * - 扫描页面上所有 .ai-ask-btn 按钮
- * - 在按钮所属 blockquote 后插入 host div
+ * - 在按钮所在 blockquote 之后插入 host div
  * - 每个 host 独立挂载一个 AIThread
  * - 状态独立、localStorage 持久化
  */
@@ -72,15 +72,16 @@ function MarkdownBody({ text, onFollowup }: { text: string; onFollowup: (q: stri
       if (cancelled) return;
       const m = mod.marked;
       m.setOptions({ gfm: true, breaks: true });
+      // 关键：marked 渲染后再注入 followup 按钮，否则 markdown 语法会破坏按钮
       const fn = (s: string) => m.parse(s, { async: false }) as string;
-      setHtml(fn(injectFollowupButtons(text)));
+      setHtml(injectFollowupButtons(fn(text)));
       setLoaded(true);
     });
     return () => { cancelled = true; };
   }, [text]);
 
   if (!loaded) {
-    return <div className="md-fallback">{injectFollowupButtons(text)}</div>;
+    return <div className="md-fallback">{text}</div>;
   }
   return (
     <div
@@ -103,6 +104,37 @@ interface AIThreadProps {
   lang: Lang;
 }
 
+function IconRefresh() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+      <path d="M16 16h5v5" />
+    </svg>
+  );
+}
+
+function IconTrash() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 function AIThread({ question, storageKey, lang }: AIThreadProps) {
   const t = lang === 'zh';
   const [expanded, setExpanded] = useState(true);
@@ -110,7 +142,6 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
   const [hydrated, setHydrated] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
-  // 读 localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -123,7 +154,6 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     setHydrated(true);
   }, [storageKey]);
 
-  // 写回
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -135,7 +165,6 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     } catch {}
   }, [turns, expanded, storageKey, hydrated]);
 
-  // 自动首次提问
   useEffect(() => {
     if (!hydrated || !expanded) return;
     if (turns.length === 0) {
@@ -165,7 +194,7 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
       onChunk: (text) => {
         if (isClosed) return;
         setTurns((prev) =>
-          prev.map((t, i) => (i === prev.length - 1 ? { ...t, answer: text, loading: true } : t))
+          prev.map((tt, i) => (i === prev.length - 1 ? { ...tt, answer: text, loading: true } : tt))
         );
       },
     }).then((res) => {
@@ -257,8 +286,8 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
           onClick={() => setExpanded((v) => !v)}
           aria-label={expanded ? (t ? '收起' : 'Collapse') : (t ? '展开' : 'Expand')}
         >
-          <span className="ai-thread-icon">{expanded ? '▼' : '▶'}</span>
-          <span className="ai-thread-title">{t ? '🎯 AI 解析' : '🎯 AI Analysis'}</span>
+          <IconChevron open={expanded} />
+          <span className="ai-thread-title">{t ? 'AI 解析' : 'AI Analysis'}</span>
           {turns.length > 0 && <span className="ai-thread-count">{turns.length}</span>}
         </button>
         {expanded && turns.length > 0 && (
@@ -269,16 +298,18 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
               onClick={handleReask}
               disabled={turns[turns.length - 1]?.loading}
               title={t ? '重新生成最后一条' : 'Regenerate last'}
+              aria-label={t ? '重新生成' : 'Regenerate'}
             >
-              🔄
+              <IconRefresh />
             </button>
             <button
               type="button"
               className="ai-thread-btn ai-thread-btn-danger"
               onClick={handleClear}
               title={t ? '清空所有回答' : 'Clear all'}
+              aria-label={t ? '清空' : 'Clear'}
             >
-              🗑
+              <IconTrash />
             </button>
           </div>
         )}
@@ -309,7 +340,7 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
             </div>
           ))}
           {turns.length === 0 && hydrated && (
-            <div className="ai-turn-empty">{t ? '点击 🔄 开始提问' : 'Click 🔄 to start'}</div>
+            <div className="ai-turn-empty">{t ? '点击 ↻ 重新开始' : 'Click ↻ to start'}</div>
           )}
         </div>
       )}
@@ -318,47 +349,61 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
 }
 
 export default function AIThreads() {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const rootsRef = useRef<Map<string, Root>>(new Map());
-
   useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-
     const findOrCreateHost = (btn: HTMLElement): HTMLElement | null => {
-      const blockquote = btn.closest('blockquote');
-      const parent = blockquote?.parentElement;
-      if (!parent) return null;
-      const question = btn.dataset.aiPayload || '';
+      const question = btn.getAttribute('data-ai-payload') || '';
       if (!question) return null;
       const hostId = 'ai-thread-host-' + hashStr(question);
-      let host = parent.querySelector(`:scope > .ai-thread-host[data-ai-id="${hostId}"]`) as HTMLElement | null;
+
+      // MDX 里所有 Q+A 行在同一个 blockquote，所以 closest('blockquote') 不够细。
+      // 用 button.parentElement（通常是 <p>），在它后面插入 host——每个 Q 独立。
+      const insertAfter = btn.parentElement;
+      if (!insertAfter) return null;
+
+      const container = insertAfter.parentElement;
+      if (!container) return null;
+
+      // 检查这个按钮的下一个兄弟节点是否已是 host（避免重复）
+      let host: HTMLElement | null = null;
+      let next = insertAfter.nextElementSibling;
+      while (next) {
+        if (next.classList?.contains('ai-thread-host') && (next as HTMLElement).dataset.aiId === hostId) {
+          host = next as HTMLElement;
+          break;
+        }
+        // 跳过空文本节点，继续找
+        next = next.nextElementSibling;
+      }
+
       if (!host) {
         host = document.createElement('div');
         host.className = 'ai-thread-host';
         host.dataset.aiId = hostId;
-        if (blockquote?.nextSibling) {
-          parent.insertBefore(host, blockquote.nextSibling);
-        } else {
-          parent.appendChild(host);
-        }
+        container.insertBefore(host, insertAfter.nextSibling);
       }
       return host;
     };
 
+    const rootsMap = new Map<string, Root>();
+
     const mount = (host: HTMLElement, question: string) => {
       const lang = detectPageLangFromDocument();
+      const key = host.dataset.aiId || '';
       const storageKey = `lovanya-ai-thread:${hashStr(question)}`;
-      let root = rootsRef.current.get(host.dataset.aiId || '');
+      let root = rootsMap.get(key);
       if (!root) {
         root = createRoot(host);
-        rootsRef.current.set(host.dataset.aiId || '', root);
+        rootsMap.set(key, root);
       }
+      // 动态 import AIThread 组件（已经在 AIThread.tsx 同模块）
+      // 这里直接用 window 全局，因为 AIThreads 和 AIThread 在同一个 bundle 里
       root.render(<AIThread question={question} storageKey={storageKey} lang={lang} />);
     };
 
     const handleClick = (e: Event) => {
-      const btn = (e.target as HTMLElement).closest('.ai-ask-btn');
+      const target = e.target as HTMLElement;
+      if (!target || !target.closest) return;
+      const btn = target.closest('.ai-ask-btn');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
@@ -372,20 +417,19 @@ export default function AIThreads() {
 
     const bindButtons = () => {
       document.querySelectorAll('.ai-ask-btn[data-ai-template][data-ai-payload]').forEach((btn) => {
-        if ((btn as HTMLElement).dataset.bound === '1') return;
-        (btn as HTMLElement).dataset.bound = '1';
-        btn.addEventListener('click', handleClick);
+        const el = btn as HTMLElement;
+        if (el.dataset.aiBound === '1') return;
+        el.dataset.aiBound = '1';
+        el.addEventListener('click', handleClick);
       });
     };
 
     bindButtons();
-
-    // 页面内容动态变化时重新绑定
     const observer = new MutationObserver(() => bindButtons());
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={containerRef} style={{ display: 'none' }} aria-hidden="true" />;
+  return null;
 }
