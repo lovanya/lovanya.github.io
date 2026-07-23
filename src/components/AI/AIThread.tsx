@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { askGemini, buildPrompt, detectPageLangFromDocument, type Lang } from '../../lib/ai';
+import { injectFollowupButtons } from '../../lib/parse-followup';
 
 /**
- * AI 线程管理器（单一 React 根）：
- * - 扫描页面上所有 .ai-ask-btn 按钮
- * - 在按钮所在 blockquote 之后插入 host div
- * - 每个 host 独立挂载一个 AIThread
- * - 状态独立、localStorage 持久化
+ * AI 内嵌线程
+ * - 纯展示组件：接收 question + storageKey + lang，负责该线程的所有 UI 与状态
+ * - 由 AIThreads 编排器挂载到对应按钮的下一个兄弟节点
+ * - localStorage 持久化对话内容
+ * - 追问 = 在 turns 数组追加新 turn，不清空原内容
  */
 
 interface Turn {
@@ -23,45 +24,34 @@ function hashStr(s: string): string {
   return Math.abs(h).toString(36);
 }
 
-// 把 AI 输出里的追问行替换成可点击按钮
-function injectFollowupButtons(text: string): string {
-  const escape = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// SVG icons (不依赖 emoji 字体)
+const IconChevron = ({ open }: { open: boolean }) => (
+  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
 
-  let result = text.replace(
-    /((?:\*\*)?(?:问题|追问)\s*(\d+)(?:\*\*)?\s*[:：]\s*)([^\n]+)/g,
-    (_, prefix, num, question) => {
-      const safe = escape(question);
-      return `${prefix}<button type="button" class="ai-followup-btn" data-fuq-q="${safe}">${safe}</button>`;
-    }
-  );
+const IconRefresh = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+    <path d="M16 16h5v5" />
+  </svg>
+);
 
-  const headerRe = /(延伸追问[：:][^\n]*\n+)/;
-  const headerMatch = result.match(headerRe);
-  if (!headerMatch || headerMatch.index === undefined) return result;
-  const headerIdx = headerMatch.index + headerMatch[0].length;
-  const afterHeader = result.substring(headerIdx);
-  const nextH2 = afterHeader.search(/\n##\s+/);
-  const sectionEnd = nextH2 === -1 ? result.length : headerIdx + nextH2;
-  const before = result.substring(0, headerIdx);
-  const section = result.substring(headerIdx, sectionEnd);
-  const after = result.substring(sectionEnd);
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
 
-  const processed = section.replace(
-    /^(\s*(?:[-*]|\d+\.)\s+|\s*)([^\n]+?)\s*$/gm,
-    (line, indent, raw) => {
-      const cleaned = raw.replace(/\*\*/g, '').trim();
-      if (!cleaned) return line;
-      if (!/[？?]/.test(cleaned)) return line;
-      if (/^(思路|提示|参考|补充|备注|说明|面试官)[：:]/.test(cleaned)) return line;
-      const safe = escape(cleaned);
-      return `${indent}<button type="button" class="ai-followup-btn" data-fuq-q="${safe}"><strong>${safe}</strong></button>`;
-    }
-  );
-
-  return before + processed + after;
-}
-
+// ============ MarkdownBody ============
+// 渲染 markdown 为 HTML，并在 marked 之前注入追问按钮 HTML
 function MarkdownBody({ text, onFollowup }: { text: string; onFollowup: (q: string) => void }) {
   const [html, setHtml] = useState<string>('');
   const [loaded, setLoaded] = useState(false);
@@ -72,17 +62,16 @@ function MarkdownBody({ text, onFollowup }: { text: string; onFollowup: (q: stri
       if (cancelled) return;
       const m = mod.marked;
       m.setOptions({ gfm: true, breaks: true });
-      // 关键：先在 markdown 源里注入按钮，marked 会把 inline HTML 原样保留
       const fn = (s: string) => m.parse(s, { async: false }) as string;
+      // 关键顺序：先注入按钮 HTML → 再过 marked（marked 会保留 inline HTML）
       setHtml(fn(injectFollowupButtons(text)));
       setLoaded(true);
     });
     return () => { cancelled = true; };
   }, [text]);
 
-  if (!loaded) {
-    return <div className="md-fallback">{text}</div>;
-  }
+  if (!loaded) return <div className="md-fallback">{text}</div>;
+
   return (
     <div
       className="md-body"
@@ -98,41 +87,11 @@ function MarkdownBody({ text, onFollowup }: { text: string; onFollowup: (q: stri
   );
 }
 
+// ============ AIThread (单个线程) ============
 interface AIThreadProps {
   question: string;
   storageKey: string;
   lang: Lang;
-}
-
-function IconRefresh() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-      <path d="M16 16h5v5" />
-    </svg>
-  );
-}
-
-function IconTrash() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 6h18" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
-    </svg>
-  );
-}
-
-function IconChevron({ open }: { open: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.15s' }}>
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
 }
 
 function AIThread({ question, storageKey, lang }: AIThreadProps) {
@@ -142,6 +101,7 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
   const [hydrated, setHydrated] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
+  // localStorage 读取
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -154,6 +114,7 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     setHydrated(true);
   }, [storageKey]);
 
+  // localStorage 写入
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -165,11 +126,10 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     } catch {}
   }, [turns, expanded, storageKey, hydrated]);
 
+  // 自动开始首次提问
   useEffect(() => {
     if (!hydrated || !expanded) return;
-    if (turns.length === 0) {
-      startTurn(question);
-    }
+    if (turns.length === 0) startTurn(question);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, expanded]);
 
@@ -218,10 +178,10 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     });
   }, [lang]);
 
-  useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
+  // 卸载时 abort
+  useEffect(() => () => abortRef.current?.abort(), []);
 
+  // 重新生成最后一条
   const handleReask = useCallback(() => {
     if (turns.length === 0) {
       startTurn(question);
@@ -267,11 +227,13 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
     });
   }, [turns, lang, question]);
 
+  // 清空全部
   const handleClear = useCallback(() => {
     abortRef.current?.abort();
     setTurns([]);
   }, []);
 
+  // 追问：追加新 turn
   const handleFollowup = useCallback((q: string) => {
     if (!q) return;
     startTurn(q);
@@ -325,9 +287,7 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
               </div>
               <div className="ai-turn-a">
                 {turn.loading && !turn.answer && (
-                  <span className="ai-typing">
-                    <span /><span /><span />
-                  </span>
+                  <span className="ai-typing"><span /><span /><span /></span>
                 )}
                 {turn.error && <span className="ai-turn-error">{turn.error}</span>}
                 {turn.answer && (
@@ -348,6 +308,9 @@ function AIThread({ question, storageKey, lang }: AIThreadProps) {
   );
 }
 
+// ============ AIThreads (编排器) ============
+// 单 React 根实例化：扫描页面上所有 .ai-ask-btn 按钮，
+// 点击后在该按钮所在 <p> 后插入 host div 并挂载 AIThread。
 export default function AIThreads() {
   useEffect(() => {
     const findOrCreateHost = (btn: HTMLElement): HTMLElement | null => {
@@ -355,37 +318,28 @@ export default function AIThreads() {
       if (!question) return null;
       const hostId = 'ai-thread-host-' + hashStr(question);
 
-      // MDX 里所有 Q+A 行在同一个 blockquote，所以 closest('blockquote') 不够细。
-      // 用 button.parentElement（通常是 <p>），在它后面插入 host——每个 Q 独立。
       const insertAfter = btn.parentElement;
       if (!insertAfter) return null;
 
-      const container = insertAfter.parentElement;
-      if (!container) return null;
-
-      // 检查这个按钮的下一个兄弟节点是否已是 host（避免重复）
-      let host: HTMLElement | null = null;
+      // 复用已存在的 host（避免重复插入）
       let next = insertAfter.nextElementSibling;
       while (next) {
         if (next.classList?.contains('ai-thread-host') && (next as HTMLElement).dataset.aiId === hostId) {
-          host = next as HTMLElement;
-          break;
+          return next as HTMLElement;
         }
-        // 跳过空文本节点，继续找
         next = next.nextElementSibling;
       }
 
-      if (!host) {
-        host = document.createElement('div');
-        host.className = 'ai-thread-host';
-        host.dataset.aiId = hostId;
-        container.insertBefore(host, insertAfter.nextSibling);
-      }
+      const container = insertAfter.parentElement;
+      if (!container) return null;
+      const host = document.createElement('div');
+      host.className = 'ai-thread-host';
+      host.dataset.aiId = hostId;
+      container.insertBefore(host, insertAfter.nextSibling);
       return host;
     };
 
     const rootsMap = new Map<string, Root>();
-
     const mount = (host: HTMLElement, question: string) => {
       const lang = detectPageLangFromDocument();
       const key = host.dataset.aiId || '';
@@ -395,14 +349,12 @@ export default function AIThreads() {
         root = createRoot(host);
         rootsMap.set(key, root);
       }
-      // 动态 import AIThread 组件（已经在 AIThread.tsx 同模块）
-      // 这里直接用 window 全局，因为 AIThreads 和 AIThread 在同一个 bundle 里
       root.render(<AIThread question={question} storageKey={storageKey} lang={lang} />);
     };
 
     const handleClick = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (!target || !target.closest) return;
+      if (!target?.closest) return;
       const btn = target.closest('.ai-ask-btn');
       if (!btn) return;
       e.preventDefault();
