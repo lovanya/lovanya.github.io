@@ -76,23 +76,24 @@ export default function AIPanel() {
   useEffect(() => {
     if (!open) return;
 
-    // 计算 anchor 位置
-    let top = window.scrollY + window.innerHeight * 0.15;
+    // 计算 anchor 位置（viewport 坐标，因为 Panel 用 position: fixed）
+    let top = window.innerHeight * 0.15;
     let left = window.innerWidth / 2 - 360;
     if (anchor) {
-      const absY = anchor.y + window.scrollY;
+      // anchor.y 已经含 scrollY（document 坐标），先转 viewport 坐标
+      const viewportY = anchor.y - window.scrollY;
       const panelHeight = 420;
       // 优先放到 anchor 下方
-      const belowTop = absY + 12;
+      const belowTop = viewportY + 12;
       // 放不下就放上方
-      const aboveTop = absY - panelHeight - 12;
-      if (belowTop + panelHeight < window.scrollY + window.innerHeight) {
+      const aboveTop = viewportY - panelHeight - 12;
+      if (belowTop + panelHeight < window.innerHeight) {
         top = belowTop;
-      } else if (aboveTop > window.scrollY) {
+      } else if (aboveTop > 0) {
         top = aboveTop;
       } else {
         // 都放不下就用屏幕中央偏下
-        top = window.scrollY + window.innerHeight * 0.15;
+        top = window.innerHeight * 0.15;
       }
       // 横向：根据 anchor.x 居中放置（夹紧到屏幕内）
       const idealLeft = anchor.x - 180;
@@ -193,7 +194,7 @@ export default function AIPanel() {
       role="dialog"
       aria-label={labels[template]}
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: `${pos.top}px`,
         left: `${Math.max(16, Math.min(pos.left, typeof window !== 'undefined' ? window.innerWidth - 740 : pos.left))}px`,
         width: '720px',
