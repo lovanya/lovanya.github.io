@@ -20,11 +20,11 @@ const markedPromise: Promise<MarkedFn> = import('marked').then((mod) => {
 let markedCache: MarkedFn | null = null;
 markedPromise.then((fn) => { markedCache = fn; });
 
-// 把 AI 输出里的"问题 N: ..."行替换成可点击按钮
-// 支持 **问题 N** 或 问题 N（带/不带冒号前后空格）
+// 把 AI 输出里的"问题/追问 N: ..."行替换成可点击按钮
+// 支持 **问题 1**、问题1、追问1、追问 1、可选中英文冒号
 function injectFollowupButtons(text: string): string {
   return text.replace(
-    /(\*\*问题\s*(\d+)\*\*\s*[:：]?\s*)([^\n]+)/g,
+    /((?:\*\*)?(?:问题|追问)\s*(\d+)(?:\*\*)?\s*[:：]\s*)([^\n]+)/g,
     (_, prefix, num, question) => {
       const safe = question
         .replace(/&/g, '&amp;')
