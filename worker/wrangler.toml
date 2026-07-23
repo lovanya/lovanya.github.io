@@ -7,7 +7,7 @@ compatibility_date = "2024-09-23"
 # Origin 白名单 + 默认模型（可放 wrangler.toml）
 [vars]
 ALLOWED_ORIGINS = "https://lovanya.github.io"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 
 # 速率限制 KV（按 IP 限流，每分钟 30 次）
 # 创建：`wrangler kv namespace create RATE_KV`，把返回的 id 填到下面

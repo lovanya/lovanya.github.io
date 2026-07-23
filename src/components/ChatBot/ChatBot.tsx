@@ -86,7 +86,7 @@ const isProd = () =>
   typeof location !== 'undefined' && /(^|\.)lovanya\.github\.io$/.test(location.hostname);
 
 const GEMINI_PROXY_URL = `${WORKER_URL}/api/answer`;
-const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
 
 const STORAGE_KEY = 'chatbot-history';
 const MAX_HISTORY = 50;
