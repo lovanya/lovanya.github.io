@@ -20,20 +20,49 @@ const markedPromise: Promise<MarkedFn> = import('marked').then((mod) => {
 let markedCache: MarkedFn | null = null;
 markedPromise.then((fn) => { markedCache = fn; });
 
-// 把 AI 输出里的"问题/追问 N: ..."行替换成可点击按钮
-// 支持 **问题 1**、问题1、追问1、追问 1、可选中英文冒号
+// 把 AI 输出里的追问行替换成可点击按钮
+// 支持两类格式：
+// 1) 带数字前缀：**问题 1**: text / 追问1: text / 问题 N: text
+// 2) 无前缀（在 "延伸追问：" 段内）：**如何处理模块间的数据共享？**
 function injectFollowupButtons(text: string): string {
-  return text.replace(
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // 格式 1：数字前缀
+  let result = text.replace(
     /((?:\*\*)?(?:问题|追问)\s*(\d+)(?:\*\*)?\s*[:：]\s*)([^\n]+)/g,
     (_, prefix, num, question) => {
-      const safe = question
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+      const safe = escape(question);
       return `${prefix}<button type="button" class="ai-followup-btn" data-fuq-num="${num}" data-fuq-q="${safe}">${safe}</button>`;
     }
   );
+
+  // 格式 2：定位 "延伸追问：" 段，把该段内每行结尾为 ？/? 的行变按钮
+  const headerRe = /(延伸追问[：:][^\n]*\n+)/;
+  const headerMatch = result.match(headerRe);
+  if (!headerMatch || headerMatch.index === undefined) return result;
+  const headerIdx = headerMatch.index + headerMatch[0].length;
+  const afterHeader = result.substring(headerIdx);
+  // 段尾：下一个二级标题（## xxx）或文末
+  const nextH2 = afterHeader.search(/\n##\s+/);
+  const sectionEnd = nextH2 === -1 ? result.length : headerIdx + nextH2;
+  const before = result.substring(0, headerIdx);
+  const section = result.substring(headerIdx, sectionEnd);
+  const after = result.substring(sectionEnd);
+
+  const processed = section.replace(
+    /^(\s*)(\*\*?)([^\n]+?[？?])(\*\*?)(\s*)$/gm,
+    (line, indent, bOpen, question, bClose, tail) => {
+      const trimmed = question.trim();
+      if (!trimmed) return line;
+      // 跳过思路提示行
+      if (/^(思路|提示|参考|补充|备注|说明)[：:]/.test(trimmed)) return line;
+      const safe = escape(trimmed);
+      return `${indent}<button type="button" class="ai-followup-btn" data-fuq-q="${safe}"><strong>${safe}</strong></button>${tail}`;
+    }
+  );
+
+  return before + processed + after;
 }
 
 interface OpenDetail {
@@ -103,17 +132,19 @@ export default function AIPanel() {
     if (!open) return;
 
     // 计算 anchor 位置（viewport 坐标，因为 Panel 用 position: fixed）
+    const BOTTOM_MARGIN = 24; // 面板底部距 viewport 底的最小间距
     let top = window.innerHeight * 0.15;
     let left = window.innerWidth / 2 - 360;
     if (anchor) {
       // anchor.y 已经含 scrollY（document 坐标），先转 viewport 坐标
       const viewportY = anchor.y - window.scrollY;
+      const idealHeight = Math.min(window.innerHeight * 0.7, window.innerHeight - BOTTOM_MARGIN * 2);
       const panelHeight = 420;
       // 优先放到 anchor 下方
-      const belowTop = viewportY + 12;
+      let belowTop = viewportY + 12;
       // 放不下就放上方
       const aboveTop = viewportY - panelHeight - 12;
-      if (belowTop + panelHeight < window.innerHeight) {
+      if (belowTop + panelHeight < window.innerHeight - BOTTOM_MARGIN) {
         top = belowTop;
       } else if (aboveTop > 0) {
         top = aboveTop;
@@ -121,6 +152,9 @@ export default function AIPanel() {
         // 都放不下就用屏幕中央偏下
         top = window.innerHeight * 0.15;
       }
+      // 终极夹紧：保证面板底部留 BOTTOM_MARGIN 距离
+      const maxAllowedTop = Math.max(16, window.innerHeight - idealHeight - BOTTOM_MARGIN);
+      top = Math.min(top, maxAllowedTop);
       // 横向：根据 anchor.x 居中放置（夹紧到屏幕内）
       const idealLeft = anchor.x - 180;
       const minLeft = 16;
