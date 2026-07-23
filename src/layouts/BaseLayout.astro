@@ -377,14 +377,8 @@ const websiteJsonLd = {
       (function () {
         if (typeof window === 'undefined') return;
 
-        const bindAiAskButtons = () => {
-          // 仅做标记，避免 AIThreads 重复绑定
-          document.querySelectorAll('.ai-ask-btn[data-ai-template][data-ai-payload]').forEach((btn) => {
-            if (btn.dataset.bound === '1') return;
-            btn.dataset.bound = '1';
-            // AIThreads 组件会接管 click 事件
-          });
-        };
+        // AIAsk 按钮绑定由 <AIThreads client:only="react" /> 组件负责（见 src/components/AI/AIThread.tsx）
+
         const decorateCodeBlocks = () => {
           document.querySelectorAll('article pre, .prose pre, .post-content pre').forEach((pre) => {
             if (pre.dataset.aiDecorated === '1') return;
@@ -438,7 +432,7 @@ const websiteJsonLd = {
           });
         };
         const decorateAll = () => {
-          bindAiAskButtons();
+          // AIAsk 按钮由 React AIThreads 组件绑定
           decorateCodeBlocks();
         };
         if (document.readyState === 'loading') {
