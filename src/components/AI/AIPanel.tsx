@@ -10,6 +10,16 @@ export { dispatchAiOpen } from '../../lib/ai';
 export { buildPrompt } from '../../lib/ai';
 export type { TemplateId, Lang } from '../../lib/ai';
 
+// marked 异步加载（不影响首屏），用 ref 缓存以避免每次重渲染重 import
+type MarkedFn = (src: string) => string;
+const markedPromise: Promise<MarkedFn> = import('marked').then((mod) => {
+  const m = mod.marked;
+  m.setOptions({ gfm: true, breaks: true });
+  return ((src: string) => m.parse(src, { async: false }) as string);
+});
+let markedCache: MarkedFn | null = null;
+markedPromise.then((fn) => { markedCache = fn; });
+
 interface OpenDetail {
   template: TemplateId;
   payload: string;
@@ -287,6 +297,7 @@ export default function AIPanel() {
 
       {/* Response */}
       <div
+        className="ai-response"
         style={{
           flex: 1,
           overflow: 'auto',
@@ -303,14 +314,15 @@ export default function AIPanel() {
           </div>
         )}
         {response.loading && response.text && (
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{response.text}<Cursor /></div>
+          <MarkdownView text={response.text} />
         )}
         {!response.loading && response.error && (
           <div style={{ color: 'var(--color-text-secondary)' }}>{response.error}</div>
         )}
         {!response.loading && !response.error && response.text && (
-          <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{response.text}</div>
+          <MarkdownView text={response.text} />
         )}
+        {response.loading && response.text && <Cursor />}
       </div>
 
       {/* Footer actions */}
@@ -372,6 +384,21 @@ function Dot({ delay }: { delay: number }) {
         animationDelay: `${delay}s`,
         opacity: 0.6,
       }}
+    />
+  );
+}
+
+function MarkdownView({ text }: { text: string }) {
+  // marked 异步加载阶段 → 回退纯文本（pre-wrap 保持换行）
+  if (!markedCache) {
+    return <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{text}</div>;
+  }
+  const html = markedCache(text);
+  return (
+    <div
+      className="md-body"
+      // marked 默认对源里的 HTML 做转义；这里 trusted AI 输出，可直接 innerHTML
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 }
