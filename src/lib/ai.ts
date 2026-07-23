@@ -1,11 +1,11 @@
 /**
  * AI 请求路由
  *
- * dev（npm run dev / Astro dev server）→ 直连 Gemini，需要 PUBLIC_GEMINI_API_KEY
+ * dev（npm run dev / Astro dev server）→ 直连智谱 OpenAI 兼容端点，需要 PUBLIC_ZHIPU_API_KEY
  * prod（npm run build）→ 走 Cloudflare Worker proxy，无 key
  *
  * 生产 bundle 不含 `askDirect` 的可执行路径（DCE by Vite），
- * PUBLIC_GEMINI_API_KEY 在生产构建里没值（GitHub Actions 不传）。
+ * PUBLIC_ZHIPU_API_KEY 在生产构建里没值（GitHub Actions 不传）。
  */
 
 import { WORKER_URL, workerHeaders } from './ai-config';
@@ -32,11 +32,12 @@ export interface BuildPromptOpts {
   targetLang?: TargetLang;
 }
 
-const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
+const ZHIPU_DIRECT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+const ZHIPU_MODEL = 'glm-4-flash';
 
 function getDirectKey(): string {
   if (typeof import.meta === 'undefined') return '';
-  return (import.meta as unknown as { env?: Record<string, string> }).env?.PUBLIC_GEMINI_API_KEY || '';
+  return (import.meta as unknown as { env?: Record<string, string> }).env?.PUBLIC_ZHIPU_API_KEY || '';
 }
 
 function detectPageLang(): Lang {
@@ -115,20 +116,25 @@ async function askDirect({ prompt, lang, signal, onChunk }: AskOpts): Promise<As
     return {
       ok: false,
       text: '',
-      error: l === 'zh' ? '⚠️ 本地未配置 PUBLIC_GEMINI_API_KEY（dev only）' : '⚠️ PUBLIC_GEMINI_API_KEY not configured (dev only)',
+      error: l === 'zh' ? '⚠️ 本地未配置 PUBLIC_ZHIPU_API_KEY（dev only）' : '⚠️ PUBLIC_ZHIPU_API_KEY not configured (dev only)',
     };
   }
   const body = JSON.stringify({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.3, topP: 0.95 },
+    model: ZHIPU_MODEL,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.3,
+    top_p: 0.95,
   });
 
   if (onChunk) {
     try {
-      const res = await fetch(`${GEMINI_DIRECT}?key=${key}&alt=sse`, {
+      const res = await fetch(ZHIPU_DIRECT, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`,
+        },
+        body: JSON.stringify({ ...JSON.parse(body), stream: true }),
         signal,
       });
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
@@ -148,7 +154,7 @@ async function askDirect({ prompt, lang, signal, onChunk }: AskOpts): Promise<As
           if (!data || data === '[DONE]') continue;
           try {
             const json = JSON.parse(data);
-            const piece = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const piece = json?.choices?.[0]?.delta?.content || '';
             if (piece) { full += piece; onChunk(full); }
           } catch {}
         }
@@ -160,18 +166,21 @@ async function askDirect({ prompt, lang, signal, onChunk }: AskOpts): Promise<As
   }
 
   try {
-    const res = await fetch(`${GEMINI_DIRECT}?key=${key}`, {
+    const res = await fetch(ZHIPU_DIRECT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
       body,
       signal,
     });
     const data = await res.json();
-    if (data?.error?.status === 'RESOURCE_EXHAUSTED') {
-      return { ok: false, text: '', error: l === 'zh' ? '⚠️ AI 配额已用完' : '⚠️ AI quota exhausted' };
+    if (data?.error?.code === 'rate_limit_exceeded' || res.status === 429) {
+      return { ok: false, text: '', error: l === 'zh' ? '⚠️ AI 限流，请稍后再试' : '⚠️ AI rate limit, retry shortly' };
     }
     if (!res.ok) return { ok: false, text: '', error: `HTTP ${res.status}` };
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data?.choices?.[0]?.message?.content || '';
     return { ok: true, text };
   } catch {
     return { ok: false, text: '', error: l === 'zh' ? '⚠️ AI 连接失败' : '⚠️ AI connection failed' };
@@ -211,7 +220,7 @@ async function askViaProxy({ prompt, lang, signal, onChunk }: AskOpts): Promise<
           if (!data || data === '[DONE]') continue;
           try {
             const json = JSON.parse(data);
-            const piece = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const piece = json?.choices?.[0]?.delta?.content || '';
             if (piece) { full += piece; onChunk(full); }
           } catch {}
         }

@@ -1,8 +1,8 @@
 /**
- * api-proxy — Cloudflare Worker 转发 Gemini API 请求
+ * api-proxy — Cloudflare Worker 转发 智谱 AI GLM-4-Flash 请求
  *
  * 部署：`cd worker && npm install && wrangler deploy`
- * Secrets（必填）：wrangler secret put GEMINI_API_KEY
+ * Secrets（必填）：wrangler secret put ZHIPU_API_KEY
  *
  * 防滥用：Origin 白名单 + KV 速率限制（可选,wrangler.toml 里 KV id 配上即可启用）
  *
@@ -10,12 +10,15 @@
  *   POST /api/ask     — 流式 (SSE) 转发, body: { prompt, lang, temperature? }
  *   POST /api/answer  — 非流式, body: { prompt, lang }
  *   GET  /healthz     — 健康检查
+ *
+ * 智谱 OpenAI 兼容端点：https://open.bigmodel.cn/api/paas/v4/chat/completions
+ * 免费模型：glm-4-flash（不限量、仅限速）
  */
 
 interface Env {
-  GEMINI_API_KEY: string;
+  ZHIPU_API_KEY: string;
   ALLOWED_ORIGINS: string;
-  GEMINI_MODEL: string;
+  ZHIPU_MODEL: string;
   RATE_KV?: KVNamespace;
 }
 
@@ -27,7 +30,7 @@ interface RateInfo {
 const RATE_LIMIT = 30;
 const RATE_WINDOW = 60_000;
 
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const ZHIPU_BASE = 'https://open.bigmodel.cn/api/paas/v4';
 
 const buildCorsHeaders = (origin: string | null, allowed: string): Record<string, string> => {
   const h: Record<string, string> = {
@@ -89,15 +92,18 @@ async function handleAsk(req: Request, env: Env, cors: Record<string, string>): 
   if (!prompt) return json({ ok: false, error: 'missing prompt' }, 400, cors);
   if (prompt.length > 32000) return json({ ok: false, error: 'prompt too long' }, 413, cors);
 
-  const upstream = await fetch(`${GEMINI_BASE}/${env.GEMINI_MODEL}:generateContent?alt=sse`, {
+  const upstream = await fetch(`${ZHIPU_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': env.GEMINI_API_KEY,
+      'Authorization': `Bearer ${env.ZHIPU_API_KEY}`,
     },
     body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: body.temperature ?? 0.3, topP: 0.95 },
+      model: env.ZHIPU_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: body.temperature ?? 0.3,
+      top_p: 0.95,
+      stream: true,
     }),
   });
 
@@ -127,15 +133,17 @@ async function handleAnswer(req: Request, env: Env, cors: Record<string, string>
   const prompt = body.prompt?.trim();
   if (!prompt) return json({ ok: false, error: 'missing prompt' }, 400, cors);
 
-  const upstream = await fetch(`${GEMINI_BASE}/${env.GEMINI_MODEL}:generateContent`, {
+  const upstream = await fetch(`${ZHIPU_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': env.GEMINI_API_KEY,
+      'Authorization': `Bearer ${env.ZHIPU_API_KEY}`,
     },
     body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, topP: 0.95 },
+      model: env.ZHIPU_MODEL,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+      top_p: 0.95,
     }),
   });
 
@@ -144,7 +152,7 @@ async function handleAnswer(req: Request, env: Env, cors: Record<string, string>
     return json({ ok: false, error: data?.error?.message || `upstream ${upstream.status}` }, 502, cors);
   }
 
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const text = data?.choices?.[0]?.message?.content ?? '';
   return json({ ok: true, text }, 200, cors);
 }
 

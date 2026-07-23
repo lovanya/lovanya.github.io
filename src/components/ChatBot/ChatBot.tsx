@@ -85,8 +85,9 @@ import { WORKER_URL, workerHeaders } from '../../lib/ai-config';
 const isProd = () =>
   typeof location !== 'undefined' && /(^|\.)lovanya\.github\.io$/.test(location.hostname);
 
-const GEMINI_PROXY_URL = `${WORKER_URL}/api/answer`;
-const GEMINI_DIRECT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
+const ZHIPU_PROXY_URL = `${WORKER_URL}/api/answer`;
+const ZHIPU_DIRECT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+const ZHIPU_MODEL = 'glm-4-flash';
 
 const STORAGE_KEY = 'chatbot-history';
 const MAX_HISTORY = 50;
@@ -169,13 +170,13 @@ Decision rules:
 
   const prompt = `${systemPrompt}\n\nUser: ${userInput}`;
 
-  // 路由：生产 → Worker proxy；本地 dev → 直连 Gemini
+  // 路由：生产 → Worker proxy；本地 dev → 直连智谱
   if (isProd()) {
     if (!WORKER_URL) {
       return { action: 'answer', answer: lang === 'zh' ? '⚠️ Worker URL 未配置' : '⚠️ Worker URL not configured' };
     }
     try {
-      const res = await fetch(GEMINI_PROXY_URL, {
+      const res = await fetch(ZHIPU_PROXY_URL, {
         method: 'POST',
         headers: workerHeaders(),
         body: JSON.stringify({ prompt, lang }),
@@ -183,7 +184,7 @@ Decision rules:
       const data = await res.json();
       if (!res.ok || !data.ok) {
         const msg = String(data?.error || `HTTP ${res.status}`);
-        if (msg.toLowerCase().includes('quota')) {
+        if (msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate')) {
           return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 配额已用完' : '⚠️ AI quota exhausted.' };
         }
         return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 暂时不可用' : '⚠️ AI unavailable' };
@@ -200,25 +201,31 @@ Decision rules:
     }
   }
 
-  // 本地 dev：直连 Gemini
-  const key = (import.meta as any).env?.PUBLIC_GEMINI_API_KEY || '';
+  // 本地 dev：直连智谱
+  const key = (import.meta as any).env?.PUBLIC_ZHIPU_API_KEY || '';
   if (!key) {
-    return { action: 'answer', answer: lang === 'zh' ? '⚠️ 本地未配置 PUBLIC_GEMINI_API_KEY' : '⚠️ PUBLIC_GEMINI_API_KEY not set locally' };
+    return { action: 'answer', answer: lang === 'zh' ? '⚠️ 本地未配置 PUBLIC_ZHIPU_API_KEY' : '⚠️ PUBLIC_ZHIPU_API_KEY not set locally' };
   }
   try {
-    const res = await fetch(`${GEMINI_DIRECT}?key=${key}`, {
+    const res = await fetch(ZHIPU_DIRECT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: ZHIPU_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
     const data = await res.json();
-    if (data?.error?.status === 'RESOURCE_EXHAUSTED') {
-      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 配额已用完' : '⚠️ AI quota exhausted.' };
+    if (data?.error?.code === 'rate_limit_exceeded' || res.status === 429) {
+      return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 限流，请稍后再试' : '⚠️ AI rate limit, retry shortly' };
     }
     if (!res.ok) {
       return { action: 'answer', answer: lang === 'zh' ? '⚠️ AI 暂时不可用' : '⚠️ AI unavailable' };
     }
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data?.choices?.[0]?.message?.content || '';
     const jsonMatch = text.match(/\{[\s\S]*?\}/);
     if (jsonMatch) {
       try { return JSON.parse(jsonMatch[0]); }
