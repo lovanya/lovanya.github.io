@@ -72,9 +72,9 @@ function MarkdownBody({ text, onFollowup }: { text: string; onFollowup: (q: stri
       if (cancelled) return;
       const m = mod.marked;
       m.setOptions({ gfm: true, breaks: true });
-      // 关键：marked 渲染后再注入 followup 按钮，否则 markdown 语法会破坏按钮
+      // 关键：先在 markdown 源里注入按钮，marked 会把 inline HTML 原样保留
       const fn = (s: string) => m.parse(s, { async: false }) as string;
-      setHtml(injectFollowupButtons(fn(text)));
+      setHtml(fn(injectFollowupButtons(text)));
       setLoaded(true);
     });
     return () => { cancelled = true; };
