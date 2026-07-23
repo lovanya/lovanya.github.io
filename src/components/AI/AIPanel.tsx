@@ -234,7 +234,7 @@ export default function AIPanel() {
             borderRadius: '4px',
           }}
         >
-          Gemini 2.5 Flash
+          GLM-4-Flash
         </span>
         <button
           onClick={() => setOpen(false)}
