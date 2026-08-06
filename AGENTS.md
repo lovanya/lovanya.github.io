@@ -81,6 +81,13 @@ Consult these guides before working on related tasks:
    - 一次提交聚焦一个功能或修复
    - 提交前确认构建通过
 
+5. **测试截图存放规范（避免污染仓库根）**：
+   - 所有调试、UI 截图、视觉回归测试的 PNG/JPG **必须** 放到 `tests/screenshots/` 子目录
+   - **禁止** 在仓库根目录生成任何 `.png`/`.jpg`/`.gif`/`.webp`（根目录只放构建产物和图标资源）
+   - 命名规范：`tests/screenshots/<场景描述>-<YYYYMMDD>.png`，例如 `homepage-desktop-20260806.png`
+   - Playwright MCP 截图默认输出到 `.playwright-mcp/`，如果用 MCP 截图也建议移过来，或修改 MCP 配置输出目录到 `tests/screenshots/`
+   - `.gitignore` 已忽略 `tests/**/*.png` 但保留 `tests/screenshots/`（截图属于过程产物，最终可清理）；如果你**有意提交**某个截图作为参考，请放在 `tests/screenshots/` 并显式 `git add -f`
+
 ## 10 分制内容审核规范
 
 ### 通用规则

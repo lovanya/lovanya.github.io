@@ -31,3 +31,9 @@ worker/node_modules/
 # playwright mcp browser artifacts
 .playwright-mcp/
 src/data/view-counts.json
+
+# 根目录测试截图统一存放到 tests/screenshots/，避免污染仓库根
+# 新生成的截图应使用 tests/screenshots/<描述>-<YYYYMMDD>.png 命名
+/tests/*.png
+/tests/**/*.png
+!/tests/screenshots/
