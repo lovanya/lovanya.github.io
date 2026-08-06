@@ -377,6 +377,27 @@ export default function AIThreads() {
     };
 
     bindButtons();
+
+    // 自动挂载有历史的线程（折叠态）
+    // 让用户刷新页面后能直接看到"之前问过"的折叠提示，而不是再点一次机器人
+    const tryAutoMount = (btn: HTMLElement) => {
+      const question = btn.getAttribute('data-ai-payload') || '';
+      if (!question) return;
+      const storageKey = `lovanya-ai-thread:${hashStr(question)}`;
+      let data: { turns?: unknown[]; expanded?: boolean } | null = null;
+      try {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) data = JSON.parse(raw);
+      } catch {}
+      if (!data || !Array.isArray(data.turns) || data.turns.length === 0) return;
+      const host = findOrCreateHost(btn);
+      if (!host) return;
+      mount(host, question);
+    };
+    document.querySelectorAll('.ai-ask-btn[data-ai-template][data-ai-payload]').forEach((btn) => {
+      tryAutoMount(btn as HTMLElement);
+    });
+
     const observer = new MutationObserver(() => bindButtons());
     observer.observe(document.body, { childList: true, subtree: true });
 
